@@ -100,7 +100,7 @@ def cmd_help(bot, update):
     "/radius <m> - Sets the search radius in m \n" +\
     "/remloc - Clears your location data \n" +\
     "/list - Lists the watched Pokémon \n" + \
-    "/lang [" + tmp + "] - sets the language for the Pokémon names ' \n" + \
+    "/lang [" + lang + "] - sets the language for the Pokémon names ' \n" + \
     "/load - Restores your settings"
     bot.sendMessage(chat_id, text)
 
@@ -283,7 +283,7 @@ def cmd_load(bot, update, job_queue):
         addJob(bot, update, job_queue)
         cmd_list(bot, update)
     else:
-        if chat_id not in jobs:
+        if chat_id in jobs:
             job = jobs[chat_id]
             job.schedule_removal()
             del jobs[chat_id]
