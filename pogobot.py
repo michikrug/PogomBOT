@@ -298,11 +298,10 @@ def cmd_lang(bot, update, args):
     pref = prefs.get(chat_id)
 
     try:
-        lan = args[0]
-
-        if not lan:
+        if len(args) < 1:
             bot.sendMessage(chat_id, text='Your language is set to [%s].' % (pref.get('language')))
         else:
+            lan = args[0]
             logger.info('[%s@%s] Setting lang.' % (userName, chat_id))
 
             if lan in pokemon_name:
