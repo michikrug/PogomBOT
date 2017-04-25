@@ -86,7 +86,7 @@ def cmd_help(bot, update):
     text = "/help - Shows a list of available commands\n" + \
     "/add <#pokedexID> - Adds Pokémon with the given ID to the scanner\n" + \
     "/add <#pokedexID1> <#pokedexID2> ...\n" + \
-    "/addbyrarity <#rarity> - With 1 very common to 5 ultrarare\n" + \
+    "/addbyrarity <#rarity> - Adds Pokémon with given rarity to scanner (1 very common - 5 ultrarare)\n" + \
     "/rem <#pokedexID> - Removes Pokémon with the given ID from the scanner\n" + \
     "/rem <#pokedexID1> <#pokedexID2> ...\n" + \
     "/list - Lists the watched Pokémon\n" + \
@@ -95,7 +95,7 @@ def cmd_help(bot, update):
     "/remloc - Clears your location data\n" +\
     "/lang [" + lang + "] - Sets the language for the Pokémon names\n" + \
     "/clear - Removes all your settings\n" + \
-    "/load - Restores your settings\n\n"
+    "/load - Restores your settings\n\n" + \
     "Hint: You can also set your scanning location by just sending a location marker."
     bot.sendMessage(chat_id, text)
 
