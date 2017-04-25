@@ -688,7 +688,7 @@ def read_move_names(loc):
 
 def send_load_message(chat_id):
     logger.info('Sending load message to: <%s>' % chat_id)
-    telegramBot.sendMessage(chat_id, text="Unfortunately, the bot was restartet. \nPlease type \"/load\" to restore your personal settings.")
+    telegramBot.sendMessage(chat_id, text="Unfortunately, the bot was restarted. \nPlease type \"/load\" to restore your personal settings.")
 
 def main():
     logger.info('Starting...')
