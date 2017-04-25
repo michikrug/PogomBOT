@@ -23,8 +23,8 @@ class UserPreferencesModel(object):
     def __defaultDict(self):
         global  config
         preferences = dict(
-            location = [None, None, None],
-            language = self.loadedconfig.get('DEFAULT_LANG', 'en'),
+            location = [50.8254, 12.9225, 1],
+            language = self.loadedconfig.get('DEFAULT_LANG', 'de'),
             search_ids = []
         )
         return preferences

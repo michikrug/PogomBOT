@@ -53,7 +53,7 @@ clearCnt = dict()
 #search_ids = dict()
 #language = dict()
 #location_ids = dict()
-location_radius = 0.6
+location_radius = 1
 
 #pokemon:
 pokemon_name = dict()
@@ -90,8 +90,8 @@ def cmd_help(bot, update):
     "/rem <#pokedexID> - Removes Pokémon with the given ID from the scanner\n" + \
     "/rem <#pokedexID1> <#pokedexID2> ...\n" + \
     "/list - Lists the watched Pokémon\n" + \
-    "/location <s> - Sets your desired search location given as text\n" +\
-    "/radius <m> - Sets the search radius in m\n" +\
+    "/location <address> - Sets your desired search location given as text\n" +\
+    "/radius <km> - Sets the search radius in km\n" +\
     "/remloc - Clears your location data\n" +\
     "/lang [" + lang + "] - Sets the language for the Pokémon names\n" + \
     "/clear - Removes all your settings\n" + \
@@ -342,8 +342,8 @@ def cmd_location(bot, update):
         pref['location'][0], pref['location'][1], pref['location'][2]))
 
     # Send confirmation nessage
-    bot.sendMessage(chat_id, text="Setting scan location to: %f / %f with radius %.2f m" %
-        (pref['location'][0], pref['location'][1], 1000*pref['location'][2]))
+    bot.sendMessage(chat_id, text="Setting scan location to: %f / %f with radius %.2f km" %
+        (pref['location'][0], pref['location'][1], pref['location'][2]))
 
 def cmd_location_str(bot, update,args):
     chat_id = update.message.chat_id
@@ -359,7 +359,7 @@ def cmd_location_str(bot, update,args):
         if user_location[0] is None:
             bot.sendMessage(chat_id, text='You have not supplied a location')
         else:
-            bot.sendMessage(chat_id, text="Your current scan location is: %f / %f with radius %.2f m"
+            bot.sendMessage(chat_id, text="Your current scan location is: %f / %f with radius %.2f km"
                                           % (user_location[0], user_location[1], user_location[2]))
         return
 
@@ -378,8 +378,8 @@ def cmd_location_str(bot, update,args):
         pref['location'][0], pref['location'][1], pref['location'][2]))
 
     # Send confirmation nessage
-    bot.sendMessage(chat_id, text="Setting scan location to: %f / %f with radius %.2f m" %
-        (pref['location'][0], pref['location'][1], 1000*pref['location'][2]))
+    bot.sendMessage(chat_id, text="Setting scan location to: %f / %f with radius %.2f km" %
+        (pref['location'][0], pref['location'][1], pref['location'][2]))
 
 
 def cmd_radius(bot, update, args):
@@ -402,8 +402,8 @@ def cmd_radius(bot, update, args):
     userName, chat_id, user_location[0], user_location[1], user_location[2]))
 
     if len(args) < 1:
-        bot.sendMessage(chat_id, text="Your current scan location is: %f / %f with radius %.2f m"
-                                      % (user_location[0], user_location[1], 1000*user_location[2]))
+        bot.sendMessage(chat_id, text="Your current scan location is: %f / %f with radius %.2f km"
+                                      % (user_location[0], user_location[1], user_location[2]))
         return
 
     # Change the radius
@@ -414,8 +414,8 @@ def cmd_radius(bot, update, args):
         pref['location'][1], pref['location'][2]))
 
     # Send confirmation
-    bot.sendMessage(chat_id, text="Setting scan location to: %f / %f with radius %.2f m" % (pref['location'][0],
-        pref['location'][1], 1000*pref['location'][2]))
+    bot.sendMessage(chat_id, text="Setting scan location to: %f / %f with radius %.2f km" % (pref['location'][0],
+        pref['location'][1], pref['location'][2]))
 
 def cmd_clearlocation(bot, update):
     chat_id = update.message.chat_id
