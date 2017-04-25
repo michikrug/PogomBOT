@@ -299,18 +299,22 @@ def cmd_lang(bot, update, args):
 
     try:
         lan = args[0]
-        logger.info('[%s@%s] Setting lang.' % (userName, chat_id))
 
-        if lan in pokemon_name:
-            pref.set('language',args[0])
-            pref.set_preferences()
-            bot.sendMessage(chat_id, text='Language set to [%s].' % (lan))
+        if not lan:
+            bot.sendMessage(chat_id, text='Your language is set to [%s].' % (pref.get('language')))
         else:
-            tmp = ''
-            for key in pokemon_name:
-                tmp += "%s, " % (key)
-            tmp = tmp[:-2]
-            bot.sendMessage(chat_id, text='This language isn\'t available. [%s]' % (tmp))
+            logger.info('[%s@%s] Setting lang.' % (userName, chat_id))
+
+            if lan in pokemon_name:
+                pref.set('language', args[0])
+                pref.set_preferences()
+                bot.sendMessage(chat_id, text='Language set to [%s].' % (lan))
+            else:
+                tmp = ''
+                for key in pokemon_name:
+                    tmp += "%s, " % (key)
+                tmp = tmp[:-2]
+                bot.sendMessage(chat_id, text='This language isn\'t available. [%s]' % (tmp))
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
         bot.sendMessage(chat_id, text='usage: /lang <#language>')
