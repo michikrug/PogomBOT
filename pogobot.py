@@ -282,7 +282,7 @@ def cmd_load(bot, update, job_queue):
     logger.info('[%s@%s] Attempting to load.' % (userName, chat_id))
     r = pref.load()
     if r is None:
-        bot.sendMessage(chat_id, text='You do not have saved preferences.')
+        #bot.sendMessage(chat_id, text='You do not have saved preferences.')
         return
 
     if not r:
