@@ -101,7 +101,6 @@ def cmd_help(bot, update):
     "/remloc - Clears your location data \n" +\
     "/list - Lists the watched Pokémon \n" + \
     "/lang [" + tmp + "] - sets the language for the Pokémon names ' \n" + \
-    #"/save \n" + \
     "/load - Restores your settings"
     bot.sendMessage(chat_id, text)
 
@@ -139,7 +138,7 @@ def cmd_add(bot, update, args, job_queue):
                 search.append(int(x))
         search.sort()
         pref.set('search_ids',search)
-        cmd_save(bot, update)
+        pref.set_preferences()
         cmd_list(bot, update)
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
@@ -170,7 +169,7 @@ def cmd_addByRarity(bot, update, args, job_queue):
                 search.append(int(x))
         search.sort()
         pref.set('search_ids', search)
-        cmd_save(bot, update)
+        pref.set_preferences()
         cmd_list(bot, update)
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
@@ -203,7 +202,7 @@ def cmd_clear(bot, update):
     del locks[chat_id]
 
     pref.reset_user()
-    cmd_save(bot, update)
+    pref.set_preferences()
 
     bot.sendMessage(chat_id, text='Notifications successfully removed!')
 
@@ -228,7 +227,7 @@ def cmd_remove(bot, update, args, job_queue):
             if int(x) in search:
                 search.remove(int(x))
         pref.set('search_ids',search)
-        cmd_save(bot, update)
+        pref.set_preferences()
         cmd_list(bot, update)
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
@@ -257,24 +256,6 @@ def cmd_list(bot, update):
         bot.sendMessage(chat_id, text = tmp)
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
-
-def cmd_save(bot, update):
-    chat_id = update.message.chat_id
-    userName = update.message.from_user.username
-    if not whitelist.isWhitelisted(userName):
-        logger.info('[%s@%s] User blocked (save).' % (userName, chat_id))
-        return
-
-    pref = prefs.get(chat_id)
-
-    logger.info('[%s@%s] Save.' % (userName, chat_id))
-
-    #if chat_id not in jobs:
-        #bot.sendMessage(chat_id, text='You have no active scanner.')
-        #return
-
-    pref.set_preferences()
-    #bot.sendMessage(chat_id, text='Save successful.')
 
 def cmd_load(bot, update, job_queue):
     chat_id = update.message.chat_id
@@ -322,6 +303,7 @@ def cmd_lang(bot, update, args):
 
         if lan in pokemon_name:
             pref.set('language',args[0])
+            pref.set_preferences()
             bot.sendMessage(chat_id, text='Language set to [%s].' % (lan))
         else:
             tmp = ''
@@ -350,6 +332,7 @@ def cmd_location(bot, update):
 
     # We set the location from the users sent location.
     pref.set('location', [user_location.latitude, user_location.longitude, location_radius])
+    pref.set_preferences()
 
     logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' % (userName, chat_id,
         pref['location'][0], pref['location'][1], pref['location'][2]))
@@ -384,6 +367,7 @@ def cmd_location_str(bot, update,args):
 
     # We set the location from the users sent location.
     pref.set('location', [user_location.latitude, user_location.longitude, location_radius])
+    pref.set_preferences()
 
     logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' % (userName, chat_id,
         pref['location'][0], pref.preferences['location'][1], pref.preferences['location'][2]))
@@ -424,6 +408,7 @@ def cmd_radius(bot, update, args):
 
     # Change the radius
     pref.set('location', [user_location[0], user_location[1], float(args[0])/1000])
+    pref.set_preferences()
 
     logger.info('[%s@%s] Set Location as Lat %s, Lon %s, R %s (Km)' % (userName, chat_id, pref['location'][0],
         pref['location'][1], pref['location'][2]))
@@ -441,6 +426,7 @@ def cmd_clearlocation(bot, update):
 
     pref = prefs.get(chat_id)
     pref.set('location', [None, None, None])
+    pref.set_preferences()
     bot.sendMessage(chat_id, text='Your location has been removed.')
     logger.info('[%s@%s] Location has been unset' % (userName, chat_id))
 
@@ -776,7 +762,6 @@ def main():
     dp.add_handler(CommandHandler("addbyrarity", cmd_addByRarity, pass_args = True, pass_job_queue=True))
     dp.add_handler(CommandHandler("clear", cmd_clear))
     dp.add_handler(CommandHandler("rem", cmd_remove, pass_args = True, pass_job_queue=True))
-    dp.add_handler(CommandHandler("save", cmd_save))
     dp.add_handler(CommandHandler("load", cmd_load, pass_job_queue=True))
     dp.add_handler(CommandHandler("list", cmd_list))
     dp.add_handler(CommandHandler("lang", cmd_lang, pass_args = True))
