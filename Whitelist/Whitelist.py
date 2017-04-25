@@ -10,7 +10,7 @@ class Whitelist(object):
 		self.__loadedconfig = config
 		self.__admins = self.__loadedconfig.get('LIST_OF_ADMINS', [])
 		self.__filename = "whitelist.json"
-		
+
 		self.__whitelistEnabled = len(self.__admins) != 0
 		self.__whitelist = []
 		if self.__whitelistEnabled:
