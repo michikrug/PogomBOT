@@ -82,28 +82,28 @@ def cmd_help(bot, update):
         logger.info('[%s@%s] User blocked (help).' % (userName, chat_id))
         return
 
-    logger.info('[%s@%s] Sending help text.' % (userName, chat_id))
-    text = "/help /start \n" + \
-    "/add <#pokedexID> \n" + \
-    "/add <#pokedexID1> <#pokedexID2> ... \n" + \
-    "/addbyrarity <#rarity> - With 1 uncommon to 5 ultrarare \n" + \
-    "/clear \n" + \
-    "/rem <#pokedexID> \n" + \
-    "/rem <#pokedexID1> <#pokedexID2> ... \n" + \
-    "Send <location> - Search a location \n" +\
-    "/location <s> - Send a location as text \n" +\
-    "/radius <m> - Search radius in m \n" +\
-    "/remloc - Clear location data\n" +\
-    "/list \n" + \
-    "/save \n" + \
-    "/load \n" + \
-    "/lang en"
-    bot.sendMessage(chat_id, text)
-    tmp = ''
+    lang = ''
     for key in pokemon_name:
-        tmp += "%s, " % (key)
-    tmp = tmp[:-2]
-    bot.sendMessage(chat_id, text= '/lang [%s]' % (tmp))
+        lang += "%s, " % (key)
+    lang = lang[:-2]
+
+    logger.info('[%s@%s] Sending help text.' % (userName, chat_id))
+    text = "/start - Starts the bot (you have already done this) \n" + \
+    "/help - Gives you this list of commands \n" + \
+    "/add <#pokedexID> - Adds Pokémon with the given ID to the scanner \n" + \
+    "/add <#pokedexID1> <#pokedexID2> ... \n" + \
+    "/addbyrarity <#rarity> - With 1 uncommon to 5 ultrarare (only 1st gen) \n" + \
+    "/clear - Removes all your settings \n" + \
+    "/rem <#pokedexID> - Removes Pokémon with the given ID from the scanner \n" + \
+    "/rem <#pokedexID1> <#pokedexID2> ... \n" + \
+    "/location <s> - Sets your desired search location given as text \n" +\
+    "/radius <m> - Sets the search radius in m \n" +\
+    "/remloc - Clears your location data \n" +\
+    "/list - Lists the watched Pokémon \n" + \
+    "/lang [" + tmp + "] - sets the language for the Pokémon names ' \n" + \
+    #"/save \n" + \
+    "/load - Restores your settings"
+    bot.sendMessage(chat_id, text)
 
 def cmd_start(bot, update):
     chat_id = update.message.chat_id
@@ -128,6 +128,7 @@ def cmd_add(bot, update, args, job_queue):
     if len(args) <= 0:
         bot.sendMessage(chat_id, text='usage: "/add <#pokemon>"" or "/add <#pokemon1> <#pokemon2>"')
         return
+
     addJob(bot, update, job_queue)
     logger.info('[%s@%s] Add pokemon.' % (userName, chat_id))
 
@@ -138,6 +139,7 @@ def cmd_add(bot, update, args, job_queue):
                 search.append(int(x))
         search.sort()
         pref.set('search_ids',search)
+        cmd_save(bot, update)
         cmd_list(bot, update)
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
@@ -168,6 +170,7 @@ def cmd_addByRarity(bot, update, args, job_queue):
                 search.append(int(x))
         search.sort()
         pref.set('search_ids', search)
+        cmd_save(bot, update)
         cmd_list(bot, update)
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
@@ -200,6 +203,7 @@ def cmd_clear(bot, update):
     del locks[chat_id]
 
     pref.reset_user()
+    cmd_save(bot, update)
 
     bot.sendMessage(chat_id, text='Notifications successfully removed!')
 
@@ -224,6 +228,7 @@ def cmd_remove(bot, update, args, job_queue):
             if int(x) in search:
                 search.remove(int(x))
         pref.set('search_ids',search)
+        cmd_save(bot, update)
         cmd_list(bot, update)
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
@@ -264,11 +269,12 @@ def cmd_save(bot, update):
 
     logger.info('[%s@%s] Save.' % (userName, chat_id))
 
-    if chat_id not in jobs:
-        bot.sendMessage(chat_id, text='You have no active scanner.')
-        return
+    #if chat_id not in jobs:
+        #bot.sendMessage(chat_id, text='You have no active scanner.')
+        #return
+
     pref.set_preferences()
-    bot.sendMessage(chat_id, text='Save successful.')
+    #bot.sendMessage(chat_id, text='Save successful.')
 
 def cmd_load(bot, update, job_queue):
     chat_id = update.message.chat_id
@@ -282,14 +288,14 @@ def cmd_load(bot, update, job_queue):
     logger.info('[%s@%s] Attempting to load.' % (userName, chat_id))
     r = pref.load()
     if r is None:
-        #bot.sendMessage(chat_id, text='You do not have saved preferences.')
+        bot.sendMessage(chat_id, text='You do not have saved preferences.')
         return
 
     if not r:
-        bot.sendMessage(chat_id, text='Already upto date.')
+        bot.sendMessage(chat_id, text='You are already up to date.')
         return
     else:
-        bot.sendMessage(chat_id, text='Load successful.')
+        bot.sendMessage(chat_id, text='Your settings were successfully restored.')
 
     # We might be the first user and above failed....
     if len(pref.get('search_ids')) > 0:
@@ -694,6 +700,10 @@ def read_move_names(loc):
         # Pass to ignore if some files missing.
         pass
 
+def send_load_message(chat_id):
+    logger.info('Sending load message to: <%s>' % chat_id)
+    bot.sendMessage(chat_id, text="Unfortunately, the bot was restartet. \nPlease type \"/load\" to restore your personal settings.")
+
 def main():
     logger.info('Starting...')
     read_config()
@@ -788,6 +798,12 @@ def main():
     updater.start_polling()
 
     logger.info('Started!')
+
+    userdirectory = os.path.join(os.path.dirname(sys.argv[0]), "userdata")
+    for file in os.listdir(userdirectory):
+        if fnmatch.fnmatch(file, '*.json'):
+            send_load_message(file.split('.')[0])
+
     # Block until the you presses Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
