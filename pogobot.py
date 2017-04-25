@@ -96,7 +96,7 @@ def cmd_help(bot, update):
     "/lang [" + lang + "] - Sets the language for the Pokémon names\n" + \
     "/clear - Removes all your settings\n" + \
     "/load - Restores your settings\n\n" + \
-    "Hint: You can also set your scanning location by just sending a location marker."
+    "Hint: You can also set your scanning location by just sending a location marker"
     bot.sendMessage(chat_id, text)
 
 def cmd_start(bot, update):
@@ -335,7 +335,7 @@ def cmd_location(bot, update):
     user_location = update.message.location
 
     # We set the location from the users sent location.
-    pref.set('location', [user_location.latitude, user_location.longitude, location_radius])
+    pref.set('location', [user_location.latitude, user_location.longitude, pref['location'][2]])
     pref.set_preferences()
 
     logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' % (userName, chat_id,
@@ -371,11 +371,11 @@ def cmd_location_str(bot, update,args):
         return
 
     # We set the location from the users sent location.
-    pref.set('location', [user_location.latitude, user_location.longitude, location_radius])
+    pref.set('location', [user_location.latitude, user_location.longitude, pref['location'][2]])
     pref.set_preferences()
 
     logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' % (userName, chat_id,
-        pref['location'][0], pref.preferences['location'][1], pref.preferences['location'][2]))
+        pref['location'][0], pref['location'][1], pref['location'][2]))
 
     # Send confirmation nessage
     bot.sendMessage(chat_id, text="Setting scan location to: %f / %f with radius %.2f m" %
@@ -403,14 +403,14 @@ def cmd_radius(bot, update, args):
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text="Your current scan location is: %f / %f with radius %.2f m"
-                                      % (user_location[0], user_location[1], user_location[2]))
+                                      % (user_location[0], user_location[1], 1000*user_location[2]))
         return
 
     # Change the radius
-    pref.set('location', [user_location[0], user_location[1], float(args[0])/1000])
+    pref.set('location', [user_location[0], user_location[1], float(args[0])])
     pref.set_preferences()
 
-    logger.info('[%s@%s] Set Location as Lat %s, Lon %s, R %s (Km)' % (userName, chat_id, pref['location'][0],
+    logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' % (userName, chat_id, pref['location'][0],
         pref['location'][1], pref['location'][2]))
 
     # Send confirmation
