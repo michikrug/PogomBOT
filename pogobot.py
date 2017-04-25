@@ -60,18 +60,13 @@ pokemon_name = dict()
 #move:
 move_name = dict()
 
-#pokemon rarity
 pokemon_rarity = [[],
-    ["13","16","19","41","133"],
-    ["1","7","10","17","21","23","25","29","32","35","43","46","48","58","60","69","84","92","96","98","120","127","129","147"],
-    ["2","4","8","11","14","15","18","20","22","27","37","39","42","47","49","50","52","54","56","61","63","66","70","72","74",\
-    "77","79","81","86","90","93","95","97","100","102","104","107","108","109","111","114","116","118","123","124","125","126","128","138","140","143"],
-    ["3","5","6","9","12","24","30","31","33","34","36","44","53","55","57","59","64","67","73","75","78","80","85","88","99",\
-    "103","105","106","110","112","113","117","119","121","122","131","134","135","137","142","148","149"],
-    ["26","28","38","40","45","51","62","65","68","71","76","82","83","87","89","91","94","101","115","130","132","136","139","141","144","145","146","150","151"],
+    ["10", "13", "16", "19", "21", "29", "32", "41", "46", "48", "98", "133", "161", "163", "165", "167", "177", "183", "194", "198", "220"],
+    ["14", "17", "20", "35", "39", "43", "52", "54", "60", "63", "69", "72", "79", "81", "90", "92", "96", "116", "118", "120", "122", "124", "129", "162", "166", "168", "170", "178", "187", "190", "209", "215", "216"],
+    ["1", "4", "7", "8", "11", "12", "15", "18", "22", "23", "25", "27", "30", "33", "37", "42", "44", "47", "49", "50", "56", "58", "61", "66", "70", "74", "77", "84", "86", "88", "93", "95", "97", "99", "100", "102", "104", "109", "111", "117", "119", "123", "125", "127", "138", "140", "147", "152", "155", "158", "164", "169", "184", "185", "188", "191", "193", "195", "200", "202", "203", "204", "206", "207", "210", "211", "213", "217", "218", "221", "223", "224", "226", "227", "228", "231", "234"],
+    ["2", "3", "5", "6", "9", "24", "26", "28", "31", "34", "36", "38", "40", "45", "51", "53", "55", "57", "59", "62", "64", "65", "67", "68", "71", "73", "75", "78", "80", "82", "85", "87", "89", "91", "94", "101", "103", "105", "106", "107", "108", "110", "112", "113", "114", "121", "126", "130", "131", "134", "135", "136", "137", "139", "141", "142", "143", "148", "149", "153", "154", "156", "157", "159", "171", "176", "179", "180", "189", "205", "219", "229", "232", "237", "241", "242", "246", "247", "248"],
+    ["76", "83", "115", "128", "132", "144", "145", "146", "150", "151", "160", "172", "173", "174", "175", "181", "182", "186", "192", "196", "197", "199", "201", "208", "212", "214", "222", "225", "230", "233", "235", "236", "238", "239", "240", "243", "244", "245", "249", "250", "251"]
 ];
-
-rarity_value = ["very common","common","uncommon","rare","very rare","ultrarare"]
 
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
@@ -88,20 +83,20 @@ def cmd_help(bot, update):
     lang = lang[:-2]
 
     logger.info('[%s@%s] Sending help text.' % (userName, chat_id))
-    text = "/start - Starts the bot (you have already done this) \n" + \
-    "/help - Gives you this list of commands \n" + \
-    "/add <#pokedexID> - Adds Pokémon with the given ID to the scanner \n" + \
-    "/add <#pokedexID1> <#pokedexID2> ... \n" + \
-    "/addbyrarity <#rarity> - With 1 uncommon to 5 ultrarare (only 1st gen) \n" + \
-    "/clear - Removes all your settings \n" + \
-    "/rem <#pokedexID> - Removes Pokémon with the given ID from the scanner \n" + \
-    "/rem <#pokedexID1> <#pokedexID2> ... \n" + \
-    "/location <s> - Sets your desired search location given as text \n" +\
-    "/radius <m> - Sets the search radius in m \n" +\
-    "/remloc - Clears your location data \n" +\
-    "/list - Lists the watched Pokémon \n" + \
-    "/lang [" + lang + "] - sets the language for the Pokémon names ' \n" + \
-    "/load - Restores your settings"
+    text = "/help - Shows a list of available commands\n" + \
+    "/add <#pokedexID> - Adds Pokémon with the given ID to the scanner\n" + \
+    "/add <#pokedexID1> <#pokedexID2> ...\n" + \
+    "/addbyrarity <#rarity> - With 1 very common to 5 ultrarare\n" + \
+    "/rem <#pokedexID> - Removes Pokémon with the given ID from the scanner\n" + \
+    "/rem <#pokedexID1> <#pokedexID2> ...\n" + \
+    "/list - Lists the watched Pokémon\n" + \
+    "/location <s> - Sets your desired search location given as text\n" +\
+    "/radius <m> - Sets the search radius in m\n" +\
+    "/remloc - Clears your location data\n" +\
+    "/lang [" + lang + "] - Sets the language for the Pokémon names\n" + \
+    "/clear - Removes all your settings\n" + \
+    "/load - Restores your settings\n\n"
+    "Hint: You can also set your scanning location by just sending a location marker."
     bot.sendMessage(chat_id, text)
 
 def cmd_start(bot, update):
@@ -124,8 +119,10 @@ def cmd_add(bot, update, args, job_queue):
 
     pref = prefs.get(chat_id)
 
-    if len(args) <= 0:
-        bot.sendMessage(chat_id, text='usage: "/add <#pokemon>"" or "/add <#pokemon1> <#pokemon2>"')
+    usage_message = 'usage: "/add <#pokemon>"" or "/add <#pokemon1> <#pokemon2>"'
+
+    if len(args) < 1:
+        bot.sendMessage(chat_id, text=usage_message)
         return
 
     addJob(bot, update, job_queue)
@@ -142,7 +139,7 @@ def cmd_add(bot, update, args, job_queue):
         cmd_list(bot, update)
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
-        bot.sendMessage(chat_id, text='usage: "/add <#pokemon>"" or "/add <#pokemon1> <#pokemon2>"')
+        bot.sendMessage(chat_id, text=usage_message)
 
 def cmd_addByRarity(bot, update, args, job_queue):
     chat_id = update.message.chat_id
@@ -153,8 +150,10 @@ def cmd_addByRarity(bot, update, args, job_queue):
 
     pref = prefs.get(chat_id)
 
-    if len(args) <= 0:
-        bot.sendMessage(chat_id, text='usage: "/addbyrarity <#rarity>" with 1 uncommon to 5 ultrarare')
+    usage_message = 'usage: "/addbyrarity <#rarity>" with 1 very common to 5 ultrarare'
+
+    if len(args) < 1:
+        bot.sendMessage(chat_id, text=usage_message)
         return
 
     addJob(bot, update, job_queue)
@@ -162,6 +161,10 @@ def cmd_addByRarity(bot, update, args, job_queue):
 
     try:
         rarity = int(args[0])
+
+        if rarity < 1 or rarity > 5:
+            bot.sendMessage(chat_id, text=usage_message)
+            return
 
         search = pref.get('search_ids')
         for x in pokemon_rarity[rarity]:
@@ -171,9 +174,10 @@ def cmd_addByRarity(bot, update, args, job_queue):
         pref.set('search_ids', search)
         pref.set_preferences()
         cmd_list(bot, update)
+
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
-        bot.sendMessage(chat_id, text='usage: "/addbyrarity <#rarity>" with 1 uncommon to 5 ultrarare')
+        bot.sendMessage(chat_id, text=usage_message)
 
 def cmd_clear(bot, update):
     chat_id = update.message.chat_id
@@ -297,23 +301,24 @@ def cmd_lang(bot, update, args):
 
     pref = prefs.get(chat_id)
 
-    try:
-        if len(args) < 1:
-            bot.sendMessage(chat_id, text='Your language is set to [%s].' % (pref.get('language')))
-        else:
-            lan = args[0]
-            logger.info('[%s@%s] Setting lang.' % (userName, chat_id))
+    if len(args) < 1:
+        bot.sendMessage(chat_id, text='Your language is currently set to [%s].' % (pref.get('language')))
+        return
 
-            if lan in pokemon_name:
-                pref.set('language', args[0])
-                pref.set_preferences()
-                bot.sendMessage(chat_id, text='Language set to [%s].' % (lan))
-            else:
-                tmp = ''
-                for key in pokemon_name:
-                    tmp += "%s, " % (key)
-                tmp = tmp[:-2]
-                bot.sendMessage(chat_id, text='This language isn\'t available. [%s]' % (tmp))
+    try:
+        lan = args[0]
+        logger.info('[%s@%s] Setting lang.' % (userName, chat_id))
+
+        if lan in pokemon_name:
+            pref.set('language', args[0])
+            pref.set_preferences()
+            bot.sendMessage(chat_id, text='Language set to [%s].' % (lan))
+        else:
+            tmp = ''
+            for key in pokemon_name:
+                tmp += "%s, " % (key)
+            tmp = tmp[:-2]
+            bot.sendMessage(chat_id, text='This language isn\'t available. [%s]' % (tmp))
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
         bot.sendMessage(chat_id, text='usage: /lang <#language>')
@@ -326,10 +331,6 @@ def cmd_location(bot, update):
         return
 
     pref = prefs.get(chat_id)
-
-    if chat_id not in jobs:
-        bot.sendMessage(chat_id, text='You have no active scanner.')
-        return
 
     user_location = update.message.location
 
@@ -353,12 +354,13 @@ def cmd_location_str(bot, update,args):
 
     pref = prefs.get(chat_id)
 
-    if chat_id not in jobs:
-        bot.sendMessage(chat_id, text='You have no active scanner.')
-        return
-
-    if len(args) <= 0:
-        bot.sendMessage(chat_id, text='You have not supplied a location')
+    if len(args) < 1:
+        user_location = pref.get('location')
+        if user_location[0] is None:
+            bot.sendMessage(chat_id, text='You have not supplied a location')
+        else:
+            bot.sendMessage(chat_id, text="Your current scan location is: %f / %f with radius %.2f m"
+                                          % (user_location[0], user_location[1], user_location[2]))
         return
 
     try:
@@ -389,15 +391,10 @@ def cmd_radius(bot, update, args):
 
     pref = prefs.get(chat_id)
 
-    if chat_id not in jobs:
-        bot.sendMessage(chat_id, text='You have no active scanner.')
-        return
-
-    # Check if user has set a location
     user_location = pref.get('location')
 
     if user_location[0] is None:
-        bot.sendMessage(chat_id, text="You have not sent a location. Do that first!")
+        bot.sendMessage(chat_id, text='You have not set a scan location. Please do that first!')
         return
 
     # Get the users location
@@ -405,7 +402,7 @@ def cmd_radius(bot, update, args):
     userName, chat_id, user_location[0], user_location[1], user_location[2]))
 
     if len(args) < 1:
-        bot.sendMessage(chat_id, text="Current scan location is: %f / %f with radius %.2f m"
+        bot.sendMessage(chat_id, text="Your current scan location is: %f / %f with radius %.2f m"
                                       % (user_location[0], user_location[1], user_location[2]))
         return
 
@@ -430,7 +427,7 @@ def cmd_clearlocation(bot, update):
     pref = prefs.get(chat_id)
     pref.set('location', [None, None, None])
     pref.set_preferences()
-    bot.sendMessage(chat_id, text='Your location has been removed.')
+    bot.sendMessage(chat_id, text='Your scan location has been removed.')
     logger.info('[%s@%s] Location has been unset' % (userName, chat_id))
 
 def cmd_addToWhitelist(bot, update, args):
@@ -443,7 +440,7 @@ def cmd_addToWhitelist(bot, update, args):
         logger.info('[%s@%s] User blocked (addToWhitelist).' % (userName, chat_id))
         return
 
-    if len(args) <= 0:
+    if len(args) < 1:
         bot.sendMessage(chat_id, text='usage: "/wladd <username>"" or "/wladd <username_1> <username_2>"')
         return
 
@@ -465,7 +462,7 @@ def cmd_remFromWhitelist(bot, update, args):
         logger.info('[%s@%s] User blocked (remFromWhitelist).' % (userName, chat_id))
         return
 
-    if len(args) <= 0:
+    if len(args) < 1:
         bot.sendMessage(chat_id, text='usage: "/wlrem <username>"" or "/wlrem <username_1> <username_2>"')
         return
 
