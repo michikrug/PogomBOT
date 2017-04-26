@@ -760,7 +760,7 @@ def sendOnePoke(chat_id, pokemon):
             if notDisappeared and (not ivAvailable or ivNoneAndSendWithout or ivNotNoneAndPokeMinIVNone or ivHigherEqualFilter):
                 if pref.get('only_map'):
                     telegramBot.sendVenue(chat_id, latitude, longitude, title, address)
-               else:
+                else:
                     if pref.get('stickers'):
                         telegramBot.sendSticker(chat_id, sticker_list.get(str(pok_id)), disable_notification=True)
                     telegramBot.sendMessage(chat_id, text = '<b>%s</b> \n%s' % (title, address))
