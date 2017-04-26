@@ -5,8 +5,8 @@ class DSPokemon:
         self.encounter_id = encounter_id
         self.spawnpoint_id = spawnpoint_id
         self.pokemon_id = pokemon_id
-        self.latitude = latitude
-        self.longitude = longitude
+        self.latitude = float(latitude)
+        self.longitude = float(longitude)
         self.disappear_time = disappear_time # Should be datetime
         self.ivs = ivs
         self.move1 = move1
@@ -41,7 +41,7 @@ class DSPokemon:
 
     def getDistance(self, user_location):
         user_lat_lon = (user_location[0], user_location[1])
-        pok_loc = (float(self.latitude), float(self.longitude))
+        pok_loc = (self.latitude, self.longitude)
         return great_circle(user_lat_lon, pok_loc).km
 
     def filterbylocation(self, user_location):
