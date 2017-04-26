@@ -23,7 +23,7 @@ class UserPreferencesModel(object):
     def __defaultDict(self):
         global config
         preferences = dict(
-            location = [50.8254, 12.9225, 1],
+            location = [None, None, 1],
             language = self.loadedconfig.get('DEFAULT_LANG', 'de'),
             stickers = self.loadedconfig.get('STICKERS', True),
             only_map = self.loadedconfig.get('SEND_MAP_ONLY', False),
