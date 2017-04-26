@@ -550,6 +550,24 @@ def cmd_location_str(bot, update,args):
 
     try:
         user_location = geolocator.geocode(' '.join(args))
+
+        # We set the location from the users sent location.
+        pref.set('location', [user_location.latitude, user_location.longitude, pref.get('location')[2]])
+        pref.set_preferences()
+
+        user_location = pref.get('location')
+
+        logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' %
+            (userName, chat_id, user_location[0], user_location[1], user_location[2]))
+
+        # Send confirmation nessage
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text="Setze Suchposition auf %f / %f mit Radius %.2f km" %
+                (user_location[0], user_location[1], user_location[2]))
+        else:
+            bot.sendMessage(chat_id, text="Setting scan location to %f / %f with radius %.2f km" %
+                (user_location[0], user_location[1], user_location[2]))
+
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
         if pref.get('language') == 'de':
@@ -557,24 +575,6 @@ def cmd_location_str(bot, update,args):
         else:
             bot.sendMessage(chat_id, text='Location was not found (or OpenStreetMap is down).')
         return
-
-    # We set the location from the users sent location.
-    pref.set('location', [user_location.latitude, user_location.longitude, pref.get('location')[2]])
-    pref.set_preferences()
-
-    user_location = pref.get('location')
-
-    logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' %
-        (userName, chat_id, user_location[0], user_location[1], user_location[2]))
-
-    # Send confirmation nessage
-    if pref.get('language') == 'de':
-        bot.sendMessage(chat_id, text="Setze Suchposition auf %f / %f mit Radius %.2f km" %
-            (user_location[0], user_location[1], user_location[2]))
-    else:
-        bot.sendMessage(chat_id, text="Setting scan location to %f / %f with radius %.2f km" %
-            (user_location[0], user_location[1], user_location[2]))
-
 
 def cmd_radius(bot, update, args):
     chat_id = update.message.chat_id
