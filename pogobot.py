@@ -1029,6 +1029,7 @@ def main():
     dp.add_handler(CommandHandler("wlrem", cmd_remFromWhitelist, pass_args=True))
     dp.add_handler(CommandHandler("stickers", cmd_stickers, pass_args=True))
     dp.add_handler(CommandHandler("maponly", cmd_maponly, pass_args=True))
+    dp.add_handler(CommandHandler("walkdist", cmd_walkdist, pass_args=True))
 
     # log all errors
     dp.add_error_handler(error)
