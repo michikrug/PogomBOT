@@ -147,11 +147,14 @@ def cmd_stickers(bot, update, args):
         return
 
     try:
-        stick = args[0]
+        stick = args[0].lower()
         logger.info('[%s@%s] Setting stickers.' % (userName, chat_id))
 
-        if stick == 'True' or stick == 'False':
-            pref.set('stickers', bool(stick))
+        if stick == 'true' or stick == 'false':
+            stick = False
+            if args[0].lower() == 'true':
+                stick = True
+            pref.set('stickers', stick)
             pref.set_preferences()
             if pref.get('language') == 'de':
                 bot.sendMessage(chat_id, text='Sticker wurden auf %s gesetzt.' % (stick))
@@ -186,11 +189,14 @@ def cmd_maponly(bot, update, args):
         return
 
     try:
-        omap = args[0]
+        omap = args[0].lower()
         logger.info('[%s@%s] Setting stickers.' % (userName, chat_id))
 
-        if omap == 'True' or omap == 'False':
-            pref.set('only_map', bool(omap))
+        if omap == 'true' or omap == 'false':
+            omap = False
+            if args[0].lower() == 'true':
+                omap = True
+            pref.set('only_map', omap)
             pref.set_preferences()
             if pref.get('language') == 'de':
                 bot.sendMessage(chat_id, text='"Nur Karte anzeigen" wurde auf %s gesetzt.' % (omap))
