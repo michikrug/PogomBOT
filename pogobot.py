@@ -726,7 +726,7 @@ def sendOnePoke(chat_id, pokemon):
         title =  pokemon_name[lan][pok_id]
 
         if location_data[0] is not None:
-            title += " - %skm" % (pokemon.getDistance(location_data))
+            title += " - %skm" % (round(pokemon.getDistance(location_data), 2))
 
         if pref.get('language') == 'de':
             address = "Verschwindet um %s ⏱ %s" % (disappear_time_str, deltaStr)
@@ -949,7 +949,7 @@ def main():
     prefs.add_config(config)
 
     # Start the Bot
-    updater.start_polling()
+    updater.start_polling(bootstrap_retries=3, read_latency=5)
 
     logger.info('Started!')
 
