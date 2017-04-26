@@ -547,11 +547,11 @@ def cmd_radius(bot, update, args):
 
     if len(args) < 1:
         if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text="Deine aktuelle Suchposition ist %f / %f mit Radius %.2f km" %
-                    (user_location[0], user_location[1], user_location[2]))
-            else:
-                bot.sendMessage(chat_id, text="Your current scan location is %f / %f with radius %.2f km" %
-                    (user_location[0], user_location[1], user_location[2]))
+            bot.sendMessage(chat_id, text="Deine aktuelle Suchposition ist %f / %f mit Radius %.2f km" %
+                (user_location[0], user_location[1], user_location[2]))
+        else:
+            bot.sendMessage(chat_id, text="Your current scan location is %f / %f with radius %.2f km" %
+                (user_location[0], user_location[1], user_location[2]))
         return
 
     # Change the radius
