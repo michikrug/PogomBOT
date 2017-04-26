@@ -936,7 +936,7 @@ def main():
     dp.add_handler(CommandHandler("radius", cmd_radius, pass_args=True))
     dp.add_handler(CommandHandler("location", cmd_location_str, pass_args=True))
     dp.add_handler(CommandHandler("remloc", cmd_clearlocation))
-    dp.add_handler(MessageHandler([Filters.location],cmd_location))
+    dp.add_handler(MessageHandler(Filters.location, cmd_location))
     dp.add_handler(CommandHandler("wladd", cmd_addToWhitelist, pass_args=True))
     dp.add_handler(CommandHandler("wlrem", cmd_remFromWhitelist, pass_args=True))
     dp.add_handler(CommandHandler("stickers", cmd_stickers, pass_args=True))
