@@ -25,6 +25,8 @@ class UserPreferencesModel(object):
         preferences = dict(
             location = [50.8254, 12.9225, 1],
             language = self.loadedconfig.get('DEFAULT_LANG', 'de'),
+            stickers = self.loadedconfig.get('STICKERS', True),
+            only_map = self.loadedconfig.get('SEND_MAP_ONLY', False),
             search_ids = []
         )
         return preferences
