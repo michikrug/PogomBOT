@@ -665,6 +665,8 @@ def addJob(bot, update, job_queue):
             if chat_id not in clearCnt:
                 clearCnt[chat_id] = 0
 
+            pref = prefs.get(chat_id)
+
             if pref.get('language') == 'de':
                 bot.sendMessage(chat_id, text="Scanner gestartet.")
             else:
