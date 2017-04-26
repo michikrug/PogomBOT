@@ -763,7 +763,7 @@ def sendOnePoke(chat_id, pokemon):
                 else:
                     if pref.get('stickers'):
                         telegramBot.sendSticker(chat_id, sticker_list.get(str(pok_id)), disable_notification=True)
-                    telegramBot.sendMessage(chat_id, text = '<b>%s</b> \n%s' % (title, address))
+                    telegramBot.sendMessage(chat_id, text = '<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
                     telegramBot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
 
     except Exception as e:
