@@ -1,12 +1,15 @@
 {
 	"LIST_OF_ADMINS": [],
 	"TELEGRAM_TOKEN": "TOKEN",
+	"GMAPS_KEY": "KEY",
 	"SCANNER_NAME": "pogom",
 	"DB_TYPE": "sqlite",
 	"DB_CONNECT": "/PATH/TO/POGOM",
 	"DEFAULT_LANG": "en",
-	"SEND_MAP_ONLY": true,
+	"SEND_MAP_ONLY": false,
 	"SEND_POKEMON_WITHOUT_IV": true,
+	"STICKERS": true,
+	"WALK_DIST": false,
 	"POKEMON_MIN_IV_FILTER_LIST": {
 		"1": 10.1,
 		"2": 20

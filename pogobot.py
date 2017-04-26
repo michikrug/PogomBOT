@@ -29,6 +29,7 @@ import Preferences
 from geopy.geocoders import Nominatim
 import Whitelist
 from Stickers import sticker_list
+import googlemaps
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s',
@@ -39,6 +40,7 @@ prefs = Preferences.UserPreferences()
 jobs = dict()
 geolocator = Nominatim()
 telegramBot = None
+gmaps_client = None
 
 clearCntThreshold = 100
 dataSource = None
@@ -65,8 +67,8 @@ pokemon_rarity = [[],
     ["10", "13", "16", "19", "21", "29", "32", "41", "46", "48", "98", "133", "161", "163", "165", "167", "177", "183", "194", "198", "220"],
     ["14", "17", "20", "35", "39", "43", "52", "54", "60", "63", "69", "72", "79", "81", "90", "92", "96", "116", "118", "120", "122", "124", "129", "162", "166", "168", "170", "178", "187", "190", "209", "215", "216"],
     ["1", "4", "7", "8", "11", "12", "15", "18", "22", "23", "25", "27", "30", "33", "37", "42", "44", "47", "49", "50", "56", "58", "61", "66", "70", "74", "77", "84", "86", "88", "93", "95", "97", "99", "100", "102", "104", "109", "111", "117", "119", "123", "125", "127", "138", "140", "147", "152", "155", "158", "164", "169", "184", "185", "188", "191", "193", "195", "200", "202", "203", "204", "206", "207", "210", "211", "213", "217", "218", "221", "223", "224", "226", "227", "228", "231", "234"],
-    ["2", "3", "5", "6", "9", "24", "26", "28", "31", "34", "36", "38", "40", "45", "51", "53", "55", "57", "59", "62", "64", "65", "67", "68", "71", "73", "75", "78", "80", "82", "85", "87", "89", "91", "94", "101", "103", "105", "106", "107", "108", "110", "112", "113", "114", "121", "126", "130", "131", "134", "135", "136", "137", "139", "141", "142", "143", "148", "149", "153", "154", "156", "157", "159", "171", "176", "179", "180", "189", "205", "219", "229", "232", "237", "241", "242", "246", "247", "248"],
-    ["76", "83", "115", "128", "132", "144", "145", "146", "150", "151", "160", "172", "173", "174", "175", "181", "182", "186", "192", "196", "197", "199", "201", "208", "212", "214", "222", "225", "230", "233", "235", "236", "238", "239", "240", "243", "244", "245", "249", "250", "251"]
+    ["2", "3", "5", "6", "9", "24", "26", "28", "31", "34", "36", "38", "40", "45", "51", "53", "55", "57", "59", "62", "64", "65", "67", "68", "71", "73", "75", "76", "78", "80", "82", "85", "87", "89", "91", "94", "101", "103", "105", "106", "107", "108", "110", "112", "113", "114", "121", "126", "130", "131", "134", "135", "136", "137", "139", "141", "142", "143", "148", "149", "153", "154", "156", "157", "159", "171", "176", "179", "180", "189", "205", "219", "229", "232", "237", "241", "242", "246", "247", "248"],
+    ["83", "115", "128", "132", "144", "145", "146", "150", "151", "160", "172", "173", "174", "175", "181", "182", "186", "192", "196", "197", "199", "201", "208", "212", "214", "222", "225", "230", "233", "235", "236", "238", "239", "240", "243", "244", "245", "249", "250", "251"]
 ];
 
 # Define a few command handlers. These usually take the two arguments bot and
@@ -92,8 +94,8 @@ def cmd_help(bot, update):
         "/location <address> - Setzt deine Suchposition gegeben als Text\n" +\
         "/radius <km> - Setzt deinen Suchradius in km\n" +\
         "/remloc - Setzt die Suchposition zurück\n" +\
-        "/stickers <True/False> - Legt fest, ob Sticker gesendet werden sollen\n" +\
-        "/maponly <True/False> - Legt fest, ob nur eine Karte gesendet werden soll (ohne zusätzliche Nachricht/Sticker)\n" +\
+        "/stickers <true/false> - Legt fest, ob Sticker gesendet werden sollen\n" +\
+        "/maponly <true/false> - Legt fest, ob nur eine Karte gesendet werden soll (ohne zusätzliche Nachricht/Sticker)\n" +\
         "/lang [de, en] - Setzt die Sprache des Bots\n" + \
         "/clear - Setzt alle deine Einstellungen zurück\n" + \
         "/load - Stellt deine Einstellungen (z.B. nach einem Neustart) wieder her\n\n" + \
@@ -110,8 +112,8 @@ def cmd_help(bot, update):
         "/location <address> - Sets your desired search location given as text\n" +\
         "/radius <km> - Sets the search radius in km\n" +\
         "/remloc - Clears your location data\n" +\
-        "/stickers <True/False> - Defines if stickers should be sent\n" +\
-        "/maponly <True/False> - Defines if only a map should be sent (without an additional message/sticker)\n" +\
+        "/stickers <true/false> - Defines if stickers should be sent\n" +\
+        "/maponly <true/false> - Defines if only a map should be sent (without an additional message/sticker)\n" +\
         "/lang [de, en] - Sets the language of the bot\n" + \
         "/clear - Resets all your settings\n" + \
         "/load - Restores your settings\n\n" + \
@@ -168,9 +170,9 @@ def cmd_stickers(bot, update, args):
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Verwendung: "/stickers <True/False>"')
+            bot.sendMessage(chat_id, text='Verwendung: "/stickers <true/false>"')
         else:
-            bot.sendMessage(chat_id, text='usage: "/stickers <True/False>"')
+            bot.sendMessage(chat_id, text='usage: "/stickers <true/false>"')
 
 def cmd_maponly(bot, update, args):
     chat_id = update.message.chat_id
@@ -210,9 +212,51 @@ def cmd_maponly(bot, update, args):
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Verwendung: "/maponly <True/False>"')
+            bot.sendMessage(chat_id, text='Verwendung: "/maponly <true/false>"')
         else:
-            bot.sendMessage(chat_id, text='usage: "/maponly <True/False>"')
+            bot.sendMessage(chat_id, text='usage: "/maponly <true/false>"')
+
+def cmd_walkdist(bot, update, args):
+    chat_id = update.message.chat_id
+    userName = update.message.from_user.username
+    if not whitelist.isAdmin(userName):
+        logger.info('[%s@%s] User blocked (walkdist).' % (userName, chat_id))
+        return
+
+    pref = prefs.get(chat_id)
+
+    if len(args) < 1:
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='"Zeige Laufdistanz und -zeit" ist aktuell gesetzt auf %s.' % (pref.get('walk_dist')))
+        else:
+            bot.sendMessage(chat_id, text='"Show walking distance/time" is currently set to %s.' % (pref.get('walk_dist')))
+        return
+
+    try:
+        wdist = args[0].lower()
+        logger.info('[%s@%s] Setting walkdist.' % (userName, chat_id))
+
+        if wdist == 'true' or wdist == 'false':
+            wdist = False
+            if args[0].lower() == 'true':
+                wdist = True
+            pref.set('walk_dist', wdist)
+            pref.set_preferences()
+            if pref.get('language') == 'de':
+                bot.sendMessage(chat_id, text='"Zeige Laufdistanz und -zeit" wurde auf %s gesetzt.' % (wdist))
+            else:
+                bot.sendMessage(chat_id, text='"Show walking distance/time" was set to %s.' % (wdist))
+        else:
+            if pref.get('language') == 'de':
+                bot.sendMessage(chat_id, text='Bitte nur True (aktivieren) oder False (deaktivieren) angeben.')
+            else:
+                bot.sendMessage(chat_id, text='Please only use True (enable) or False (disable).')
+    except Exception as e:
+        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='Verwendung: "/walkdist <true/false>"')
+        else:
+            bot.sendMessage(chat_id, text='usage: "/walkdist <true/false>"')
 
 def cmd_add(bot, update, args, job_queue):
     chat_id = update.message.chat_id
@@ -463,19 +507,21 @@ def cmd_location(bot, update):
     user_location = update.message.location
 
     # We set the location from the users sent location.
-    pref.set('location', [user_location.latitude, user_location.longitude, pref['location'][2]])
+    pref.set('location', [user_location.latitude, user_location.longitude, pref.get('location')[2]])
     pref.set_preferences()
 
-    logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' % (userName, chat_id,
-        pref['location'][0], pref['location'][1], pref['location'][2]))
+    user_location = pref.get('location')
+
+    logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' %
+        (userName, chat_id, user_location[0], user_location[1], user_location[2]))
 
     # Send confirmation nessage
     if pref.get('language') == 'de':
         bot.sendMessage(chat_id, text="Setze Suchposition auf %f / %f mit Radius %.2f km" %
-            (pref['location'][0], pref['location'][1], pref['location'][2]))
+            (user_location[0], user_location[1], user_location[2]))
     else:
         bot.sendMessage(chat_id, text="Setting scan location to %f / %f with radius %.2f km" %
-            (pref['location'][0], pref['location'][1], pref['location'][2]))
+            (user_location[0], user_location[1], user_location[2]))
 
 def cmd_location_str(bot, update,args):
     chat_id = update.message.chat_id
@@ -513,19 +559,21 @@ def cmd_location_str(bot, update,args):
         return
 
     # We set the location from the users sent location.
-    pref.set('location', [user_location.latitude, user_location.longitude, pref['location'][2]])
+    pref.set('location', [user_location.latitude, user_location.longitude, pref.get('location')[2]])
     pref.set_preferences()
 
-    logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' % (userName, chat_id,
-        pref['location'][0], pref['location'][1], pref['location'][2]))
+    user_location = pref.get('location')
+
+    logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' %
+        (userName, chat_id, user_location[0], user_location[1], user_location[2]))
 
     # Send confirmation nessage
     if pref.get('language') == 'de':
         bot.sendMessage(chat_id, text="Setze Suchposition auf %f / %f mit Radius %.2f km" %
-            (pref['location'][0], pref['location'][1], pref['location'][2]))
+            (user_location[0], user_location[1], user_location[2]))
     else:
         bot.sendMessage(chat_id, text="Setting scan location to %f / %f with radius %.2f km" %
-            (pref['location'][0], pref['location'][1], pref['location'][2]))
+            (user_location[0], user_location[1], user_location[2]))
 
 
 def cmd_radius(bot, update, args):
@@ -547,8 +595,8 @@ def cmd_radius(bot, update, args):
         return
 
     # Get the users location
-    logger.info('[%s@%s] Retrieved Location as Lat %s, Lon %s, R %s (Km)' % (
-    userName, chat_id, user_location[0], user_location[1], user_location[2]))
+    logger.info('[%s@%s] Retrieved Location as Lat %s, Lon %s, R %s (Km)' %
+        (userName, chat_id, user_location[0], user_location[1], user_location[2]))
 
     if len(args) < 1:
         if pref.get('language') == 'de':
@@ -563,16 +611,18 @@ def cmd_radius(bot, update, args):
     pref.set('location', [user_location[0], user_location[1], float(args[0])])
     pref.set_preferences()
 
-    logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' % (userName, chat_id, pref['location'][0],
-        pref['location'][1], pref['location'][2]))
+    user_location = pref.get('location')
+
+    logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' %
+        (userName, chat_id, user_location[0], user_location[1], user_location[2]))
 
     # Send confirmation nessage
     if pref.get('language') == 'de':
         bot.sendMessage(chat_id, text="Setze Suchposition auf %f / %f mit Radius %.2f km" %
-            (pref['location'][0], pref['location'][1], pref['location'][2]))
+            (user_location[0], user_location[1], user_location[2]))
     else:
         bot.sendMessage(chat_id, text="Setting scan location to %f / %f with radius %.2f km" %
-            (pref['location'][0], pref['location'][1], pref['location'][2]))
+            (user_location[0], user_location[1], user_location[2]))
 
 def cmd_clearlocation(bot, update):
     chat_id = update.message.chat_id
@@ -702,9 +752,9 @@ def sendOnePoke(chat_id, pokemon):
 
     lock.acquire()
     try:
-        lan = pref['language']
+        lan = pref.get('language')
         mySent = sent[chat_id]
-        location_data = pref['location']
+        location_data = pref.get('location')
 
         sendPokeWithoutIV = config.get('SEND_POKEMON_WITHOUT_IV', True)
         pokeMinIVFilterList = config.get('POKEMON_MIN_IV_FILTER_LIST', dict())
@@ -733,13 +783,18 @@ def sendOnePoke(chat_id, pokemon):
 
         title =  pokemon_name[lan][pok_id]
 
-        if location_data[0] is not None:
-            title += " - %skm" % (round(pokemon.getDistance(location_data), 2))
-
         if pref.get('language') == 'de':
             address = "Verschwindet um %s ⏱ %s" % (disappear_time_str, deltaStr)
         else:
             address = "Disappears at %s ⏱ %s" % (disappear_time_str, deltaStr)
+
+        if location_data[0] is not None:
+            if pref.get('walk_dist'):
+                walkin_data = get_walking_data(location_data, latitude, longitude)
+                title += " - %skm" % (walkin_data['walk_dist'])
+                address += " 🚶%s" % (walkin_data['walk_time'])
+            else:
+                title += " - %skm" % (round(pokemon.getDistance(location_data), 2))
 
         if iv is not None:
             title += " IV:%s" % (iv)
@@ -866,6 +921,26 @@ def send_load_message(chat_id):
     else:
         telegramBot.sendMessage(chat_id, text="Unfortunately, the bot had to be restarted. \nPlease use the \"/load\" command to restore your settings.")
 
+# Returns a set with walking dist and walking duration via Google Distance Matrix API
+def get_walking_data(user_location, lat, lng):
+    data = {'walk_dist': "unknown", 'walk_time': "unknown"}
+    if gmaps_client is None:
+        logger.error('Google Maps Client not available. Unable to get walking data.')
+        return data
+    if user_location[0] is None:
+        logger.error('No location has been set. Unable to get walking data.')
+        return data
+    origin = "{},{}".format(user_location[0], user_location[1])
+    dest = "{},{}".format(lat, lng)
+    try:
+        result = gmaps_client.distance_matrix(origin, dest, mode='walking', units='metric')
+        result = result.get('rows')[0].get('elements')[0]
+        data['walk_dist'] = result.get('distance').get('text').encode('utf-8').replace(' ', '')
+        data['walk_time'] = result.get('duration').get('text').encode('utf-8').replace(' hours', 'h').replace(' hour', 'h').replace(' mins', 'm').replace(' min', 'm')
+    except Exception as e:
+        logger.error("Encountered error while getting walking data (%s)" % (repr(e)))
+    return data
+
 def main():
     logger.info('Starting...')
     read_config()
@@ -927,6 +1002,11 @@ def main():
     global telegramBot
     telegramBot = Bot(token)
     logger.info("BotName: <%s>" % (telegramBot.name))
+
+    # Get the Google Maps API
+    global gmaps_client
+    google_key = config.get('GMAPS_KEY', None)
+    gmaps_client = googlemaps.Client(key=google_key, timeout=3, retry_timeout=4) if google_key is not None else None
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
