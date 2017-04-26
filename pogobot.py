@@ -783,18 +783,22 @@ def sendOnePoke(chat_id, pokemon):
 
         title =  pokemon_name[lan][pok_id]
 
-        if pref.get('language') == 'de':
-            address = "Verschwindet um %s ⏱ %s" % (disappear_time_str, deltaStr)
-        else:
-            address = "Disappears at %s ⏱ %s" % (disappear_time_str, deltaStr)
+        address = "💨 %s ⏱ %s" % (disappear_time_str, deltaStr)
 
         if location_data[0] is not None:
             if pref.get('walk_dist'):
                 walkin_data = get_walking_data(location_data, latitude, longitude)
-                title += " - %s" % (walkin_data['walk_dist'])
+                if walkin_data['walk_dist'] < 1:
+                    title += " 📍 %sm" % (1000*walkin_data['walk_dist'])
+                else:
+                    title += " 📍 %skm" % (walkin_data['walk_dist'])
                 address += " 🚶%s" % (walkin_data['walk_time'])
             else:
-                title += " - %skm" % (round(pokemon.getDistance(location_data), 2))
+                dist = round(pokemon.getDistance(location_data), 2)
+                if dist < 1:
+                    title += " 📍 %sm" % (1000*dist)
+                else:
+                    title += " 📍 %skm" % (dist)
 
         if iv is not None:
             title += " IV:%s" % (iv)
@@ -935,7 +939,7 @@ def get_walking_data(user_location, lat, lng):
     try:
         result = gmaps_client.distance_matrix(origin, dest, mode='walking', units='metric')
         result = result.get('rows')[0].get('elements')[0]
-        data['walk_dist'] = result.get('distance').get('text').replace(' ', '')
+        data['walk_dist'] = float(result.get('distance').get('text').replace(' km', ''))
         data['walk_time'] = result.get('duration').get('text').replace(' hours', 'h').replace(' hour', 'h').replace(' mins', 'm').replace(' min', 'm')
     except Exception as e:
         logger.error("Encountered error while getting walking data (%s)" % (repr(e)))
