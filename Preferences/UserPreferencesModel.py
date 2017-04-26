@@ -31,7 +31,7 @@ class UserPreferencesModel(object):
         )
         return preferences
 
-    def __init__(self, chat_id,config):
+    def __init__(self, chat_id, config):
         self.chat_id = chat_id
         self.loadedconfig = config
         self.__set_directory(directory=self.__getDefaulteDir())

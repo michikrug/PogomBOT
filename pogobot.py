@@ -235,7 +235,7 @@ def cmd_add(bot, update, args, job_queue):
             if int(x) not in search:
                 search.append(int(x))
         search.sort()
-        pref.set('search_ids',search)
+        pref.set('search_ids', search)
         pref.set_preferences()
         cmd_list(bot, update)
     except Exception as e:
@@ -332,7 +332,7 @@ def cmd_remove(bot, update, args, job_queue):
         for x in args:
             if int(x) in search:
                 search.remove(int(x))
-        pref.set('search_ids',search)
+        pref.set('search_ids', search)
         pref.set_preferences()
         cmd_list(bot, update)
     except Exception as e:
@@ -400,7 +400,6 @@ def cmd_load(bot, update, job_queue):
     # We might be the first user and above failed....
     if len(pref.get('search_ids')) > 0:
         addJob(bot, update, job_queue)
-        cmd_list(bot, update)
     else:
         if chat_id in jobs:
             job = jobs[chat_id]
@@ -428,7 +427,7 @@ def cmd_lang(bot, update, args):
         logger.info('[%s@%s] Setting lang.' % (userName, chat_id))
 
         if lan == 'de' or lan == 'en':
-            pref.set('language', args[0])
+            pref.set('language', lan)
             pref.set_preferences()
             if pref.get('language') == 'de':
                 bot.sendMessage(chat_id, text='Sprache wurde auf [%s] gesetzt.' % (lan))
@@ -706,11 +705,6 @@ def sendOnePoke(chat_id, pokemon):
         if lan in move_name:
             moveNames = move_name[lan]
 
-        if location_data[0] is not None:
-            if not pokemon.filterbylocation(location_data):
-                lock.release()
-                return
-
         encounter_id = pokemon.getEncounterID()
         spaw_point = pokemon.getSpawnpointID()
         pok_id = pokemon.getPokemonID()
@@ -721,7 +715,7 @@ def sendOnePoke(chat_id, pokemon):
         move1 = pokemon.getMove1()
         move2 = pokemon.getMove2()
 
-        if encounter_id in mySent:
+        if (encounter_id in mySent) or (location_data[0] is not None and not pokemon.filterbylocation(location_data)):
             lock.release()
             return
 
@@ -730,6 +724,9 @@ def sendOnePoke(chat_id, pokemon):
         disappear_time_str = disappear_time.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime("%H:%M:%S")
 
         title =  pokemon_name[lan][pok_id]
+
+        if location_data[0] is not None:
+            title += " - %skm" % (pokemon.getDistance(location_data))
 
         if pref.get('language') == 'de':
             address = "Verschwindet um %s ⏱ %s" % (disappear_time_str, deltaStr)

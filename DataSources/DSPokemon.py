@@ -39,7 +39,10 @@ class DSPokemon:
     def getMove2(self):
         return self.move2
 
-    def filterbylocation(self,user_location):
+    def getDistance(self, user_location):
         user_lat_lon = (user_location[0], user_location[1])
         pok_loc = (float(self.latitude), float(self.longitude))
-        return great_circle(user_lat_lon, pok_loc).km <= user_location[2]
+        return great_circle(user_lat_lon, pok_loc).km
+
+    def filterbylocation(self, user_location):
+        return self.getDistance(user_location) <= user_location[2]
