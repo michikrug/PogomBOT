@@ -531,7 +531,7 @@ def cmd_location(bot, update):
 
     pref = prefs.get(chat_id)
     user_location = update.message.location
-    setUserLocation(user_location.latitude, user_location.longitude, pref.get('location')[2])
+    setUserLocation(userName, chat_id, user_location.latitude, user_location.longitude, pref.get('location')[2])
     sendCurrentLocation(bot, chat_id, True)
 
 def cmd_location_str(bot, update, args):
@@ -549,7 +549,7 @@ def cmd_location_str(bot, update, args):
 
     try:
         user_location = geolocator.geocode(' '.join(args))
-        setUserLocation(user_location.latitude, user_location.longitude, pref.get('location')[2])
+        setUserLocation(userName, chat_id, user_location.latitude, user_location.longitude, pref.get('location')[2])
         sendCurrentLocation(bot, chat_id, True)
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
@@ -572,7 +572,7 @@ def cmd_radius(bot, update, args):
 
     # Change the radius
     pref = prefs.get(chat_id)
-    setUserLocation(pref.get('location')[0], pref.get('location')[1], float(args[0]))
+    setUserLocation(userName, chat_id, pref.get('location')[0], pref.get('location')[1], float(args[0]))
     sendCurrentLocation(bot, chat_id, True)
 
 def cmd_clearlocation(bot, update):
@@ -582,7 +582,7 @@ def cmd_clearlocation(bot, update):
     if isNotWhitelisted(userName, chat_id, 'clearlocation'):
         return
 
-    setUserLocation(None, None, None)
+    setUserLocation(userName, chat_id, None, None, None)
 
     pref = prefs.get(chat_id)
     if pref.get('language') == 'de':
