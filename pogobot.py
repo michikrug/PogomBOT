@@ -803,7 +803,7 @@ def sendOnePoke(chat_id, pokemon):
         if lan in move_name:
             moveNames = move_name[lan]
 
-        if dists[pok_id]:
+        if pok_id in dists:
             location_data[2] = dists[pok_id]
 
         if (encounter_id in mySent) or (location_data[0] is not None and not pokemon.filterbylocation(location_data)):

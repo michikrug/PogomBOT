@@ -223,7 +223,7 @@ A valid filename must not contain especial characters or operating system separa
         flag, m = self.check_preferences(preferences)
         assert flag, m
         assert isinstance(preferences, dict), "Preferences must be a dictionary"
-        set_and_dump_preferences(preferences)
+        self.set_and_dump_preferences(preferences)
 
     def update_preferences(self, preferences):
         """
@@ -237,7 +237,7 @@ A valid filename must not contain especial characters or operating system separa
         assert isinstance(preferences, dict), "Preferences must be a dictionary"
         newPreferences = self.preferences
         newPreferences.update(preferences)
-        set_and_dump_preferences(newPreferences)
+        self.set_and_dump_preferences(newPreferences)
 
     def set_and_dump_preferences(self, preferences):
         self.__preferences = preferences
