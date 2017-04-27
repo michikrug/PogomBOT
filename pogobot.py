@@ -666,8 +666,8 @@ def cmd_rempkmradius(bot, update, args):
 def isNotWhitelisted(userName, chat_id, command):
     if not whitelist.isWhitelisted(userName):
         logger.info('[%s@%s] User blocked (%s).' % (userName, chat_id, command))
-        return False
-    return True
+        return True
+    return False
 
 def cmd_addToWhitelist(bot, update, args):
     chat_id = update.message.chat_id
