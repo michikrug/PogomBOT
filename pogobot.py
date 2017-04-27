@@ -124,8 +124,8 @@ def cmd_help(bot, update):
 def cmd_start(bot, update):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
-    if not whitelist.isWhitelisted(userName):
-        logger.info('[%s@%s] User blocked (start).' % (userName, chat_id))
+
+    if isNotWhitelisted(userName, chat_id, 'start'):
         return
 
     logger.info('[%s@%s] Starting.' % (userName, chat_id))
@@ -135,8 +135,8 @@ def cmd_start(bot, update):
 def cmd_stickers(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
-    if not whitelist.isWhitelisted(userName):
-        logger.info('[%s@%s] User blocked (stickers).' % (userName, chat_id))
+
+    if isNotWhitelisted(userName, chat_id, 'stickers'):
         return
 
     pref = prefs.get(chat_id)
@@ -177,8 +177,8 @@ def cmd_stickers(bot, update, args):
 def cmd_maponly(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
-    if not whitelist.isWhitelisted(userName):
-        logger.info('[%s@%s] User blocked (maponly).' % (userName, chat_id))
+
+    if isNotWhitelisted(userName, chat_id, 'maponly'):
         return
 
     pref = prefs.get(chat_id)
@@ -261,8 +261,8 @@ def cmd_walkdist(bot, update, args):
 def cmd_add(bot, update, args, job_queue):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
-    if not whitelist.isWhitelisted(userName):
-        logger.info('[%s@%s] User blocked (add).' % (userName, chat_id))
+
+    if isNotWhitelisted(userName, chat_id, 'add'):
         return
 
     pref = prefs.get(chat_id)
@@ -295,8 +295,8 @@ def cmd_add(bot, update, args, job_queue):
 def cmd_addByRarity(bot, update, args, job_queue):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
-    if not whitelist.isWhitelisted(userName):
-        logger.info('[%s@%s] User blocked (addByRarity).' % (userName, chat_id))
+
+    if isNotWhitelisted(userName, chat_id, 'addByRarity'):
         return
 
     pref = prefs.get(chat_id)
@@ -336,8 +336,8 @@ def cmd_addByRarity(bot, update, args, job_queue):
 def cmd_clear(bot, update):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
-    if not whitelist.isWhitelisted(userName):
-        logger.info('[%s@%s] User blocked (clear).' % (userName, chat_id))
+
+    if isNotWhitelisted(userName, chat_id, 'clear'):
         return
 
     pref = prefs.get(chat_id)
@@ -369,8 +369,8 @@ def cmd_clear(bot, update):
 def cmd_remove(bot, update, args, job_queue):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
-    if not whitelist.isWhitelisted(userName):
-        logger.info('[%s@%s] User blocked (remove).' % (userName, chat_id))
+
+    if isNotWhitelisted(userName, chat_id, 'remove'):
         return
 
     pref = prefs.get(chat_id)
@@ -395,8 +395,8 @@ def cmd_remove(bot, update, args, job_queue):
 def cmd_list(bot, update):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
-    if not whitelist.isWhitelisted(userName):
-        logger.info('[%s@%s] User blocked (list).' % (userName, chat_id))
+
+    if isNotWhitelisted(userName, chat_id, 'list'):
         return
 
     pref = prefs.get(chat_id)
@@ -418,8 +418,8 @@ def cmd_list(bot, update):
 def cmd_load(bot, update, job_queue):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
-    if not whitelist.isWhitelisted(userName):
-        logger.info('[%s@%s] User blocked (load).' % (userName, chat_id))
+
+    if isNotWhitelisted(userName, chat_id, 'load'):
         return
 
     pref = prefs.get(chat_id)
@@ -459,8 +459,8 @@ def cmd_load(bot, update, job_queue):
 def cmd_lang(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
-    if not whitelist.isWhitelisted(userName):
-        logger.info('[%s@%s] User blocked (lang).' % (userName, chat_id))
+
+    if isNotWhitelisted(userName, chat_id, 'lang'):
         return
 
     pref = prefs.get(chat_id)
@@ -495,79 +495,64 @@ def cmd_lang(bot, update, args):
         else:
             bot.sendMessage(chat_id, text='usage: /lang <#language>')
 
-def cmd_location(bot, update):
-    chat_id = update.message.chat_id
-    userName = update.message.from_user.username
-    if not whitelist.isWhitelisted(userName):
-        logger.info('[%s@%s] User blocked (location).' % (userName, chat_id))
-        return
-
+def setUserLocation(userName, chat_id, latitude, longitude, radius):
     pref = prefs.get(chat_id)
-
-    user_location = update.message.location
-
-    # We set the location from the users sent location.
-    pref.set('location', [user_location.latitude, user_location.longitude, pref.get('location')[2]])
+    pref.set('location', [latitude, longitude, radius])
     pref.set_preferences()
-
     user_location = pref.get('location')
-
     logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' %
         (userName, chat_id, user_location[0], user_location[1], user_location[2]))
 
-    # Send confirmation nessage
-    if pref.get('language') == 'de':
-        bot.sendMessage(chat_id, text="Setze Suchposition auf %f / %f mit Radius %.2f km" %
-            (user_location[0], user_location[1], user_location[2]))
+def sendCurrentLocation(bot, chat_id, set_new = False):
+    pref = prefs.get(chat_id)
+    user_location = pref.get('location')
+    if user_location[0] is None:
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='Du hast keine Suchposition angegeben.')
+        else:
+            bot.sendMessage(chat_id, text='You have not supplied a scan location.')
     else:
-        bot.sendMessage(chat_id, text="Setting scan location to %f / %f with radius %.2f km" %
-            (user_location[0], user_location[1], user_location[2]))
+        if set_new:
+            if pref.get('language') == 'de':
+                bot.sendMessage(chat_id, text='Setze neue Suchposition mit Radius %.2fkm' % (user_location[2]))
+            else:
+                bot.sendMessage(chat_id, text='Setting new scan location with radius %.2fkm' % (user_location[2]))
+        else:
+            if pref.get('language') == 'de':
+                bot.sendMessage(chat_id, text='Dies ist deine aktuelle Suchposition mit Radius %.2fkm' % (user_location[2]))
+            else:
+                bot.sendMessage(chat_id, text='This is your current scan location with radius %.2fkm' % (user_location[2]))
+        bot.sendLocation(chat_id, user_location[0], user_location[1], disable_notification=True)
+
+def cmd_location(bot, update):
+    chat_id = update.message.chat_id
+    userName = update.message.from_user.username
+
+    if isNotWhitelisted(userName, chat_id, 'location'):
+        return
+
+    pref = prefs.get(chat_id)
+    user_location = update.message.location
+    setUserLocation(user_location.latitude, user_location.longitude, pref.get('location')[2])
+    sendCurrentLocation(bot, chat_id, True)
 
 def cmd_location_str(bot, update,args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
-    if not whitelist.isWhitelisted(userName):
-        logger.info('[%s@%s] User blocked (location_str).' % (userName, chat_id))
+
+    if isNotWhitelisted(userName, chat_id, 'location_str'):
         return
 
     pref = prefs.get(chat_id)
 
     if len(args) < 1:
-        user_location = pref.get('location')
-        if user_location[0] is None:
-            if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text='Du hast keine Position angegeben.')
-            else:
-                bot.sendMessage(chat_id, text='You have not supplied a location.')
-        else:
-            if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text="Deine aktuelle Suchposition ist %f / %f mit Radius %.2f km" %
-                    (user_location[0], user_location[1], user_location[2]))
-            else:
-                bot.sendMessage(chat_id, text="Your current scan location is %f / %f with radius %.2f km" %
-                    (user_location[0], user_location[1], user_location[2]))
+        sendCurrentLocation(bot, chat_id)
         return
 
     try:
         user_location = geolocator.geocode(' '.join(args))
-
-        # We set the location from the users sent location.
-        pref.set('location', [user_location.latitude, user_location.longitude, pref.get('location')[2]])
-        pref.set_preferences()
-
-        user_location = pref.get('location')
-
-        logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' %
-            (userName, chat_id, user_location[0], user_location[1], user_location[2]))
-
-        # Send confirmation nessage
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text="Setze Suchposition auf %f / %f mit Radius %.2f km" %
-                (user_location[0], user_location[1], user_location[2]))
-        else:
-            bot.sendMessage(chat_id, text="Setting scan location to %f / %f with radius %.2f km" %
-                (user_location[0], user_location[1], user_location[2]))
-
+        setUserLocation(user_location.latitude, user_location.longitude, pref.get('location')[2])
+        sendCurrentLocation(bot, chat_id, True)
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
         if pref.get('language') == 'de':
@@ -579,66 +564,39 @@ def cmd_location_str(bot, update,args):
 def cmd_radius(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
-    if not whitelist.isWhitelisted(userName):
-        logger.info('[%s@%s] User blocked (radius).' % (userName, chat_id))
+
+    if isNotWhitelisted(userName, chat_id, 'radius'):
         return
-
-    pref = prefs.get(chat_id)
-
-    user_location = pref.get('location')
-
-    if user_location[0] is None:
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Du hast noch keine Suchposition festgelegt. Bitte tu das zuerst!')
-        else:
-            bot.sendMessage(chat_id, text='You have not set a scan location. Please do that first!')
-        return
-
-    # Get the users location
-    logger.info('[%s@%s] Retrieved Location as Lat %s, Lon %s, R %s (Km)' %
-        (userName, chat_id, user_location[0], user_location[1], user_location[2]))
 
     if len(args) < 1:
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text="Deine aktuelle Suchposition ist %f / %f mit Radius %.2f km" %
-                (user_location[0], user_location[1], user_location[2]))
-        else:
-            bot.sendMessage(chat_id, text="Your current scan location is %f / %f with radius %.2f km" %
-                (user_location[0], user_location[1], user_location[2]))
+        sendCurrentLocation(bot, chat_id)
         return
 
     # Change the radius
-    pref.set('location', [user_location[0], user_location[1], float(args[0])])
-    pref.set_preferences()
-
-    user_location = pref.get('location')
-
-    logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' %
-        (userName, chat_id, user_location[0], user_location[1], user_location[2]))
-
-    # Send confirmation nessage
-    if pref.get('language') == 'de':
-        bot.sendMessage(chat_id, text="Setze Suchposition auf %f / %f mit Radius %.2f km" %
-            (user_location[0], user_location[1], user_location[2]))
-    else:
-        bot.sendMessage(chat_id, text="Setting scan location to %f / %f with radius %.2f km" %
-            (user_location[0], user_location[1], user_location[2]))
+    pref = prefs.get(chat_id)
+    setUserLocation(pref.get('location')[0], pref.get('location')[1], float(args[0]))
+    sendCurrentLocation(bot, chat_id, True)
 
 def cmd_clearlocation(bot, update):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
-    if not whitelist.isWhitelisted(userName):
-        logger.info('[%s@%s] User blocked (clearlocation).' % (userName, chat_id))
+
+    if isNotWhitelisted(userName, chat_id, 'clearlocation'):
         return
 
+    setUserLocation(None, None, None)
+
     pref = prefs.get(chat_id)
-    pref.set('location', [None, None, None])
-    pref.set_preferences()
     if pref.get('language') == 'de':
         bot.sendMessage(chat_id, text='Deine Suchposition wurde entfernt.')
     else:
         bot.sendMessage(chat_id, text='Your scan location has been removed.')
-    logger.info('[%s@%s] Location has been unset' % (userName, chat_id))
+
+def isNotWhitelisted(userName, chat_id, command):
+    if not whitelist.isWhitelisted(userName):
+        logger.info('[%s@%s] User blocked (%s).' % (userName, chat_id, command))
+        return False
+    return True
 
 def cmd_addToWhitelist(bot, update, args):
     chat_id = update.message.chat_id
