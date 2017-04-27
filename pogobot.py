@@ -400,10 +400,17 @@ def cmd_list(bot, update):
     try:
         lan = pref.get('language')
         dists = pref.get('search_dists')
-        if pref.get('language') == 'de':
-            tmp = 'Liste der überwachten Pokémon:\n'
+        location = pref.get('location')
+        if lan == 'de':
+            if location[0] is None:
+                tmp = 'Liste der überwachten Pokémon:\n'
+            else:
+                tmp = 'Liste der überwachten Pokémon im Radius von %.2fkm:\n' % (location[2])
         else:
-            tmp = 'List of watched Pokémon:\n'
+            if location[0] is None:
+                tmp = 'List of watched Pokémon:\n'
+            else:
+                tmp = 'List of watched Pokémon within a radius of %.2fkm:\n' % (location[2])
         for x in pref.get('search_ids'):
             tmp += "%i %s" % (x, pokemon_name[lan][str(x)])
             if str(x) in dists:
@@ -582,7 +589,7 @@ def cmd_clearlocation(bot, update):
     if isNotWhitelisted(userName, chat_id, 'clearlocation'):
         return
 
-    setUserLocation(userName, chat_id, None, None, None)
+    setUserLocation(userName, chat_id, None, None, 1)
 
     pref = prefs.get(chat_id)
     if pref.get('language') == 'de':
