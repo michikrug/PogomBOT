@@ -406,7 +406,7 @@ def cmd_list(bot, update):
             tmp = 'List of watched Pokémon:\n'
         for x in pref.get('search_ids'):
             tmp += "%i %s" % (x, pokemon_name[lan][str(x)])
-            if dists[str(x)]:
+            if str(x) in dists:
                 tmp += " %skm" & (dists[str(x)])
             tmp += "\n"
         bot.sendMessage(chat_id, text = tmp)
@@ -615,7 +615,7 @@ def cmd_pkmradius(bot, update, args):
 
         # Only get current value
         if len(args) < 2:
-            pkm_dist = dists[pkm_id] if dists[pkm_id] else pref.get('location')[2]
+            pkm_dist = pkm_id in dists if dists[pkm_id] else pref.get('location')[2]
             if pref.get('language') == 'de':
                 bot.sendMessage(chat_id, text='Der Suchradius für %s ist auf %skm gesetzt.' % (pokemon_name['de'][pkm_id], pkm_dist))
             else:
@@ -655,7 +655,7 @@ def cmd_rempkmradius(bot, update, args):
     # Change the radius for a specific pokemon
     dists = pref.get('search_dists')
     pkm_id = args[0]
-    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and dists[pkm_id]:
+    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and pkm_id in dists:
         del dists[pkm_id]
         pref.set('search_dists', dists)
         if pref.get('language') == 'de':
