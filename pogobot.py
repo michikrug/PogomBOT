@@ -400,17 +400,17 @@ def cmd_list(bot, update):
     try:
         lan = pref.get('language')
         dists = pref.get('search_dists')
-        location = pref.get('location')
+        user_location = pref.get('location')
         if lan == 'de':
-            if location[0] is None:
+            if user_location[0] is None:
                 tmp = 'Liste der überwachten Pokémon:\n'
             else:
-                tmp = 'Liste der überwachten Pokémon im Radius von %.2fkm:\n' % (location[2])
+                tmp = 'Liste der überwachten Pokémon im Radius von %.2fkm:\n' % (user_location[2])
         else:
-            if location[0] is None:
+            if user_location[0] is None:
                 tmp = 'List of watched Pokémon:\n'
             else:
-                tmp = 'List of watched Pokémon within a radius of %.2fkm:\n' % (location[2])
+                tmp = 'List of watched Pokémon within a radius of %.2fkm:\n' % (user_location[2])
         for x in pref.get('search_ids'):
             tmp += "%i %s" % (x, pokemon_name[lan][str(x)])
             if str(x) in dists:
@@ -1059,13 +1059,13 @@ def main():
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", cmd_start))
     dp.add_handler(CommandHandler("help", cmd_help))
-    dp.add_handler(CommandHandler("add", cmd_add, pass_args = True, pass_job_queue=True))
+    dp.add_handler(CommandHandler("add", cmd_add, pass_args=True, pass_job_queue=True))
     dp.add_handler(CommandHandler("addbyrarity", cmd_addByRarity, pass_args = True, pass_job_queue=True))
     dp.add_handler(CommandHandler("clear", cmd_clear))
-    dp.add_handler(CommandHandler("rem", cmd_remove, pass_args = True, pass_job_queue=True))
+    dp.add_handler(CommandHandler("rem", cmd_remove, pass_args=True, pass_job_queue=True))
     dp.add_handler(CommandHandler("load", cmd_load, pass_job_queue=True))
     dp.add_handler(CommandHandler("list", cmd_list))
-    dp.add_handler(CommandHandler("lang", cmd_lang, pass_args = True))
+    dp.add_handler(CommandHandler("lang", cmd_lang, pass_args=True))
     dp.add_handler(CommandHandler("radius", cmd_radius, pass_args=True))
     dp.add_handler(CommandHandler("location", cmd_location_str, pass_args=True))
     dp.add_handler(CommandHandler("remloc", cmd_clearlocation))
