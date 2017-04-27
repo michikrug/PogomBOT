@@ -52,16 +52,13 @@ sent = dict()
 locks = dict()
 clearCnt = dict()
 
-# User dependant - Add to clear, addJob, loadUserConfig, saveUserConfig
-#search_ids = dict()
-#language = dict()
-#location_ids = dict()
-location_radius = 1
-
 #pokemon:
 pokemon_name = dict()
 #move:
 move_name = dict()
+
+min_pokemon_id = 1
+max_pokemon_id = 251
 
 pokemon_rarity = [[],
     ["10", "13", "16", "19", "21", "29", "32", "41", "46", "48", "98", "133", "161", "163", "165", "167", "177", "183", "194", "198", "220"],
@@ -91,15 +88,17 @@ def cmd_help(bot, update):
         "/rem <#pokedexID> - Entfernt Pokémon mit der gegebenen ID vom Scanner\n" + \
         "/rem <#pokedexID1> <#pokedexID2> ...\n" + \
         "/list - Zeigt eine Liste mit den überwachten Pokémon\n" + \
-        "/location <address> - Setzt deine Suchposition gegeben als Text\n" +\
-        "/radius <km> - Setzt deinen Suchradius in km\n" +\
+        "/location <address> - Setzt die Suchposition gegeben als Text\n" +\
+        "/radius <km> - Setzt den Suchradius in km\n" +\
         "/remloc - Setzt die Suchposition zurück\n" +\
+        "/pkmradius <#pokedexID> <km> - Setzt den Suchradius für ein bestimmtes Pokémon in km\n" +\
+        "/rempkmradius <#pokedexID> - Setzt den Suchradius für ein bestimmtes Pokémon zurück\n" +\
         "/stickers <true/false> - Legt fest, ob Sticker gesendet werden sollen\n" +\
         "/maponly <true/false> - Legt fest, ob nur eine Karte gesendet werden soll (ohne zusätzliche Nachricht/Sticker)\n" +\
         "/lang [de, en] - Setzt die Sprache des Bots\n" + \
         "/clear - Setzt alle deine Einstellungen zurück\n" + \
         "/load - Stellt deine Einstellungen (z.B. nach einem Neustart) wieder her\n\n" + \
-        "Hinweis: Du kannst ebenso deine Suchposition festlegen, indem du einfach einen Positionsmarker sendest"
+        "Hinweis: Du kannst ebenso die Suchposition festlegen, indem du einfach einen Positionsmarker sendest"
 
     else:
         text = "/help - Shows a list of available commands\n" + \
@@ -109,15 +108,17 @@ def cmd_help(bot, update):
         "/rem <#pokedexID> - Removes Pokémon with the given ID from the scanner\n" + \
         "/rem <#pokedexID1> <#pokedexID2> ...\n" + \
         "/list - Lists the watched Pokémon\n" + \
-        "/location <address> - Sets your desired search location given as text\n" +\
+        "/location <address> - Sets the desired search location given as text\n" +\
         "/radius <km> - Sets the search radius in km\n" +\
-        "/remloc - Clears your location data\n" +\
+        "/remloc - Clears the location data\n" +\
+        "/pkmradius <#pokedexID> <km> - Sets the search radius for a specific Pokémon in km\n" +\
+        "/rempkmradius <#pokedexID> - Resets the search radius for a specific Pokémon\n" +\
         "/stickers <true/false> - Defines if stickers should be sent\n" +\
         "/maponly <true/false> - Defines if only a map should be sent (without an additional message/sticker)\n" +\
         "/lang [de, en] - Sets the language of the bot\n" + \
         "/clear - Resets all your settings\n" + \
-        "/load - Restores your settings\n\n" + \
-        "Hint: You can also set your scanning location by just sending a location marker"
+        "/load - Restores your settings (e.g. after a restart)\n\n" + \
+        "Hint: You can also set the scanning location by just sending a location marker"
 
     bot.sendMessage(chat_id, text)
 
@@ -279,7 +280,7 @@ def cmd_add(bot, update, args, job_queue):
     try:
         search = pref.get('search_ids')
         for x in args:
-            if int(x) not in search:
+            if int(x) >= min_pokemon_id and int(x) <= max_pokemon_id and int(x) not in search:
                 search.append(int(x))
         search.sort()
         pref.set('search_ids', search)
@@ -398,12 +399,16 @@ def cmd_list(bot, update):
 
     try:
         lan = pref.get('language')
+        dists = pref.get('search_dists')
         if pref.get('language') == 'de':
             tmp = 'Liste der überwachten Pokémon:\n'
         else:
             tmp = 'List of watched Pokémon:\n'
         for x in pref.get('search_ids'):
-            tmp += "%i %s\n" % (x, pokemon_name[lan][str(x)])
+            tmp += "%i %s" % (x, pokemon_name[lan][str(x)])
+            if dists[str(x)]:
+                tmp += " %skm" & (dists[str(x)])
+            tmp += "\n"
         bot.sendMessage(chat_id, text = tmp)
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
@@ -489,6 +494,8 @@ def cmd_lang(bot, update, args):
 
 def setUserLocation(userName, chat_id, latitude, longitude, radius):
     pref = prefs.get(chat_id)
+    if radius is not None and radius < 0.1:
+        radius = user_location[2]
     pref.set('location', [latitude, longitude, radius])
     user_location = pref.get('location')
     logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' %
@@ -527,7 +534,7 @@ def cmd_location(bot, update):
     setUserLocation(user_location.latitude, user_location.longitude, pref.get('location')[2])
     sendCurrentLocation(bot, chat_id, True)
 
-def cmd_location_str(bot, update,args):
+def cmd_location_str(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
@@ -582,6 +589,79 @@ def cmd_clearlocation(bot, update):
         bot.sendMessage(chat_id, text='Deine Suchposition wurde entfernt.')
     else:
         bot.sendMessage(chat_id, text='Your scan location has been removed.')
+
+def cmd_pkmradius(bot, update, args):
+    chat_id = update.message.chat_id
+    userName = update.message.from_user.username
+
+    if isNotWhitelisted(userName, chat_id, 'pkmradius'):
+        return
+
+    pref = prefs.get(chat_id)
+
+    if pref.get('language') == 'de':
+        usage_message = 'Verwendung: "/pkmradius <#pokedexID> <km>"'
+    else:
+        usage_message = 'usage: "/pkmradius <#pokedexID> <km>"'
+
+    if len(args) < 1:
+        bot.sendMessage(chat_id, text=usage_message)
+        return
+
+    pkm_id = args[0]
+
+    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id:
+        dists = pref.get('search_dists')
+
+        # Only get current value
+        if len(args) < 2:
+            pkm_dist = dists[pkm_id] if dists[pkm_id] else pref.get('location')[2]
+            if pref.get('language') == 'de':
+                bot.sendMessage(chat_id, text='Der Suchradius für %s ist auf %skm gesetzt.' % (pokemon_name['de'][pkm_id], pkm_dist))
+            else:
+                bot.sendMessage(chat_id, text='The search radius for %s is set to %skm.' % (pokemon_name['en'][pkm_id], pkm_dist))
+            return
+
+        # Change the radius for a specific pokemon
+        pkm_dist = float(args[1])
+        if pkm_dist < 0.1:
+            pkm_dist = pref.get('location')[2]
+
+        dists[pkm_id] = pkm_dist
+        pref.set('search_dists', dists)
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='Der Suchradius für %s wurde auf %skm gesetzt.' % (pokemon_name['de'][pkm_id], pkm_dist))
+        else:
+            bot.sendMessage(chat_id, text='The search radius for %s was set to %skm.' % (pokemon_name['en'][pkm_id], pkm_dist))
+
+def cmd_rempkmradius(bot, update, args):
+    chat_id = update.message.chat_id
+    userName = update.message.from_user.username
+
+    if isNotWhitelisted(userName, chat_id, 'rempkmradius'):
+        return
+
+    pref = prefs.get(chat_id)
+
+    if pref.get('language') == 'de':
+        usage_message = 'Verwendung: "/rempkmradius <#pokedexID>"'
+    else:
+        usage_message = 'usage: "/rempkmradius <#pokedexID>"'
+
+    if len(args) < 1:
+        bot.sendMessage(chat_id, text=usage_message)
+        return
+
+    # Change the radius for a specific pokemon
+    dists = pref.get('search_dists')
+    pkm_id = args[0]
+    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and dists[pkm_id]:
+        del dists[pkm_id]
+        pref.set('search_dists', dists)
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='Der Suchradius für %s wurde zurückgesetzt.' % (pokemon_name['de'][pkm_id]))
+        else:
+            bot.sendMessage(chat_id, text='The search radius for %s was reset.' % (pokemon_name['en'][pkm_id]))
 
 def isNotWhitelisted(userName, chat_id, command):
     if not whitelist.isWhitelisted(userName):
@@ -701,17 +781,6 @@ def sendOnePoke(chat_id, pokemon):
 
     lock.acquire()
     try:
-        lan = pref.get('language')
-        mySent = sent[chat_id]
-        location_data = pref.get('location')
-
-        sendPokeWithoutIV = config.get('SEND_POKEMON_WITHOUT_IV', True)
-        pokeMinIVFilterList = config.get('POKEMON_MIN_IV_FILTER_LIST', dict())
-
-        moveNames = move_name["en"]
-        if lan in move_name:
-            moveNames = move_name[lan]
-
         encounter_id = pokemon.getEncounterID()
         spaw_point = pokemon.getSpawnpointID()
         pok_id = pokemon.getPokemonID()
@@ -721,6 +790,21 @@ def sendOnePoke(chat_id, pokemon):
         iv = pokemon.getIVs()
         move1 = pokemon.getMove1()
         move2 = pokemon.getMove2()
+
+        mySent = sent[chat_id]
+        lan = pref.get('language')
+        location_data = pref.get('location')
+        dists = pref.get('search_dists')
+
+        sendPokeWithoutIV = config.get('SEND_POKEMON_WITHOUT_IV', True)
+        pokeMinIVFilterList = config.get('POKEMON_MIN_IV_FILTER_LIST', dict())
+
+        moveNames = move_name["en"]
+        if lan in move_name:
+            moveNames = move_name[lan]
+
+        if dists[pok_id]:
+            location_data[2] = dists[pok_id]
 
         if (encounter_id in mySent) or (location_data[0] is not None and not pokemon.filterbylocation(location_data)):
             lock.release()
@@ -984,6 +1068,8 @@ def main():
     dp.add_handler(CommandHandler("stickers", cmd_stickers, pass_args=True))
     dp.add_handler(CommandHandler("maponly", cmd_maponly, pass_args=True))
     dp.add_handler(CommandHandler("walkdist", cmd_walkdist, pass_args=True))
+    dp.add_handler(CommandHandler("pkmradius", cmd_pkmradius, pass_args=True))
+    dp.add_handler(CommandHandler("rempkmradius", cmd_rempkmradius, pass_args=True))
 
     # log all errors
     dp.add_error_handler(error)
