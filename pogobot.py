@@ -407,7 +407,7 @@ def cmd_list(bot, update):
         for x in pref.get('search_ids'):
             tmp += "%i %s" % (x, pokemon_name[lan][str(x)])
             if str(x) in dists:
-                tmp += " %.2fkm" & (dists[str(x)])
+                tmp += " %.2fkm" % (dists[str(x)])
             tmp += "\n"
         bot.sendMessage(chat_id, text = tmp)
     except Exception as e:
