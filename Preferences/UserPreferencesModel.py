@@ -197,7 +197,6 @@ A valid filename must not contain especial characters or operating system separa
         pref_loc = self.__defaultDict()
         self.update_preferences(pref_loc)
 
-
     def set(self, key, value):
         pref_loc = self.preferences
         if key in pref_loc:
@@ -211,7 +210,6 @@ A valid filename must not contain especial characters or operating system separa
         self.__load_or_create()
         return self.__isUpdated(pref_loc)
 
-
     def set_preferences(self, preferences = None):
         """
         Set preferences and update preferences file.
@@ -224,15 +222,7 @@ A valid filename must not contain especial characters or operating system separa
         flag, m = self.check_preferences(preferences)
         assert flag, m
         assert isinstance(preferences, dict), "Preferences must be a dictionary"
-        self.__preferences = preferences
-        # dump to file
-        try:
-            self.__dump_file(temp=False)
-        except Exception as e:
-            logger.error("Unable to dump preferences file (%s). "
-                         "Preferences file can be corrupt, but in memory stored preferences are "
-                         "still available using and accessible using preferences property." % e)
-        # set preferences
+        set_and_dump_preferences(preferences)
 
     def update_preferences(self, preferences):
         """
@@ -246,6 +236,14 @@ A valid filename must not contain especial characters or operating system separa
         assert isinstance(preferences, dict), "Preferences must be a dictionary"
         newPreferences = self.preferences
         newPreferences.update(preferences)
-        self.__preferences = newPreferences
-        # set new preferences
-        # self.set_preferences(newPreferences)
+        set_and_dump_preferences(newPreferences)
+
+    def set_and_dump_preferences(self, preferences):
+        self.__preferences = preferences
+        # dump to file
+        try:
+            self.__dump_file(temp=False)
+        except Exception as e:
+            logger.error("Unable to dump preferences file (%s). "
+                         "Preferences file can be corrupt, but in memory stored preferences are "
+                         "still available using and accessible using preferences property." % e)

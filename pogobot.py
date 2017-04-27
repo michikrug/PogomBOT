@@ -157,7 +157,6 @@ def cmd_stickers(bot, update, args):
             if args[0].lower() == 'true':
                 stick = True
             pref.set('stickers', stick)
-            pref.set_preferences()
             if pref.get('language') == 'de':
                 bot.sendMessage(chat_id, text='Sticker wurden auf %s gesetzt.' % (stick))
             else:
@@ -199,7 +198,6 @@ def cmd_maponly(bot, update, args):
             if args[0].lower() == 'true':
                 omap = True
             pref.set('only_map', omap)
-            pref.set_preferences()
             if pref.get('language') == 'de':
                 bot.sendMessage(chat_id, text='"Nur Karte anzeigen" wurde auf %s gesetzt.' % (omap))
             else:
@@ -241,7 +239,6 @@ def cmd_walkdist(bot, update, args):
             if args[0].lower() == 'true':
                 wdist = True
             pref.set('walk_dist', wdist)
-            pref.set_preferences()
             if pref.get('language') == 'de':
                 bot.sendMessage(chat_id, text='"Zeige Laufdistanz und -zeit" wurde auf %s gesetzt.' % (wdist))
             else:
@@ -286,7 +283,6 @@ def cmd_add(bot, update, args, job_queue):
                 search.append(int(x))
         search.sort()
         pref.set('search_ids', search)
-        pref.set_preferences()
         cmd_list(bot, update)
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
@@ -326,7 +322,6 @@ def cmd_addByRarity(bot, update, args, job_queue):
                 search.append(int(x))
         search.sort()
         pref.set('search_ids', search)
-        pref.set_preferences()
         cmd_list(bot, update)
 
     except Exception as e:
@@ -351,7 +346,6 @@ def cmd_clear(bot, update):
     logger.info('[%s@%s] Clear list.' % (userName, chat_id))
 
     pref.reset_user()
-    pref.set_preferences()
 
     if chat_id not in jobs:
         return
@@ -383,7 +377,6 @@ def cmd_remove(bot, update, args, job_queue):
             if int(x) in search:
                 search.remove(int(x))
         pref.set('search_ids', search)
-        pref.set_preferences()
         cmd_list(bot, update)
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
@@ -478,7 +471,6 @@ def cmd_lang(bot, update, args):
 
         if lan == 'de' or lan == 'en':
             pref.set('language', lan)
-            pref.set_preferences()
             if pref.get('language') == 'de':
                 bot.sendMessage(chat_id, text='Sprache wurde auf [%s] gesetzt.' % (lan))
             else:
@@ -498,7 +490,6 @@ def cmd_lang(bot, update, args):
 def setUserLocation(userName, chat_id, latitude, longitude, radius):
     pref = prefs.get(chat_id)
     pref.set('location', [latitude, longitude, radius])
-    pref.set_preferences()
     user_location = pref.get('location')
     logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' %
         (userName, chat_id, user_location[0], user_location[1], user_location[2]))
@@ -1005,6 +996,7 @@ def main():
 
     logger.info('Started!')
 
+    # Send restart notification to all known users
     userdirectory = os.path.join(os.path.dirname(sys.argv[0]), "userdata")
     for file in os.listdir(userdirectory):
         if fnmatch.fnmatch(file, '*.json'):
