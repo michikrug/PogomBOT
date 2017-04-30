@@ -803,7 +803,7 @@ def sendOnePoke(chat_id, pokemon):
 
         mySent = sent[chat_id]
         lan = pref.get('language')
-        location_data = pref.get('location')
+        location_data = pref.preferences.get('location')
         dists = pref.get('search_dists')
 
         sendPokeWithoutIV = config.get('SEND_POKEMON_WITHOUT_IV', True)
