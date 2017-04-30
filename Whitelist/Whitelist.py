@@ -77,6 +77,6 @@ class Whitelist(object):
 		try:
 			with open(fullpath, 'w', encoding='utf-8') as file:
 				json.dump(self.__whitelist, file, indent=4, sort_keys=True, separators=(',', ':'))
-			logger.info('Whitelist saved  successful.')
+			logger.info('Whitelist saved successful.')
 		except Exception as e:
 			logger.warn('Error while saving whitelist. (%s)' % (e))
