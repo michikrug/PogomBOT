@@ -60,6 +60,8 @@ move_name = dict()
 min_pokemon_id = 1
 max_pokemon_id = 251
 
+pokemon_blacklist = [10,13,16,19,21,29,32,39,41,46,48,54,60,90,92,98,116,118,120,161,163,165,167,177,183,194,198,220]
+
 pokemon_rarity = [[],
     ["10", "13", "16", "19", "21", "29", "32", "41", "46", "48", "98", "133", "161", "163", "165", "167", "177", "183", "194", "198", "220"],
     ["14", "17", "20", "35", "39", "43", "52", "54", "60", "63", "69", "72", "79", "81", "90", "92", "96", "116", "118", "120", "122", "124", "129", "162", "166", "168", "170", "178", "187", "190", "209", "215", "216"],
@@ -280,7 +282,7 @@ def cmd_add(bot, update, args, job_queue):
     try:
         search = pref.get('search_ids')
         for x in args:
-            if int(x) >= min_pokemon_id and int(x) <= max_pokemon_id and int(x) not in search:
+            if int(x) >= min_pokemon_id and int(x) <= max_pokemon_id and int(x) not in search and int(x) not in pokemon_blacklist:
                 search.append(int(x))
         search.sort()
         pref.set('search_ids', search)
@@ -319,7 +321,7 @@ def cmd_addByRarity(bot, update, args, job_queue):
 
         search = pref.get('search_ids')
         for x in pokemon_rarity[rarity]:
-            if int(x) not in search:
+            if int(x) not in search and int(x) not in pokemon_blacklist:
                 search.append(int(x))
         search.sort()
         pref.set('search_ids', search)
@@ -503,7 +505,7 @@ def setUserLocation(userName, chat_id, latitude, longitude, radius):
     pref = prefs.get(chat_id)
     user_location = pref.get('location')
     if radius is not None and radius < 0.1:
-        radius = user_location[2]
+        radius = 0.1
     pref.set('location', [latitude, longitude, radius])
     logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' %
         (userName, chat_id, user_location[0], user_location[1], user_location[2]))
@@ -618,7 +620,7 @@ def cmd_pkmradius(bot, update, args):
 
     pkm_id = args[0]
 
-    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id:
+    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and int(pkm_id) not in pokemon_blacklist:
         dists = pref.get('search_dists')
 
         # Only get current value
@@ -633,7 +635,7 @@ def cmd_pkmradius(bot, update, args):
         # Change the radius for a specific pokemon
         pkm_dist = float(args[1])
         if pkm_dist < 0.1:
-            pkm_dist = pref.get('location')[2]
+            pkm_dist = 0.1
 
         dists[pkm_id] = pkm_dist
         pref.set('search_dists', dists)
