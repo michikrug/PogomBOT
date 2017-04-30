@@ -829,16 +829,16 @@ def sendOnePoke(chat_id, pokemon):
             if pref.get('walk_dist'):
                 walkin_data = get_walking_data(location_data, latitude, longitude)
                 if walkin_data['walk_dist'] < 1:
-                    title += " 📍 %sm" % (int(1000*walkin_data['walk_dist']))
+                    title += " 📍%sm" % (int(1000*walkin_data['walk_dist']))
                 else:
-                    title += " 📍 %skm" % (walkin_data['walk_dist'])
+                    title += " 📍%skm" % (walkin_data['walk_dist'])
                 address += " 🚶%s" % (walkin_data['walk_time'])
             else:
                 dist = round(pokemon.getDistance(location_data), 2)
                 if dist < 1:
-                    title += " 📍 %sm" % (int(1000*dist))
+                    title += " 📍%sm" % (int(1000*dist))
                 else:
-                    title += " 📍 %skm" % (dist)
+                    title += " 📍%skm" % (dist)
 
         if iv is not None:
             title += " IV:%s" % (iv)
@@ -867,8 +867,8 @@ def sendOnePoke(chat_id, pokemon):
                 else:
                     if pref.get('stickers'):
                         telegramBot.sendSticker(chat_id, sticker_list.get(str(pok_id)), disable_notification=True)
-                    telegramBot.sendMessage(chat_id, text = '<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
                     telegramBot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
+                    telegramBot.sendMessage(chat_id, text = '<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
 
     except Exception as e:
         logger.error('[%s] %s' % (chat_id, repr(e)))
