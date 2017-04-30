@@ -501,10 +501,10 @@ def cmd_lang(bot, update, args):
 
 def setUserLocation(userName, chat_id, latitude, longitude, radius):
     pref = prefs.get(chat_id)
+    user_location = pref.get('location')
     if radius is not None and radius < 0.1:
         radius = user_location[2]
     pref.set('location', [latitude, longitude, radius])
-    user_location = pref.get('location')
     logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' %
         (userName, chat_id, user_location[0], user_location[1], user_location[2]))
 
@@ -579,7 +579,8 @@ def cmd_radius(bot, update, args):
 
     # Change the radius
     pref = prefs.get(chat_id)
-    setUserLocation(userName, chat_id, pref.get('location')[0], pref.get('location')[1], float(args[0]))
+    user_location = pref.get('location')
+    setUserLocation(userName, chat_id, user_location[0], user_location[1], float(args[0]))
     sendCurrentLocation(bot, chat_id, True)
 
 def cmd_clearlocation(bot, update):
@@ -622,7 +623,7 @@ def cmd_pkmradius(bot, update, args):
 
         # Only get current value
         if len(args) < 2:
-            pkm_dist = pkm_id in dists if dists[pkm_id] else pref.get('location')[2]
+            pkm_dist = dists[pkm_id] if pkm_id in dists else pref.get('location')[2]
             if pref.get('language') == 'de':
                 bot.sendMessage(chat_id, text='Der Suchradius für %s ist auf %skm gesetzt.' % (pokemon_name['de'][pkm_id], pkm_dist))
             else:
@@ -842,6 +843,8 @@ def sendOnePoke(chat_id, pokemon):
 
         if iv is not None:
             title += " IV:%s" % (iv)
+
+        title += " "
 
         if move1 is not None and move2 is not None:
             # Use language if other move languages are available.
