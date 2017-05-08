@@ -149,9 +149,9 @@ def cmd_stop(bot, update):
     logger.info('[%s@%s] Stopping.' % (userName, chat_id))
 
     if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Bot wurde pausiert')
-        else:
-            bot.sendMessage(chat_id, text='Bot was paused.')
+        bot.sendMessage(chat_id, text='Bot wurde pausiert')
+    else:
+        bot.sendMessage(chat_id, text='Bot was paused.')
 
     if chat_id not in jobs:
         return
