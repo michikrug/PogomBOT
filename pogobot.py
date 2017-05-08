@@ -100,6 +100,7 @@ def cmd_help(bot, update):
         "/lang [de, en] - Setzt die Sprache des Bots\n" + \
         "/clear - Setzt alle deine Einstellungen zurück\n" + \
         "/load - Stellt deine Einstellungen (z.B. nach einem Neustart) wieder her\n\n" + \
+        "/stop - Pausiert die Bot-Nachrichten (mit /load wieder starten)\n\n" + \
         "Hinweis: Du kannst ebenso die Suchposition festlegen, indem du einfach einen Positionsmarker sendest"
 
     else:
@@ -120,6 +121,7 @@ def cmd_help(bot, update):
         "/lang [de, en] - Sets the language of the bot\n" + \
         "/clear - Resets all your settings\n" + \
         "/load - Restores your settings (e.g. after a restart)\n\n" + \
+        "/stop - Pauses the bot messages (use /load to resume)\n\n" + \
         "Hint: You can also set the scanning location by just sending a location marker"
 
     bot.sendMessage(chat_id, text)
@@ -134,6 +136,35 @@ def cmd_start(bot, update):
     logger.info('[%s@%s] Starting.' % (userName, chat_id))
     bot.sendMessage(chat_id, text='Hello!')
     cmd_help(bot, update)
+
+def cmd_stop(bot, update):
+    chat_id = update.message.chat_id
+    userName = update.message.from_user.username
+
+    if isNotWhitelisted(userName, chat_id, 'stop'):
+        return
+
+    pref = prefs.get(chat_id)
+
+    logger.info('[%s@%s] Stopping.' % (userName, chat_id))
+
+    if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='Bot wurde pausiert')
+        else:
+            bot.sendMessage(chat_id, text='Bot was paused.')
+
+    if chat_id not in jobs:
+        return
+
+    # Remove from jobs
+    job = jobs[chat_id]
+    job.schedule_removal()
+    del jobs[chat_id]
+
+    # Remove from sent
+    del sent[chat_id]
+    # Remove from locks
+    del locks[chat_id]
 
 def cmd_stickers(bot, update, args):
     chat_id = update.message.chat_id
@@ -1063,6 +1094,7 @@ def main():
 
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", cmd_start))
+    dp.add_handler(CommandHandler("stop", cmd_stop))
     dp.add_handler(CommandHandler("help", cmd_help))
     dp.add_handler(CommandHandler("add", cmd_add, pass_args=True, pass_job_queue=True))
     dp.add_handler(CommandHandler("addbyrarity", cmd_addByRarity, pass_args = True, pass_job_queue=True))
