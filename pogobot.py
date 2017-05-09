@@ -84,20 +84,20 @@ def cmd_help(bot, update):
     pref = prefs.get(chat_id)
     if pref.get('language') == 'de':
         text = "/help - Zeigt eine Liste mit verfügbaren Befehlen\n" + \
-        "/add <#pokedexID> - Fügt Pokémon mit der gegebenen ID zum Scanner hinzu\n" + \
-        "/add <#pokedexID1> <#pokedexID2> ...\n" + \
+        "/add <pokedexID> - Fügt Pokémon mit der gegebenen ID zum Scanner hinzu\n" + \
+        "/add <pokedexID1> <pokedexID2> ...\n" + \
         "/addbyrarity <#rarity> - Fügt Pokémon it der gegebenen Seltenheit zum Scanner hinzu (1 sehr häufig - 5 ultra selten)\n" + \
-        "/rem <#pokedexID> - Entfernt Pokémon mit der gegebenen ID vom Scanner\n" + \
-        "/rem <#pokedexID1> <#pokedexID2> ...\n" + \
+        "/rem <pokedexID> - Entfernt Pokémon mit der gegebenen ID vom Scanner\n" + \
+        "/rem <pokedexID1> <pokedexID2> ...\n" + \
         "/list - Zeigt eine Liste mit den überwachten Pokémon\n" + \
         "/location <address> - Setzt die Suchposition gegeben als Text\n" +\
         "/radius <km> - Setzt den Suchradius in km\n" +\
         "/remloc - Setzt die Suchposition zurück\n" +\
-        "/pkmradius <#pokedexID> <km> - Setzt den Suchradius für ein bestimmtes Pokémon in km\n" +\
-        "/rempkmradius <#pokedexID> - Setzt den Suchradius für ein bestimmtes Pokémon zurück\n" +\
+        "/pkmradius <pokedexID> <km> - Setzt den Suchradius für ein bestimmtes Pokémon in km\n" +\
+        "/rempkmradius <pokedexID> - Setzt den Suchradius für ein bestimmtes Pokémon zurück\n" +\
         "/stickers <true/false> - Legt fest, ob Sticker gesendet werden sollen\n" +\
         "/maponly <true/false> - Legt fest, ob nur eine Karte gesendet werden soll (ohne zusätzliche Nachricht/Sticker)\n" +\
-        "/lang [de, en] - Setzt die Sprache des Bots\n" + \
+        "/lang <de/en> - Setzt die Sprache des Bots\n" + \
         "/clear - Setzt alle deine Einstellungen zurück\n" + \
         "/load - Stellt deine Einstellungen (z.B. nach einem Neustart) wieder her\n\n" + \
         "/stop - Pausiert die Bot-Nachrichten (mit /load wieder starten)\n\n" + \
@@ -105,20 +105,20 @@ def cmd_help(bot, update):
 
     else:
         text = "/help - Shows a list of available commands\n" + \
-        "/add <#pokedexID> - Adds Pokémon with the given ID to the scanner\n" + \
-        "/add <#pokedexID1> <#pokedexID2> ...\n" + \
-        "/addbyrarity <#rarity> - Adds Pokémon with the given rarity to scanner (1 very common - 5 ultrarare)\n" + \
-        "/rem <#pokedexID> - Removes Pokémon with the given ID from the scanner\n" + \
-        "/rem <#pokedexID1> <#pokedexID2> ...\n" + \
+        "/add <pokedexID> - Adds Pokémon with the given ID to the scanner\n" + \
+        "/add <pokedexID1> <pokedexID2> ...\n" + \
+        "/addbyrarity <rarity> - Adds Pokémon with the given rarity to scanner (1 very common - 5 ultrarare)\n" + \
+        "/rem <pokedexID> - Removes Pokémon with the given ID from the scanner\n" + \
+        "/rem <pokedexID1> <pokedexID2> ...\n" + \
         "/list - Lists the watched Pokémon\n" + \
         "/location <address> - Sets the desired search location given as text\n" +\
         "/radius <km> - Sets the search radius in km\n" +\
         "/remloc - Clears the location data\n" +\
-        "/pkmradius <#pokedexID> <km> - Sets the search radius for a specific Pokémon in km\n" +\
-        "/rempkmradius <#pokedexID> - Resets the search radius for a specific Pokémon\n" +\
+        "/pkmradius <pokedexID> <km> - Sets the search radius for a specific Pokémon in km\n" +\
+        "/rempkmradius <pokedexID> - Resets the search radius for a specific Pokémon\n" +\
         "/stickers <true/false> - Defines if stickers should be sent\n" +\
         "/maponly <true/false> - Defines if only a map should be sent (without an additional message/sticker)\n" +\
-        "/lang [de, en] - Sets the language of the bot\n" + \
+        "/lang <de/en> - Sets the language of the bot\n" + \
         "/clear - Resets all your settings\n" + \
         "/load - Restores your settings (e.g. after a restart)\n\n" + \
         "/stop - Pauses the bot messages (use /load to resume)\n\n" + \
