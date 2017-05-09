@@ -994,14 +994,17 @@ def read_move_names(loc):
 def send_load_message(chat_id):
     logger.info('Sending load message to: <%s>' % chat_id)
     pref = prefs.get(chat_id)
-    if pref.get('language') == 'de':
-        telegramBot.sendMessage(chat_id, text="Leider musste der Bot neugestartet werden. \nBitte nutze den \"/load\" Befehl um deine Einstellungen wiederherzustellen.")
-    else:
-        telegramBot.sendMessage(chat_id, text="Unfortunately, the bot had to be restarted. \nPlease use the \"/load\" command to restore your settings.")
+    try:
+        if pref.get('language') == 'de':
+            telegramBot.sendMessage(chat_id, text="Leider musste der Bot neugestartet werden. \nBitte nutze den \"/load\" Befehl um deine Einstellungen wiederherzustellen.")
+        else:
+            telegramBot.sendMessage(chat_id, text="Unfortunately, the bot had to be restarted. \nPlease use the \"/load\" command to restore your settings.")
+    except Exception as e:
+        logger.error('Encountered error while sending load message (%s)' % (repr(e)))
 
 # Returns a set with walking dist and walking duration via Google Distance Matrix API
 def get_walking_data(user_location, lat, lng):
-    data = {'walk_dist': "unknown", 'walk_time': "unknown"}
+    data = {'walk_dist': 'unknown', 'walk_time': 'unknown'}
     if gmaps_client is None:
         logger.error('Google Maps Client not available. Unable to get walking data.')
         return data
@@ -1016,7 +1019,7 @@ def get_walking_data(user_location, lat, lng):
         data['walk_dist'] = float(result.get('distance').get('text').replace(' km', ''))
         data['walk_time'] = result.get('duration').get('text').replace(' hours', 'h').replace(' hour', 'h').replace(' mins', 'm').replace(' min', 'm')
     except Exception as e:
-        logger.error("Encountered error while getting walking data (%s)" % (repr(e)))
+        logger.error('Encountered error while getting walking data (%s)' % (repr(e)))
     return data
 
 def main():
