@@ -865,9 +865,7 @@ def sendOnePoke(chat_id, pokemon):
             else:
                 title += " %sCP" % (cp)
 
-        title += " "
-
-        address = "💨 %s ⏱  %s" % (disappear_time_str, deltaStr)
+        address = "💨 %s ⏱ %s" % (disappear_time_str, deltaStr)
 
         if location_data[0] is not None:
             if pref.get('walk_dist'):
@@ -888,7 +886,7 @@ def sendOnePoke(chat_id, pokemon):
             # Use language if other move languages are available.
             move1Name = moveNames[move1] if move1 in moveNames else '?'
             move2Name = moveNames[move2] if move2 in moveNames else '?'
-            address += "\n⚔  %s / %s" % (move1Name, move2Name)
+            address += "\n⚔ %s / %s" % (move1Name, move2Name)
 
         pokeMinIV = None
 
