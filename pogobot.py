@@ -100,7 +100,7 @@ def cmd_help(bot, update):
         "/lang <de/en> - Setzt die Sprache des Bots\n" + \
         "/clear - Setzt alle deine Einstellungen zurück\n" + \
         "/load - Stellt deine Einstellungen (z.B. nach einem Neustart) wieder her\n\n" + \
-        "/stop - Pausiert die Bot-Nachrichten (mit /load wieder starten)\n\n" + \
+        "/stop - Pausiert die Bot-Nachrichten (nutze /load zum Fortsetzen)\n\n" + \
         "Hinweis: Du kannst ebenso die Suchposition festlegen, indem du einfach einen Positionsmarker sendest"
 
     else:
@@ -149,9 +149,9 @@ def cmd_stop(bot, update):
     logger.info('[%s@%s] Stopping.' % (userName, chat_id))
 
     if pref.get('language') == 'de':
-        bot.sendMessage(chat_id, text='Bot wurde pausiert')
+        bot.sendMessage(chat_id, text='Bot wurde pausiert. Nutze /load zum Fortsetzen.')
     else:
-        bot.sendMessage(chat_id, text='Bot was paused.')
+        bot.sendMessage(chat_id, text='Bot was paused. Use /load to resume.')
 
     if chat_id not in jobs:
         return
@@ -831,6 +831,7 @@ def sendOnePoke(chat_id, pokemon):
         iv = pokemon.getIVs()
         move1 = pokemon.getMove1()
         move2 = pokemon.getMove2()
+        cp = pokemon.getCP()
 
         mySent = sent[chat_id]
         lan = pref.get('language')
@@ -838,7 +839,6 @@ def sendOnePoke(chat_id, pokemon):
         dists = pref.get('search_dists')
 
         sendPokeWithoutIV = config.get('SEND_POKEMON_WITHOUT_IV', True)
-        pokeMinIVFilterList = config.get('POKEMON_MIN_IV_FILTER_LIST', dict())
 
         moveNames = move_name["en"]
         if lan in move_name:
@@ -853,11 +853,22 @@ def sendOnePoke(chat_id, pokemon):
 
         delta = disappear_time - datetime.utcnow()
         deltaStr = '%02dm %02ds' % (int(delta.seconds / 60), int(delta.seconds % 60))
-        disappear_time_str = disappear_time.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime("%H:%M:%S")
+        disappear_time_str = disappear_time.replace(tzinfo = timezone.utc).astimezone(tz = None).strftime("%H:%M:%S")
 
         title =  pokemon_name[lan][pok_id]
 
-        address = "💨 %s ⏱ %s" % (disappear_time_str, deltaStr)
+        if iv is not None:
+            title += " %s%" % (iv)
+
+        if cp is not None:
+            if lan == 'de':
+                title += " %sWP" % (cp)
+            else:
+                title += " %sCP" % (cp)
+
+        title += " "
+
+        address = "💨 %s ⏱  %s" % (disappear_time_str, deltaStr)
 
         if location_data[0] is not None:
             if pref.get('walk_dist'):
@@ -874,20 +885,13 @@ def sendOnePoke(chat_id, pokemon):
                 else:
                     title += " 📍%skm" % (dist)
 
-        if iv is not None:
-            title += " IV:%s" % (iv)
-
-        title += " "
-
         if move1 is not None and move2 is not None:
             # Use language if other move languages are available.
             move1Name = moveNames[move1]
             move2Name = moveNames[move2]
-            address += " Moves: %s,%s" % (move1Name, move2Name)
+            address += "\n⚔  %s / %s" % (move1Name, move2Name)
 
         pokeMinIV = None
-        if pok_id in pokeMinIVFilterList:
-            pokeMinIV = pokeMinIVFilterList[pok_id]
 
         if encounter_id not in mySent:
             mySent[encounter_id] = disappear_time
@@ -962,13 +966,6 @@ def report_config():
     logger.info('SEND_MAP_ONLY: <%s>' % (config.get('SEND_MAP_ONLY', None)))
     logger.info('STICKERS: <%s>' % (config.get('STICKERS', None)))
     logger.info('SEND_POKEMON_WITHOUT_IV: <%s>' % (config.get('SEND_POKEMON_WITHOUT_IV', None)))
-
-    poke_ivfilter_list = config.get('POKEMON_MIN_IV_FILTER_LIST', dict())
-    tmp = ''
-    for poke_id in poke_ivfilter_list:
-        tmp = '%s %s:%s' % (tmp, poke_id, poke_ivfilter_list[poke_id])
-    tmp = tmp[1:]
-    logger.info('POKEMON_MIN_IV_FILTER_LIST: <%s>' % (tmp))
 
 def read_pokemon_names(loc):
     logger.info('Reading pokemon names. <%s>' % loc)

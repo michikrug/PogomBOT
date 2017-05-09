@@ -1,16 +1,21 @@
 from geopy.distance import great_circle
 
 class DSPokemon:
-    def __init__(self, encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, ivs, move1, move2):
+    def __init__(self, encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, ivs, move1, move2, weight, height, gender, form, cp):
         self.encounter_id = encounter_id
         self.spawnpoint_id = spawnpoint_id
         self.pokemon_id = pokemon_id
-        self.latitude = float(latitude)
-        self.longitude = float(longitude)
+        self.latitude = latitude
+        self.longitude = longitude
         self.disappear_time = disappear_time # Should be datetime
         self.ivs = ivs
         self.move1 = move1
         self.move2 = move2
+        self.weight = weight
+        self.height = height
+        self.gender = gender
+        self.form = form
+        self.cp = cp
 
     def getEncounterID(self):
         return self.encounter_id
@@ -38,6 +43,21 @@ class DSPokemon:
 
     def getMove2(self):
         return self.move2
+
+    def getWeight(self):
+        return self.weight
+
+    def getHeight(self):
+        return self.height
+
+    def getGender(self):
+        return self.gender
+
+    def getForm(self):
+        return self.form
+
+    def getCP(self):
+        return self.cp
 
     def getDistance(self, user_location):
         user_lat_lon = (user_location[0], user_location[1])
