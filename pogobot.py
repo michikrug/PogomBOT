@@ -887,8 +887,8 @@ def sendOnePoke(chat_id, pokemon):
 
         if move1 is not None and move2 is not None:
             # Use language if other move languages are available.
-            move1Name = moveNames[move1]
-            move2Name = moveNames[move2]
+            move1Name = moveNames[move1] if move1 in moveNames else '?'
+            move2Name = moveNames[move2] if move2 in moveNames else '?'
             address += "\n⚔  %s / %s" % (move1Name, move2Name)
 
         pokeMinIV = None
