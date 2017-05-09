@@ -857,7 +857,7 @@ def sendOnePoke(chat_id, pokemon):
         title = pokemon_name[lan][pok_id]
 
         if iv is not None:
-            title += " %s%" % (iv)
+            title += " %s%%" % (iv)
 
         if cp is not None:
             if lan == 'de':
