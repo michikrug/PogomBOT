@@ -823,14 +823,13 @@ def sendOnePoke(chat_id, pokemon):
     lock.acquire()
     try:
         encounter_id = pokemon.getEncounterID()
-        spaw_point = pokemon.getSpawnpointID()
-        pok_id = pokemon.getPokemonID()
+        pok_id = str(pokemon.getPokemonID())
         latitude = pokemon.getLatitude()
         longitude = pokemon.getLongitude()
         disappear_time = pokemon.getDisappearTime()
         iv = pokemon.getIVs()
-        move1 = pokemon.getMove1()
-        move2 = pokemon.getMove2()
+        move1 = str(pokemon.getMove1())
+        move2 = str(pokemon.getMove2())
         cp = pokemon.getCP()
 
         mySent = sent[chat_id]
@@ -855,7 +854,7 @@ def sendOnePoke(chat_id, pokemon):
         deltaStr = '%02dm %02ds' % (int(delta.seconds / 60), int(delta.seconds % 60))
         disappear_time_str = disappear_time.replace(tzinfo = timezone.utc).astimezone(tz = None).strftime("%H:%M:%S")
 
-        title =  pokemon_name[lan][pok_id]
+        title = pokemon_name[lan][pok_id]
 
         if iv is not None:
             title += " %s%" % (iv)
