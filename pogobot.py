@@ -13,7 +13,7 @@
 
 import sys
 if sys.version_info[0] < 3:
-    raise Exception("Must be using Python 3.")
+    raise Exception('Must be using Python 3.')
 
 from telegram.ext import Updater, CommandHandler, Job, MessageHandler, Filters
 from telegram import Bot
@@ -86,7 +86,7 @@ def cmd_help(bot, update):
         text = "/help - Zeigt eine Liste mit verfügbaren Befehlen\n" + \
         "/add <pokedexID> - Fügt Pokémon mit der gegebenen ID zum Scanner hinzu\n" + \
         "/add <pokedexID1> <pokedexID2> ...\n" + \
-        "/addbyrarity <#rarity> - Fügt Pokémon it der gegebenen Seltenheit zum Scanner hinzu (1 sehr häufig - 5 ultra selten)\n" + \
+        "/addbyrarity <rarity> - Fügt Pokémon it der gegebenen Seltenheit zum Scanner hinzu (1 sehr häufig - 5 ultra selten)\n" + \
         "/rem <pokedexID> - Entfernt Pokémon mit der gegebenen ID vom Scanner\n" + \
         "/rem <pokedexID1> <pokedexID2> ...\n" + \
         "/list - Zeigt eine Liste mit den überwachten Pokémon\n" + \
@@ -101,7 +101,8 @@ def cmd_help(bot, update):
         "/clear - Setzt alle deine Einstellungen zurück\n" + \
         "/load - Stellt deine Einstellungen (z.B. nach einem Neustart) wieder her\n\n" + \
         "/stop - Pausiert die Bot-Nachrichten (nutze /load zum Fortsetzen)\n\n" + \
-        "Hinweis: Du kannst ebenso die Suchposition festlegen, indem du einfach einen Positionsmarker sendest"
+        "Hinweis 1: Die spitzen Klammern < > sind nur Platzhalter und werden im Befehl nicht angegeben\n\n" + \
+        "Hinweis 2: Du kannst ebenso die Suchposition festlegen, indem du einfach einen Positionsmarker sendest"
 
     else:
         text = "/help - Shows a list of available commands\n" + \
@@ -122,7 +123,8 @@ def cmd_help(bot, update):
         "/clear - Resets all your settings\n" + \
         "/load - Restores your settings (e.g. after a restart)\n\n" + \
         "/stop - Pauses the bot messages (use /load to resume)\n\n" + \
-        "Hint: You can also set the scanning location by just sending a location marker"
+        "Hint 1: The angle brackets < > are only placeholders and are not used in the command\n\n" + \
+        "Hint 2: You can also set the scanning location by just sending a location marker"
 
     bot.sendMessage(chat_id, text)
 
@@ -203,9 +205,9 @@ def cmd_stickers(bot, update, args):
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Verwendung: "/stickers <true/false>"')
+            bot.sendMessage(chat_id, text='Verwendung: /stickers <true/false>')
         else:
-            bot.sendMessage(chat_id, text='usage: "/stickers <true/false>"')
+            bot.sendMessage(chat_id, text='Usage: /stickers <true/false>')
 
 def cmd_maponly(bot, update, args):
     chat_id = update.message.chat_id
@@ -244,9 +246,9 @@ def cmd_maponly(bot, update, args):
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Verwendung: "/maponly <true/false>"')
+            bot.sendMessage(chat_id, text='Verwendung: /maponly <true/false>')
         else:
-            bot.sendMessage(chat_id, text='usage: "/maponly <true/false>"')
+            bot.sendMessage(chat_id, text='Usage: /maponly <true/false>')
 
 def cmd_walkdist(bot, update, args):
     chat_id = update.message.chat_id
@@ -285,9 +287,9 @@ def cmd_walkdist(bot, update, args):
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Verwendung: "/walkdist <true/false>"')
+            bot.sendMessage(chat_id, text='Verwendung: /walkdist <true/false>')
         else:
-            bot.sendMessage(chat_id, text='usage: "/walkdist <true/false>"')
+            bot.sendMessage(chat_id, text='Usage: /walkdist <true/false>')
 
 def cmd_add(bot, update, args, job_queue):
     chat_id = update.message.chat_id
@@ -299,9 +301,9 @@ def cmd_add(bot, update, args, job_queue):
     pref = prefs.get(chat_id)
 
     if pref.get('language') == 'de':
-        usage_message = 'Verwendung: "/add <#pokemon>"" oder "/add <#pokemon1> <#pokemon2>"'
+        usage_message = 'Verwendung: /add <pokedexID>oder /add <pokedexID1> <pokedexID2>'
     else:
-        usage_message = 'usage: "/add <#pokemon>"" or "/add <#pokemon1> <#pokemon2>"'
+        usage_message = 'Usage: /add <pokedexID> or /add <pokedexID1> <pokedexID2>'
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -332,9 +334,9 @@ def cmd_addByRarity(bot, update, args, job_queue):
     pref = prefs.get(chat_id)
 
     if pref.get('language') == 'de':
-        usage_message = 'Verwendung: "/addbyrarity <#rarity>" mit 1 sehr häufig bis 5 ultra selten'
+        usage_message = 'Verwendung: /addbyrarity <rarity> (mit 1 sehr häufig bis 5 ultra selten)'
     else:
-        usage_message = 'usage: "/addbyrarity <#rarity>" with 1 very common to 5 ultrarare'
+        usage_message = 'Usage: /addbyrarity <rarity> (with 1 very common to 5 ultrarare)'
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -415,9 +417,9 @@ def cmd_remove(bot, update, args, job_queue):
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Verwendung: /rem <#pokemon>')
+            bot.sendMessage(chat_id, text='Verwendung: /rem <pokedexID>')
         else:
-            bot.sendMessage(chat_id, text='usage: /rem <#pokemon>')
+            bot.sendMessage(chat_id, text='Usage: /rem <pokedexID>')
 
 def cmd_list(bot, update):
     chat_id = update.message.chat_id
@@ -528,9 +530,9 @@ def cmd_lang(bot, update, args):
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Verwendung: /lang <#sprache>')
+            bot.sendMessage(chat_id, text='Verwendung: /lang <de/en>')
         else:
-            bot.sendMessage(chat_id, text='usage: /lang <#language>')
+            bot.sendMessage(chat_id, text='Usage: /lang <de/en>')
 
 def setUserLocation(userName, chat_id, latitude, longitude, radius):
     pref = prefs.get(chat_id)
@@ -641,9 +643,9 @@ def cmd_pkmradius(bot, update, args):
     pref = prefs.get(chat_id)
 
     if pref.get('language') == 'de':
-        usage_message = 'Verwendung: "/pkmradius <#pokedexID> <km>"'
+        usage_message = 'Verwendung: /pkmradius <pokedexID> <km>'
     else:
-        usage_message = 'usage: "/pkmradius <#pokedexID> <km>"'
+        usage_message = 'Usage: /pkmradius <pokedexID> <km>'
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -685,9 +687,9 @@ def cmd_rempkmradius(bot, update, args):
     pref = prefs.get(chat_id)
 
     if pref.get('language') == 'de':
-        usage_message = 'Verwendung: "/rempkmradius <#pokedexID>"'
+        usage_message = 'Verwendung: /rempkmradius <pokedexID>'
     else:
-        usage_message = 'usage: "/rempkmradius <#pokedexID>"'
+        usage_message = 'Usage: /rempkmradius <pokedexID>'
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -721,7 +723,7 @@ def cmd_addToWhitelist(bot, update, args):
         return
 
     if len(args) < 1:
-        bot.sendMessage(chat_id, text='usage: "/wladd <username>"" or "/wladd <username_1> <username_2>"')
+        bot.sendMessage(chat_id, text='Usage: /wladd <username> or /wladd <username_1> <username_2>')
         return
 
     try:
@@ -730,7 +732,7 @@ def cmd_addToWhitelist(bot, update, args):
         bot.sendMessage(chat_id, "Added to whitelist.")
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
-        bot.sendMessage(chat_id, text='usage: "/wladd <username>"" or "/wladd <username_1> <username_2>"')
+        bot.sendMessage(chat_id, text='Usage: /wladd <username> or /wladd <username_1> <username_2>')
 
 def cmd_remFromWhitelist(bot, update, args):
     chat_id = update.message.chat_id
@@ -743,7 +745,7 @@ def cmd_remFromWhitelist(bot, update, args):
         return
 
     if len(args) < 1:
-        bot.sendMessage(chat_id, text='usage: "/wlrem <username>"" or "/wlrem <username_1> <username_2>"')
+        bot.sendMessage(chat_id, text='Usage: /wlrem <username> or /wlrem <username_1> <username_2>')
         return
 
     try:
@@ -752,7 +754,7 @@ def cmd_remFromWhitelist(bot, update, args):
         bot.sendMessage(chat_id, "Removed from whitelist.")
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
-        bot.sendMessage(chat_id, text='usage: "/wlrem <username>"" or "/wlrem <username_1> <username_2>"')
+        bot.sendMessage(chat_id, text='Usage: /wlrem <username> or /wlrem <username_1> <username_2>')
 
 ## Functions
 def error(bot, update, error):
@@ -788,9 +790,9 @@ def addJob(bot, update, job_queue):
             pref = prefs.get(chat_id)
 
             if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text="Scanner gestartet.")
+                bot.sendMessage(chat_id, text='Scanner gestartet.')
             else:
-                bot.sendMessage(chat_id, text="Scanner started.")
+                bot.sendMessage(chat_id, text='Scanner started.')
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
 
@@ -828,8 +830,8 @@ def sendOnePoke(chat_id, pokemon):
         longitude = pokemon.getLongitude()
         disappear_time = pokemon.getDisappearTime()
         iv = pokemon.getIVs()
-        move1 = str(pokemon.getMove1())
-        move2 = str(pokemon.getMove2())
+        move1 = pokemon.getMove1()
+        move2 = pokemon.getMove2()
         cp = pokemon.getCP()
 
         mySent = sent[chat_id]
@@ -884,8 +886,8 @@ def sendOnePoke(chat_id, pokemon):
 
         if move1 is not None and move2 is not None:
             # Use language if other move languages are available.
-            move1Name = moveNames[move1] if move1 in moveNames else '?'
-            move2Name = moveNames[move2] if move2 in moveNames else '?'
+            move1Name = moveNames[str(move1)] if str(move1) in moveNames else '?'
+            move2Name = moveNames[str(move2)] if str(move2) in moveNames else '?'
             address += "\n⚔ %s / %s" % (move1Name, move2Name)
 
         pokeMinIV = None
