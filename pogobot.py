@@ -645,14 +645,14 @@ def sendCurrentLocation(bot, chat_id, set_new = False):
     else:
         if set_new:
             if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text='Setze neue Suchposition mit Radius %fkm' % (user_location[2]))
+                bot.sendMessage(chat_id, text='Setze neue Suchposition mit Radius %skm' % (user_location[2]))
             else:
-                bot.sendMessage(chat_id, text='Setting new scan location with radius %fkm' % (user_location[2]))
+                bot.sendMessage(chat_id, text='Setting new scan location with radius %skm' % (user_location[2]))
         else:
             if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text='Dies ist deine aktuelle Suchposition mit Radius %fkm' % (user_location[2]))
+                bot.sendMessage(chat_id, text='Dies ist deine aktuelle Suchposition mit Radius %skm' % (user_location[2]))
             else:
-                bot.sendMessage(chat_id, text='This is your current scan location with radius %fkm' % (user_location[2]))
+                bot.sendMessage(chat_id, text='This is your current scan location with radius %skm' % (user_location[2]))
         bot.sendLocation(chat_id, user_location[0], user_location[1], disable_notification=True)
 
 def cmd_location(bot, update):
@@ -752,9 +752,9 @@ def cmd_pkmradius(bot, update, args):
         if len(args) < 2:
             pkm_dist = dists[pkm_id] if pkm_id in dists else pref.get('location')[2]
             if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text='Der Suchradius für %s ist auf %fkm gesetzt.' % (pokemon_name['de'][pkm_id], pkm_dist))
+                bot.sendMessage(chat_id, text='Der Suchradius für %s ist auf %skm gesetzt.' % (pokemon_name['de'][pkm_id], pkm_dist))
             else:
-                bot.sendMessage(chat_id, text='The search radius for %s is set to %fkm.' % (pokemon_name['en'][pkm_id], pkm_dist))
+                bot.sendMessage(chat_id, text='The search radius for %s is set to %skm.' % (pokemon_name['en'][pkm_id], pkm_dist))
             return
 
         # Change the radius for a specific pokemon
@@ -765,9 +765,9 @@ def cmd_pkmradius(bot, update, args):
         dists[pkm_id] = pkm_dist
         pref.set('search_dists', dists)
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Der Suchradius für %s wurde auf %fkm gesetzt.' % (pokemon_name['de'][pkm_id], pkm_dist))
+            bot.sendMessage(chat_id, text='Der Suchradius für %s wurde auf %skm gesetzt.' % (pokemon_name['de'][pkm_id], pkm_dist))
         else:
-            bot.sendMessage(chat_id, text='The search radius for %s was set to %fkm.' % (pokemon_name['en'][pkm_id], pkm_dist))
+            bot.sendMessage(chat_id, text='The search radius for %s was set to %skm.' % (pokemon_name['en'][pkm_id], pkm_dist))
 
 def cmd_rempkmradius(bot, update, args):
     chat_id = update.message.chat_id
@@ -1134,7 +1134,7 @@ def checkAndSend(bot, chat_id):
 
         allpokes = dataSource.getPokemonByIds(pokemons, miniv, mincp, sendWithout)
 
-        if len(allpokes) > 20:
+        if len(allpokes) > 200:
             if pref.get('language') == 'de':
                 bot.sendMessage(chat_id, text="Deine Filterregeln treffen auf zu viele Pokémon zu.\nBitte überprüfe deine Einstellungen!")
             else:
@@ -1222,7 +1222,7 @@ def sendOnePoke(chat_id, pokemon):
         title = pokemon_name[lan][pok_id]
 
         if iv is not None:
-            title += " %f%%" % (iv)
+            title += " %s%%" % (iv)
 
         if cp is not None:
             if lan == 'de':
@@ -1238,14 +1238,14 @@ def sendOnePoke(chat_id, pokemon):
                 if walkin_data['walk_dist'] < 1:
                     title += " 📍%dm" % (int(1000*walkin_data['walk_dist']))
                 else:
-                    title += " 📍%fkm" % (walkin_data['walk_dist'])
+                    title += " 📍%skm" % (walkin_data['walk_dist'])
                 address += " 🚶%s" % (walkin_data['walk_time'])
             else:
                 dist = round(pokemon.getDistance(location_data), 2)
                 if dist < 1:
                     title += " 📍%dm" % (int(1000*dist))
                 else:
-                    title += " 📍%fkm" % (dist)
+                    title += " 📍%skm" % (dist)
 
         if move1 is not None and move2 is not None:
             # Use language if other move languages are available.
