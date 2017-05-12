@@ -22,14 +22,23 @@ class DSPokemonGoMapIVMysql():
         logger.info('Connecting to remote database')
         self.__connect()
 
-    def getPokemonByIds(self, ids):
+    def getPokemonByIds(self, ids, miniv = 0, mincp = 0, sendWithout = True):
         pokelist = []
+        includeWithoutIV = 'individual_attack is NULL OR '
+        includeWithoutCP = 'cp is NULL OR '
+        if not sendWithout:
+            includeWithoutIV = ''
+            includeWithoutCP = ''
 
         sqlquery = ("SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
             "individual_attack, individual_defense, individual_stamina, move_1, move_2, weight, height, gender, form, cp "
-            "FROM pokemon WHERE ")
-        sqlquery += ' disappear_time > "' + str(datetime.utcnow()) + '"'
+            "FROM pokemon WHERE last_modified > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) AND ")
+        sqlquery += ' disappear_time > UTC_TIMESTAMP()'
         sqlquery += ' AND pokemon_id in (' + ','.join(map(str, ids)) + ')'
+        if miniv > 0:
+            sqlquery += ' AND (' + includeWithoutIV + '(individual_attack + individual_defense + individual_stamina) >= ' + (miniv/100*45) + ')'
+        if mincp > 0:
+            sqlquery += ' AND (' + includeWithoutCP + 'cp >= ' + mincp + ')'
         sqlquery += ' ORDER BY pokemon_id ASC'
 
         try:
