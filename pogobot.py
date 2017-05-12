@@ -1079,14 +1079,7 @@ def addJob(bot, update, job_queue):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
     logger.info('[%s@%s] Adding job.' % (userName, chat_id))
-
-    if addJobForChatId(chat_id, job_queue):
-        pref = prefs.get(chat_id)
-
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Scanner gestartet.')
-        else:
-            bot.sendMessage(chat_id, text='Scanner started.')
+    addJobForChatId(chat_id, job_queue)
 
 def addJobForChatId(chat_id, job_queue):
     try:
