@@ -21,21 +21,25 @@ logger = logging.getLogger(__name__)
 class UserPreferencesModel(object):
 
     def __defaultDict(self):
-        global config
-        preferences = dict(
+        return copy.deepcopy(self.defaultDict)
+
+    def __init__(self, chat_id, config):
+        self.chat_id = chat_id
+        self.loadedconfig = config
+        self.defaultDict = dict(
             location = [None, None, 1],
             language = self.loadedconfig.get('DEFAULT_LANG', 'de'),
             stickers = self.loadedconfig.get('STICKERS', True),
             only_map = self.loadedconfig.get('SEND_MAP_ONLY', False),
             walk_dist = self.loadedconfig.get('WALK_DIST', False),
+            send_without = self.loadedconfig.get('SEND_POKEMON_WITHOUT_IV', True),
+            miniv = 0,
+            mincp = 0,
             search_ids = [],
-            search_dists = {}
+            search_dists = {},
+            search_miniv = {},
+            search_mincp = {}
         )
-        return preferences
-
-    def __init__(self, chat_id, config):
-        self.chat_id = chat_id
-        self.loadedconfig = config
         self.__set_directory(directory=self.__getDefaulteDir())
         self.__set_filename(filename=self.__getDefaultFilename(chat_id))
         # load existing or create file
@@ -199,12 +203,12 @@ A valid filename must not contain especial characters or operating system separa
         self.update_preferences(pref_loc)
 
     def set(self, key, value):
-        pref_loc = self.preferences
-        if key in pref_loc:
+        if key in self.defaultDict:
+            pref_loc = self.preferences
             pref_loc[key] = value
+            self.update_preferences(pref_loc)
         else:
             logger.error('Can not set preference key %s for user %s' % (key, self.chat_id))
-        self.update_preferences(pref_loc)
 
     def load(self):
         pref_loc = self.preferences
