@@ -1,4 +1,4 @@
-from geopy.distance import great_circle
+from geopy.distance import vincenty
 
 class DSPokemon:
     def __init__(self, encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, ivs, move1, move2, weight, height, gender, form, cp):
@@ -62,7 +62,7 @@ class DSPokemon:
     def getDistance(self, user_location):
         user_lat_lon = (user_location[0], user_location[1])
         pok_loc = (self.latitude, self.longitude)
-        return great_circle(user_lat_lon, pok_loc).km
+        return vincenty(user_lat_lon, pok_loc).km
 
     def filterbylocation(self, user_location):
         return self.getDistance(user_location) <= user_location[2]
