@@ -1157,7 +1157,7 @@ def checkAndSend(bot, chat_id):
             mincp = cp if cp < mincp else mincp
 
         if chat_id == 189742061:
-            allpokes = dataSource.getPokemonByIds(buildDetailedPokemonList(chat_id))
+            allpokes = dataSource.getPokemonByList(buildDetailedPokemonList(chat_id))
         else:
             allpokes = dataSource.getPokemonByIds(pokemons, miniv, mincp, sendWithout)
 
