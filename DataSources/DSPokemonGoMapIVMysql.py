@@ -24,8 +24,8 @@ class DSPokemonGoMapIVMysql():
 
     def getPokemonByIds(self, ids, miniv = 0, mincp = 0, sendWithout = True):
         pokelist = []
-        includeWithoutIV = 'individual_attack is NULL OR '
-        includeWithoutCP = 'cp is NULL OR '
+        includeWithoutIV = 'individual_attack IS NULL OR '
+        includeWithoutCP = 'cp IS NULL OR '
         if not sendWithout:
             includeWithoutIV = ''
             includeWithoutCP = ''
@@ -39,6 +39,8 @@ class DSPokemonGoMapIVMysql():
             sqlquery += ' AND (' + includeWithoutIV + '(individual_attack + individual_defense + individual_stamina) >= ' + (miniv/100*45) + ')'
         if mincp > 0:
             sqlquery += ' AND (' + includeWithoutCP + 'cp >= ' + mincp + ')'
+        if not sendWithout:
+            sqlquery += ' AND individual_attack IS NOT NULL'
         sqlquery += ' ORDER BY pokemon_id ASC'
 
         try:
