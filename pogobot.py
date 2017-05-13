@@ -1171,7 +1171,7 @@ def findUsersByPokeId(pokemon):
 def sendOnePoke(chat_id, pokemon):
     pref = prefs.get(chat_id)
     lock = locks[chat_id]
-    logger.info('[%s] Sending one notification. %s' % (chat_id, pokemon.getPokemonID()))
+    logger.info('[%s] Trying to send one notification. %s' % (chat_id, pokemon.getPokemonID()))
 
     lock.acquire()
     try:
@@ -1231,6 +1231,8 @@ def sendOnePoke(chat_id, pokemon):
         if location_data[0] is not None and not pokemon.filterbylocation(location_data):
             lock.release()
             return
+
+        logger.info('[%s] Sending one notification. %s' % (chat_id, pokemon.getPokemonID()))
 
         title = pokemon_name[lan][pok_id]
 
