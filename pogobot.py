@@ -634,7 +634,7 @@ def setUserLocation(userName, chat_id, latitude, longitude, radius):
         radius = 0.1
     pref.set('location', [latitude, longitude, radius])
     logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' %
-        (userName, chat_id, user_location[0], user_location[1], user_location[2]))
+        (userName, chat_id, latitude, longitude, radius))
 
 def sendCurrentLocation(bot, chat_id, set_new = False):
     pref = prefs.get(chat_id)
@@ -706,7 +706,6 @@ def cmd_radius(bot, update, args):
         sendCurrentLocation(bot, chat_id)
         return
 
-    # Change the radius
     pref = prefs.get(chat_id)
     user_location = pref.get('location')
     setUserLocation(userName, chat_id, user_location[0], user_location[1], float(args[0]))
@@ -1144,22 +1143,9 @@ def checkAndSend(bot, chat_id):
         if len(pokemons) == 0:
             return
 
-        miniv = pref.get('miniv', 0)
-        mincp = pref.get('mincp', 0)
         sendWithout = pref.get('send_without', True)
 
-        minivs = pref.get('search_miniv', {})
-        for iv in minivs.values():
-            miniv = iv if iv < miniv else miniv
-
-        mincps = pref.get('search_mincp', {})
-        for cp in mincps.values():
-            mincp = cp if cp < mincp else mincp
-
-        if chat_id == 189742061:
-            allpokes = dataSource.getPokemonByList(buildDetailedPokemonList(chat_id))
-        else:
-            allpokes = dataSource.getPokemonByIds(pokemons, miniv, mincp, sendWithout)
+        allpokes = dataSource.getPokemonByList(buildDetailedPokemonList(chat_id), sendWithout)
 
         if len(allpokes) > 200:
             if pref.get('language') == 'de':

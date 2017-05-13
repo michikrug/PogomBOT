@@ -34,18 +34,15 @@ class DSPokemonGoMapIVMysql():
             queryParts.append('longitude BETWEEN %s AND %s' % (pkm['lng_min'], pkm['lng_max']))
         return '(' + ' AND '.join(queryParts) + ')'
 
-    def getPokemonByList(self, pokemonList):
+    def getPokemonByList(self, pokemonList, sendWithout = True):
         sqlquery = ("SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
             "individual_attack, individual_defense, individual_stamina, move_1, move_2, weight, height, gender, form, cp "
             "FROM pokemon WHERE last_modified > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) AND ")
-        sqlquery += ' disappear_time > UTC_TIMESTAMP() AND ('
-
-        pokemonqueryParts = list(map(self.buildPokemonQuery, pokemonList))
-        sqlquery += ' OR '.join(pokemonqueryParts)
-
-        sqlquery += ') ORDER BY pokemon_id ASC'
-
-        logger.info(sqlquery)
+        sqlquery += ' disappear_time > UTC_TIMESTAMP() AND '
+        sqlquery += '(' + ' OR '.join(list(map(self.buildPokemonQuery, pokemonList))) + ')'
+        if not sendWithout:
+            sqlquery += ' AND individual_attack IS NOT NULL'
+        sqlquery += ' ORDER BY pokemon_id ASC'
 
         return self.executePokemonQuery(sqlquery)
 
