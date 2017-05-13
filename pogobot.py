@@ -98,9 +98,9 @@ def cmd_help(bot, update):
         "/list - Zeigt eine Liste mit den überwachten Pokémon\n" + \
         "/iv 0-100 - Setzt den Minimalwert für IV-Werte in Prozent\n" +\
         "/wp 0-4760 - Setzt den Minimalwert für WP-Werte\n" +\
-        "/pkmiv 0-100 - Setzt den Minimalwert für IV-Werte für ein bestimmtes Pokémon in Prozent\n" +\
+        "/pkmiv pokedexID 0-100 - Setzt den Minimalwert für IV-Werte für ein bestimmtes Pokémon in Prozent\n" +\
         "/rempkmiv pokedexID - Setzt den Minimalwert für IV-Werte für ein bestimmtes Pokémon zurück\n" +\
-        "/pkmwp 0-4760 - Setzt den Minimalwert für WP-Werte für ein bestimmtes Pokémon\n" +\
+        "/pkmwp pokedexID 0-4760 - Setzt den Minimalwert für WP-Werte für ein bestimmtes Pokémon\n" +\
         "/rempkmwp pokedexID - Setzt den Minimalwert für WP-Werte für ein bestimmtes Pokémon zurück\n\n" +\
         "*Entfernungs-Filter*\n" + \
         "/location Addresse - Setzt die Suchposition gegeben als Text\n" +\
@@ -814,7 +814,7 @@ def cmd_iv(bot, update, args):
             bot.sendMessage(chat_id, text='The minimum IV filter is set to %d%%.' % (pref.get('miniv', 0)))
         return
 
-    miniv = int(args[1])
+    miniv = int(args[0])
     if miniv < 0:
         miniv = 0
     if miniv > 100:
@@ -916,7 +916,7 @@ def cmd_cp(bot, update, args):
             bot.sendMessage(chat_id, text='The minimum CP filter is set to %d.' % (pref.get('mincp', 0)))
         return
 
-    mincp = int(args[1])
+    mincp = int(args[0])
     if mincp < 0:
         mincp = 0
     if mincp > 4760:
