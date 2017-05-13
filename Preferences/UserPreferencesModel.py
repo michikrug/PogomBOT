@@ -17,7 +17,6 @@ import json
 
 logger = logging.getLogger(__name__)
 
-
 class UserPreferencesModel(object):
 
     def __defaultDict(self):
