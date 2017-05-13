@@ -26,7 +26,7 @@ class DSPokemonGoMapIVMysql():
         queryParts = []
         queryParts.append('pokemon_id = %s' % pkm['id'])
         if (pkm['iv'] > 0):
-            queryiParts.append('(individual_attack + individual_defense + individual_stamina) >= %s' % (float(pkm['iv'])/100*45))
+            queryParts.append('(individual_attack + individual_defense + individual_stamina) >= %s' % (float(pkm['iv'])/100*45))
         if (pkm['cp'] > 0):
             queryParts.append('cp >= %s' % pkm['cp'])
         if 'lat_max' in pkm:
