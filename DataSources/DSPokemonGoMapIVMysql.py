@@ -36,7 +36,7 @@ class DSPokemonGoMapIVMysql():
         sqlquery += ' disappear_time > UTC_TIMESTAMP()'
         sqlquery += ' AND pokemon_id in (' + ','.join(map(str, ids)) + ')'
         if miniv > 0:
-            sqlquery += ' AND (' + includeWithoutIV + '(individual_attack + individual_defense + individual_stamina) >= ' + str(miniv/100*45) + ')'
+            sqlquery += ' AND (' + includeWithoutIV + '(individual_attack + individual_defense + individual_stamina) >= ' + str(float(miniv)/100*45) + ')'
         if mincp > 0:
             sqlquery += ' AND (' + includeWithoutCP + 'cp >= ' + str(mincp) + ')'
         if not sendWithout:
