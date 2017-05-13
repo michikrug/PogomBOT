@@ -1198,7 +1198,7 @@ def sendOnePoke(chat_id, pokemon):
         if pok_id in mincps:
             mincp = mincps[pok_id]
 
-        sendPokeWithoutIV = config.get('SEND_POKEMON_WITHOUT_IV', True)
+        sendPokeWithoutIV = pref.get('send_without', True)
 
         lan = pref.get('language')
         moveNames = move_name["en"]
