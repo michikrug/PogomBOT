@@ -29,7 +29,7 @@ class DSPokemonGoMapIVMysql():
             queryiParts.append('(individual_attack + individual_defense + individual_stamina) >= %s' % (float(pkm['iv'])/100*45))
         if (pkm['cp'] > 0):
             queryParts.append('cp >= %s' % pkm['cp'])
-        if ('lat_max' is in pkm):
+        if 'lat_max' in pkm:
             queryParts.append('latitude BETWEEN %s AND %s' % (pkm['lat_min'], pkm['lat_max']))
             queryParts.append('longitude BETWEEN %s AND %s' % (pkm['lng_min'], pkm['lng_max']))
         return '(' + ' AND '.join(queryParts) + ')'
