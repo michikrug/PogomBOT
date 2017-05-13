@@ -40,7 +40,7 @@ class DSPokemonGoMapIVMysql():
             "FROM pokemon WHERE last_modified > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) AND ")
         sqlquery += ' disappear_time > UTC_TIMESTAMP() AND ('
 
-        pokemonqueryParts = map(self.buildPokemonQuery, pokemonList)
+        pokemonqueryParts = list(map(self.buildPokemonQuery, pokemonList))
         sqlquery += ' OR '.join(pokemonqueryParts)
 
         sqlquery += ') ORDER BY pokemon_id ASC'
