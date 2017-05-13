@@ -27,6 +27,8 @@ import fnmatch
 import DataSources
 import Preferences
 from geopy.geocoders import Nominatim
+from geopy.point import Point
+from geopy.distance import vincenty
 import Whitelist
 from Stickers import sticker_list
 import googlemaps
@@ -1105,6 +1107,35 @@ def addJobForChatId(chat_id, job_queue):
 
     return False
 
+def buildDetailedPokemonList(chat_id):
+    pref = prefs.get(chat_id)
+    pokemons = pref.get('search_ids')
+    if len(pokemons) == 0:
+        return []
+    location = pref.get('location')
+    miniv = pref.get('miniv', 0)
+    mincp = pref.get('mincp', 0)
+    dists = pref.get('search_dists', {})
+    minivs = pref.get('search_miniv', {})
+    mincps = pref.get('search_mincp', {})
+    pokemonList = []
+    for pkm in pokemons:
+        entry = {}
+        pkm_id = str(pkm)
+        entry['id'] = pkm_id
+        entry['iv'] = minivs[pkm_id] if pkm_id in minivs else miniv
+        entry['cp'] = mincps[pkm_id] if pkm_id in mincps else mincp
+        if location[0] is not None:
+            radius = dists[pkm_id] if pkm_id in dists else location[2]
+            radius += 0.2
+            origin = Point(location[0], location[1])
+            entry['lat_max'] = vincenty(radius).destination(origin, 0).latitude
+            entry['lng_max'] = vincenty(radius).destination(origin, 90).longitude
+            entry['lat_min'] = vincenty(radius).destination(origin, 180).latitude
+            entry['lng_min'] = vincenty(radius).destination(origin, 270).longitude
+        pokemonList.append(entry)
+    return pokemonList
+
 def checkAndSend(bot, chat_id):
     logger.info('[%s] Checking pokemons.' % (chat_id))
     try:
@@ -1125,7 +1156,10 @@ def checkAndSend(bot, chat_id):
         for cp in mincps.values():
             mincp = cp if cp < mincp else mincp
 
-        allpokes = dataSource.getPokemonByIds(pokemons, miniv, mincp, sendWithout)
+        if chat_id == 189742061:
+            allpokes = dataSource.getPokemonByIds(buildDetailedPokemonList(chat_id))
+        else:
+            allpokes = dataSource.getPokemonByIds(pokemons, miniv, mincp, sendWithout)
 
         if len(allpokes) > 200:
             if pref.get('language') == 'de':

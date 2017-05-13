@@ -22,8 +22,34 @@ class DSPokemonGoMapIVMysql():
         logger.info('Connecting to remote database')
         self.__connect()
 
+    def buildPokemonQuery(self, pkm):
+        queryParts = []
+        queryParts.append('pokemon_id = %s' % pkm['id'])
+        if (pkm['iv'] > 0):
+            queryiParts.append('(individual_attack + individual_defense + individual_stamina) >= %s' % (float(pkm['iv'])/100*45))
+        if (pkm['cp'] > 0):
+            queryParts.append('cp >= %s' % pkm['cp'])
+        if ('lat_max' is in pkm):
+            queryParts.append('latitude BETWEEN %s AND %s' % (pkm['lat_min'], pkm['lat_max']))
+            queryParts.append('longitude BETWEEN %s AND %s' % (pkm['lng_min'], pkm['lng_max']))
+        return '(' + ' AND '.join(queryParts) + ')'
+
+    def getPokemonByList(self, pokemonList):
+        sqlquery = ("SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
+            "individual_attack, individual_defense, individual_stamina, move_1, move_2, weight, height, gender, form, cp "
+            "FROM pokemon WHERE last_modified > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) AND ")
+        sqlquery += ' disappear_time > UTC_TIMESTAMP() AND ('
+
+        pokemonqueryParts = map(self.buildPokemonQuery, pokemonList)
+        sqlquery += ' OR '.join(pokemonqueryParts)
+
+        sqlquery += ') ORDER BY pokemon_id ASC'
+
+        logger.info(sqlquery)
+
+        return self.executePokemonQuery(sqlquery)
+
     def getPokemonByIds(self, ids, miniv = 0, mincp = 0, sendWithout = True):
-        pokelist = []
         includeWithoutIV = 'individual_attack IS NULL OR '
         includeWithoutCP = 'cp IS NULL OR '
         if not sendWithout:
@@ -43,6 +69,10 @@ class DSPokemonGoMapIVMysql():
             sqlquery += ' AND individual_attack IS NOT NULL'
         sqlquery += ' ORDER BY pokemon_id ASC'
 
+        return self.executePokemonQuery(sqlquery)
+
+    def executePokemonQuery(self, sqlquery):
+        pokelist = []
         try:
             with self.con:
                 cur = self.con.cursor()
