@@ -1126,7 +1126,6 @@ def buildDetailedPokemonList(chat_id):
         entry['cp'] = mincps[pkm_id] if pkm_id in mincps else mincp
         if location[0] is not None:
             radius = dists[pkm_id] if pkm_id in dists else location[2]
-            radius += 0.2
             origin = Point(location[0], location[1])
             entry['lat_max'] = vincenty(radius).destination(origin, 0).latitude
             entry['lng_max'] = vincenty(radius).destination(origin, 90).longitude
