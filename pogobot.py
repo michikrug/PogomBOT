@@ -938,7 +938,7 @@ def cmd_pkmcp(bot, update, args):
     pref = prefs.get(chat_id)
 
     if pref.get('language') == 'de':
-        usage_message = 'Verwendung:\n/pkmcp pokedexID 0-4670'
+        usage_message = 'Verwendung:\n/pkmwp pokedexID 0-4670'
     else:
         usage_message = 'Usage:\n/pkmcp pokedexID 0-4670'
 
@@ -955,9 +955,9 @@ def cmd_pkmcp(bot, update, args):
         if len(args) < 2:
             pkm_mincp = mincps[pkm_id] if pkm_id in mincps else pref.get('mincp', 0)
             if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text='Der Minimal-WP-Filter für %s ist auf %d%% gesetzt.' % (pokemon_name['de'][pkm_id], pkm_mincp))
+                bot.sendMessage(chat_id, text='Der Minimal-WP-Filter für %s ist auf %dWP gesetzt.' % (pokemon_name['de'][pkm_id], pkm_mincp))
             else:
-                bot.sendMessage(chat_id, text='The minimum CP filter for %s is set to %d%%.' % (pokemon_name['en'][pkm_id], pkm_mincp))
+                bot.sendMessage(chat_id, text='The minimum CP filter for %s is set to %dCP.' % (pokemon_name['en'][pkm_id], pkm_mincp))
             return
 
         pkm_mincp = int(args[1])
@@ -969,9 +969,9 @@ def cmd_pkmcp(bot, update, args):
         mincps[pkm_id] = pkm_mincp
         pref.set('search_mincp', mincps)
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Der Minimal-WP-Filter für %s wurde auf %d%% gesetzt.' % (pokemon_name['de'][pkm_id], pkm_mincp))
+            bot.sendMessage(chat_id, text='Der Minimal-WP-Filter für %s wurde auf %dWP gesetzt.' % (pokemon_name['de'][pkm_id], pkm_mincp))
         else:
-            bot.sendMessage(chat_id, text='The minimum CP filter for %s was set to %d%%.' % (pokemon_name['en'][pkm_id], pkm_mincp))
+            bot.sendMessage(chat_id, text='The minimum CP filter for %s was set to %dCP.' % (pokemon_name['en'][pkm_id], pkm_mincp))
 
 def cmd_rempkmcp(bot, update, args):
     chat_id = update.message.chat_id
