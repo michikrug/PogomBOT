@@ -25,8 +25,8 @@ class DSPokemonGoMapIVMysql():
     def buildPokemonQuery(self, pkm, matchMode = 0):
         queryParts = []
         queryParts.append('pokemon_id = %s' % pkm['id'])
-        ivQuery = '(individual_attack + individual_defense + individual_stamina) >= %s' % (float(pkm['iv'])/100*45) if iv > 0 else ''
-        cpQuery = 'cp >= %s' % pkm['cp'] if cp > 0 else ''
+        ivQuery = '(individual_attack + individual_defense + individual_stamina) >= %s' % (float(pkm['iv'])/100*45) if pkm['iv'] > 0 else ''
+        cpQuery = 'cp >= %s' % pkm['cp'] if pkm['cp'] > 0 else ''
         if ivQuery or cpQuery:
             if matchMode == 0:
                 if ivQuery:
