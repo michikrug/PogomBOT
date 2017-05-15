@@ -1,4 +1,4 @@
 geopy==1.11.0
 PyMySQL==0.7.11
-git+https://github.com/python-telegram-bot/python-telegram-bot.git@45414761439d1df86e11f47ec14026f73c8c48a8#egg=python_telegram_bot
+git+https://github.com/python-telegram-bot/python-telegram-bot.git@9a2d5e041089a0525895b9aa6ce09f8f9e57b3e8#egg=python_telegram_bot
 googlemaps==2.4.6
