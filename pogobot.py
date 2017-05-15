@@ -1158,6 +1158,7 @@ def buildDetailedPokemonList(chat_id):
     dists = pref.get('search_dists', {})
     minivs = pref.get('search_miniv', {})
     mincps = pref.get('search_mincp', {})
+    matchmode = pref.get('match_mode', 0)
     pokemonList = []
     for pkm in pokemons:
         entry = {}
@@ -1165,6 +1166,7 @@ def buildDetailedPokemonList(chat_id):
         entry['id'] = pkm_id
         entry['iv'] = minivs[pkm_id] if pkm_id in minivs else miniv
         entry['cp'] = mincps[pkm_id] if pkm_id in mincps else mincp
+        entry['match_mode'] = matchmode
         if location[0] is not None:
             radius = dists[pkm_id] if pkm_id in dists else location[2]
             origin = Point(location[0], location[1])
@@ -1184,9 +1186,8 @@ def checkAndSend(bot, chat_id):
             return
 
         sendWithout = pref.get('send_without', True)
-        matchMode = pref.get('match_mode', 0)
 
-        allpokes = dataSource.getPokemonByList(buildDetailedPokemonList(chat_id), matchMode, sendWithout)
+        allpokes = dataSource.getPokemonByList(buildDetailedPokemonList(chat_id), sendWithout)
 
         if len(allpokes) > 200:
             if pref.get('language') == 'de':

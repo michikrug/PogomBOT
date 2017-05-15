@@ -22,33 +22,30 @@ class DSPokemonGoMapIVMysql():
         logger.info('Connecting to remote database')
         self.__connect()
 
-    def buildPokemonQuery(self, pkm, matchMode = 0):
+    def buildPokemonQuery(self, pkm):
         queryParts = []
         queryParts.append('pokemon_id = %s' % pkm['id'])
         ivQuery = '(individual_attack + individual_defense + individual_stamina) >= %s' % (float(pkm['iv'])/100*45) if pkm['iv'] > 0 else ''
         cpQuery = 'cp >= %s' % pkm['cp'] if pkm['cp'] > 0 else ''
         if ivQuery or cpQuery:
-            if matchMode == 0:
-                if ivQuery:
-                    queryParts.append(ivQuery)
-                if cpQuery:
-                    queryParts.append(cpQuery)
-            elif matchMode == 1:
-                orQuery = '(' + ivQuery
-                if ivQuery and cpQuery:
-                    orQuery += ' OR '
-                orQuery += cpQuery + ')'
-                queryParts.append(orQuery)
+            ivcpQuery = '(' + ivQuery
+            if ivQuery and cpQuery:
+                if pkm['match_mode'] == 0:
+                    ivcpQuery += ' AND '
+                elif pkm['match_mode'] == 1:
+                    ivcpQuery += ' OR '
+            ivcpQuery += cpQuery + ')'
+            queryParts.append(ivcpQuery)
         if 'lat_max' in pkm:
             queryParts.append('latitude BETWEEN %s AND %s' % (pkm['lat_min'], pkm['lat_max']))
             queryParts.append('longitude BETWEEN %s AND %s' % (pkm['lng_min'], pkm['lng_max']))
         return '(' + ' AND '.join(queryParts) + ')'
 
-    def getPokemonByList(self, pokemonList, matchMode = 0, sendWithout = True):
+    def getPokemonByList(self, pokemonList, sendWithout = True):
         sqlquery = ("SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
             "individual_attack, individual_defense, individual_stamina, move_1, move_2, weight, height, gender, form, cp, cp_multiplier "
             "FROM pokemon WHERE last_modified > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) AND disappear_time > UTC_TIMESTAMP()")
-        sqlquery += ' AND (' + ' OR '.join(list(map(lambda p: self.buildPokemonQuery(p, matchMode), pokemonList))) + ')'
+        sqlquery += ' AND (' + ' OR '.join(list(map(self.buildPokemonQuery, pokemonList))) + ')'
         if not sendWithout:
             sqlquery += ' AND individual_attack IS NOT NULL'
         sqlquery += ' ORDER BY pokemon_id ASC'
