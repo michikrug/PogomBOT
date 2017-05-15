@@ -1183,6 +1183,7 @@ def sendOnePoke(chat_id, pokemon):
         move1 = pokemon.getMove1()
         move2 = pokemon.getMove2()
         cp = pokemon.getCP()
+        cp_multiplier = pokemon.getCPMultiplier()
 
         mySent = sent[chat_id]
 
@@ -1236,13 +1237,16 @@ def sendOnePoke(chat_id, pokemon):
         title = pokemon_name[lan][pok_id]
 
         if iv is not None:
-            title += " %s%%" % (iv)
+            title += " %s%%" % iv
 
         if cp is not None:
             if lan == 'de':
-                title += " %dWP" % (cp)
+                title += " %dWP" % cp
             else:
-                title += " %dCP" % (cp)
+                title += " %dCP" % cp
+
+        if cp_multiplier is not None:
+            title += " L%d" % calc_pokemon_level(cp_multiplier)
 
         address = "💨 %s ⏱ %s" % (disappear_time_str, deltaStr)
 
@@ -1250,16 +1254,16 @@ def sendOnePoke(chat_id, pokemon):
             if pref.get('walk_dist'):
                 walkin_data = get_walking_data(location_data, latitude, longitude)
                 if walkin_data['walk_dist'] < 1:
-                    title += " 📍%dm" % (int(1000*walkin_data['walk_dist']))
+                    title += " 📍%dm" % int(1000*walkin_data['walk_dist'])
                 else:
-                    title += " 📍%skm" % (walkin_data['walk_dist'])
-                address += " 🚶%s" % (walkin_data['walk_time'])
+                    title += " 📍%skm" % walkin_data['walk_dist']
+                address += " 🚶%s" % walkin_data['walk_time']
             else:
                 dist = round(pokemon.getDistance(location_data), 2)
                 if dist < 1:
-                    title += " 📍%dm" % (int(1000*dist))
+                    title += " 📍%dm" % int(1000*dist)
                 else:
-                    title += " 📍%skm" % (dist)
+                    title += " 📍%skm" % dist
 
         if move1 is not None and move2 is not None:
             # Use language if other move languages are available.
@@ -1302,6 +1306,15 @@ def sendOnePoke(chat_id, pokemon):
     else:
         clearCnt[chat_id] = clearCnt[chat_id] + 1
     lock.release()
+
+def calc_pokemon_level(cp_multiplier):
+    if cp_multiplier < 0.734:
+        pokemon_level = (58.35178527 * cp_multiplier * cp_multiplier -
+                         2.838007664 * cp_multiplier + 0.8539209906)
+    else:
+        pokemon_level = 171.0112688 * cp_multiplier - 95.20425243
+    pokemon_level = int((round(pokemon_level) * 2) / 2)
+    return pokemon_level
 
 def read_config():
     config_path = os.path.join(

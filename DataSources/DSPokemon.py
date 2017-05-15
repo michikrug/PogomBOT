@@ -1,7 +1,7 @@
 from geopy.distance import vincenty
 
 class DSPokemon:
-    def __init__(self, encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, ivs, move1, move2, weight, height, gender, form, cp):
+    def __init__(self, encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, ivs, move1, move2, weight, height, gender, form, cp, cp_multiplier):
         self.encounter_id = encounter_id
         self.spawnpoint_id = spawnpoint_id
         self.pokemon_id = pokemon_id
@@ -16,6 +16,7 @@ class DSPokemon:
         self.gender = gender
         self.form = form
         self.cp = cp
+        self.cp_multiplier = cp_multiplier
 
     def getEncounterID(self):
         return self.encounter_id
@@ -58,6 +59,9 @@ class DSPokemon:
 
     def getCP(self):
         return self.cp
+
+    def getCPMultiplier(self):
+        return self.cp_multiplier
 
     def getDistance(self, user_location):
         user_lat_lon = (user_location[0], user_location[1])

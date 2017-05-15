@@ -36,7 +36,7 @@ class DSPokemonGoMapIVMysql():
 
     def getPokemonByList(self, pokemonList, sendWithout = True):
         sqlquery = ("SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
-            "individual_attack, individual_defense, individual_stamina, move_1, move_2, weight, height, gender, form, cp "
+            "individual_attack, individual_defense, individual_stamina, move_1, move_2, weight, height, gender, form, cp, cp_multiplier "
             "FROM pokemon WHERE last_modified > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) AND ")
         sqlquery += ' disappear_time > UTC_TIMESTAMP() AND '
         sqlquery += '(' + ' OR '.join(list(map(self.buildPokemonQuery, pokemonList))) + ')'
@@ -54,7 +54,7 @@ class DSPokemonGoMapIVMysql():
             includeWithoutCP = ''
 
         sqlquery = ("SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
-            "individual_attack, individual_defense, individual_stamina, move_1, move_2, weight, height, gender, form, cp "
+            "individual_attack, individual_defense, individual_stamina, move_1, move_2, weight, height, gender, form, cp, cp_multiplier "
             "FROM pokemon WHERE last_modified > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) AND ")
         sqlquery += ' disappear_time > UTC_TIMESTAMP()'
         sqlquery += ' AND pokemon_id in (' + ','.join(map(str, ids)) + ')'
@@ -93,9 +93,10 @@ class DSPokemonGoMapIVMysql():
                     gender = int(row[13]) if row[13] is not None else None
                     form = int(row[14]) if row[14] is not None else None
                     cp = int(row[15]) if row[15] is not None else None
+                    cp_multiplier = float(row[16]) if row[16] is not None else None
                     ivs = round(float((individual_attack + individual_defense + individual_stamina) / 45 * 100), 1) if individual_attack is not None else None
 
-                    poke = DSPokemon(encounter_id, spawn_point, pok_id, latitude, longitude, disappear_time, ivs, move1, move2, weight, height, gender, form, cp)
+                    poke = DSPokemon(encounter_id, spawn_point, pok_id, latitude, longitude, disappear_time, ivs, move1, move2, weight, height, gender, form, cp, cp_multiplier)
                     pokelist.append(poke)
 
         except pymysql.err.OperationalError as e:
