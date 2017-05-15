@@ -32,6 +32,7 @@ class UserPreferencesModel(object):
             only_map = self.loadedconfig.get('SEND_MAP_ONLY', False),
             walk_dist = self.loadedconfig.get('WALK_DIST', False),
             send_without = self.loadedconfig.get('SEND_POKEMON_WITHOUT_IV', True),
+            match_mode = 0,
             miniv = 0,
             mincp = 0,
             search_ids = [],
