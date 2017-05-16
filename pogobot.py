@@ -1266,14 +1266,6 @@ def sendOnePoke(chat_id, pokemon):
             lock.release()
             return
 
-        if iv is not None and iv < miniv:
-            lock.release()
-            return
-
-        if cp is not None and cp < mincp:
-            lock.release()
-            return
-
         location_data = pref.preferences.get('location')
         dists = pref.get('search_dists', {})
         if pok_id in dists:
