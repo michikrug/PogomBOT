@@ -32,13 +32,16 @@ class UserPreferencesModel(object):
             only_map = self.loadedconfig.get('SEND_MAP_ONLY', False),
             walk_dist = self.loadedconfig.get('WALK_DIST', False),
             send_without = self.loadedconfig.get('SEND_POKEMON_WITHOUT_IV', True),
-            match_mode = 0,
             miniv = 0,
             mincp = 0,
+            minlevel = 0,
+            match_mode = 0,
             search_ids = [],
             search_dists = {},
             search_miniv = {},
-            search_mincp = {}
+            search_mincp = {},
+            search_minlevel = {},
+            search_matchmode = {}
         )
         self.__set_directory(directory=self.__getDefaulteDir())
         self.__set_filename(filename=self.__getDefaultFilename(chat_id))

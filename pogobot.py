@@ -98,13 +98,18 @@ def cmd_help(bot, update):
         "/rem pokedexID - Entfernt Pokémon mit der gegebenen ID vom Scanner\n" + \
         "/rem pokedexID1 pokedexID2 ...\n" + \
         "/list - Zeigt eine Liste mit den überwachten Pokémon\n" + \
-        "/iv 0-100 - Setzt den Minimalwert für IV-Werte in Prozent\n" +\
-        "/wp 0-4760 - Setzt den Minimalwert für WP-Werte\n" +\
-        "/pkmiv pokedexID 0-100 - Setzt den Minimalwert für IV-Werte für ein bestimmtes Pokémon in Prozent\n" +\
-        "/rempkmiv pokedexID - Setzt den Minimalwert für IV-Werte für ein bestimmtes Pokémon zurück\n" +\
-        "/pkmwp pokedexID 0-4760 - Setzt den Minimalwert für WP-Werte für ein bestimmtes Pokémon\n" +\
-        "/rempkmwp pokedexID - Setzt den Minimalwert für WP-Werte für ein bestimmtes Pokémon zurück\n" +\
-        "/matchmode 0/1 - Legt fest, ob (0) IV- UND WP-Wert / (1) IV- ODER WP-Wert übereinstimmen muss\n\n" +\
+        "/iv 0-100 - Setzt den Minimal-IV-Wert in Prozent\n" +\
+        "/wp 0-4760 - Setzt den Minimal-WP-Wert\n" +\
+        "/level 0-30 - Setzt das Minimal-Level\n" +\
+        "/pkmiv pokedexID 0-100 - Setzt den Minimal-IV-Wert für ein bestimmtes Pokémon in Prozent\n" +\
+        "/rempkmiv pokedexID - Setzt den Minimal-IV-Wert für ein bestimmtes Pokémon zurück\n" +\
+        "/pkmwp pokedexID 0-4760 - Setzt den Minimal-WP-Wert für ein bestimmtes Pokémon\n" +\
+        "/rempkmwp pokedexID - Setzt den Minimal-WP-Wert für ein bestimmtes Pokémon zurück\n" +\
+        "/pkmlevel pokedexID 0-30 - Setzt das Minimal-Level für ein bestimmtes Pokémon\n" +\
+        "/rempkmlevel pokedexID - Setzt das Minimal-Level für ein bestimmtes Pokémon zurück\n" +\
+        "/matchmode 0/1 - Legt den Übereinstimmungs-Modus fest (0) IV- UND WP-Wert UND Level / (1) IV- ODER WP-Wert ODER Level muss übereinstimmen\n" +\
+        "/pkmmatchmode pokedexID 0/1 - Legt den Übereinstimmungs-Modus für ein bestimmtes Pokémon fest\n" +\
+        "/rempkmmatchmode pokedexID - Setzt den Übereinstimmungs-Modus für ein bestimmtes Pokémon zurück\n\n" +\
         "*Entfernungs-Filter*\n" + \
         "/location Addresse - Setzt die Suchposition gegeben als Text\n" +\
         "/radius km - Setzt den Suchradius in km\n" +\
@@ -132,13 +137,18 @@ def cmd_help(bot, update):
         "/rem pokedexID - Removes Pokémon with the given ID from the scanner\n" + \
         "/rem pokedexID1 pokedexID2 ...\n" + \
         "/list - Lists the watched Pokémon\n" + \
-        "/iv 0-100 - Sets the minimum value for IVs given as percent\n" +\
-        "/wp 0-4760 - Sets the minumum value for CP\n" +\
-        "/pkmiv pokedexID 0-100 - Sets the minimum value for IVs for a specific Pokémon given as percent\n" +\
-        "/rempkmiv pokedexID - Resets the minimum value for IVs for a specific Pokémon\n" +\
-        "/pkmcp pokedexID 0-4760 - Sets the minumum value for CP for a specific Pokémon\n" +\
-        "/rempkmcp pokedexID - Resets the minumum value for CP for a specific Pokémon\n" +\
-        "/matchmode 0/1 - Defines if (0) IV- AND CP / (1) IV- OR CP has to match\n\n" +\
+        "/iv 0-100 - Sets the minimum IVs given as percent\n" +\
+        "/cp 0-4760 - Sets the minumum CP\n" +\
+        "/level 0-30 - Sets the minumum level\n" +\
+        "/pkmiv pokedexID 0-100 - Sets the minimum IVs for a specific Pokémon given as percent\n" +\
+        "/rempkmiv pokedexID - Resets the minimum IVs for a specific Pokémon\n" +\
+        "/pkmcp pokedexID 0-4760 - Sets the minumum CP for a specific Pokémon\n" +\
+        "/rempkmcp pokedexID - Resets the minumum CP for a specific Pokémon\n" +\
+        "/pkmlevel pokedexID 0-30 - Sets the minumum level for a specific Pokémon\n" +\
+        "/rempkmlevel pokedexID - Resets the minumum level for a specific Pokémon\n" +\
+        "/matchmode 0/1 - Sets the match mode (0) IVs AND CP AND level / (1) IVs OR CP OR level has to match\n" +\
+        "/pkmmatchmode pokedexID 0/1 - Set the match mode for a specific Pokémon\n" +\
+        "/rempkmmatchmode pokedexID - Reset the match mode for a specific Pokémon\n\n" +\
         "*Distance filter*\n" + \
         "/location address - Sets the desired search location given as text\n" +\
         "/radius km - Sets the search radius in km\n" +\
@@ -332,45 +342,6 @@ def cmd_sendwithout(bot, update, args):
         else:
             bot.sendMessage(chat_id, text='Usage:\n/sendwithout true/false')
 
-def cmd_matchmode(bot, update, args):
-    chat_id = update.message.chat_id
-    userName = update.message.from_user.username
-
-    if isNotWhitelisted(userName, chat_id, 'matchmode'):
-        return
-
-    pref = prefs.get(chat_id)
-
-    if len(args) < 1:
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='"IV/WP-Wert Übereinstimmungsmodus" ist aktuell auf %s gesetzt.' % (pref.get('match_mode', 0)))
-        else:
-            bot.sendMessage(chat_id, text='"IV/CP matching mode" is currently set to %s.' % (pref.get('match_mode', 0)))
-        return
-
-    try:
-        matchmode = int(args[0])
-        logger.info('[%s@%s] Setting matchmode.' % (userName, chat_id))
-
-        if matchmode == 0 or matchmode == 1:
-            pref.set('match_mode', matchmode)
-            if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text='"IV/WP-Wert Übereinstimmungsmodus" wurde auf %s gesetzt.' % (matchmode))
-            else:
-                bot.sendMessage(chat_id, text='"IV/CP matching mode" was set to %s.' % (matchmode))
-        else:
-            if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text='Bitte nur 0 (beide Werte) oder 1 (einer oder beide Werte) angeben.')
-            else:
-                bot.sendMessage(chat_id, text='Please only use 0 (both values) or 1 (one or both values).')
-
-    except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Verwendung:\n/matchmode 0/1')
-        else:
-            bot.sendMessage(chat_id, text='Usage:\n/matchmode 0/1')
-
 def cmd_walkdist(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
@@ -561,30 +532,37 @@ def cmd_list(bot, update):
         dists = pref.get('search_dists', {})
         minivs = pref.get('search_miniv', {})
         mincps = pref.get('search_mincp', {})
+        minlevels = pref.get('search_minlevel', {})
+        matchmodes = pref.get('search_matchmode', {})
         user_location = pref.get('location')
         if lan == 'de':
             if user_location[0] is None:
-                tmp = 'Liste der überwachten Pokémon:\n'
+                tmp = '*Liste der überwachten Pokémon:*\n'
             else:
-                tmp = 'Liste der überwachten Pokémon im Radius von %.2fkm:\n' % (user_location[2])
+                tmp = '*Liste der überwachten Pokémon im Radius von %.2fkm:*\n' % (user_location[2])
         else:
             if user_location[0] is None:
-                tmp = 'List of watched Pokémon:\n'
+                tmp = '*List of watched Pokémon:*\n'
             else:
-                tmp = 'List of watched Pokémon within a radius of %.2fkm:\n' % (user_location[2])
+                tmp = '*List of watched Pokémon within a radius of %.2fkm:*\n' % (user_location[2])
         for x in pref.get('search_ids'):
-            tmp += "%i %s" % (x, pokemon_name[lan][str(x)])
-            if str(x) in dists:
-                tmp += " %.2fkm" % (dists[str(x)])
-            if str(x) in minivs:
-                tmp += " %d%%" % (minivs[str(x)])
-            if str(x) in mincps:
-                if lan == 'de':
-                    tmp += " %dWP" % (mincps[str(x)])
-                else:
-                    tmp += " %dCP" % (mincps[str(x)])
+            pkm_id = str(x)
+            tmp += "%s %s" % (pkm_id, pokemon_name[lan][pkm_id])
+            if pkm_id in dists:
+                tmp += " %.2fkm" % (dists[pkm_id])
+            if pkm_id in minivs:
+                tmp += " %d%%" % (minivs[pkm_id])
+            if pkm_id in mincps:
+                tmp += " %dWP" % (mincps[pkm_id]) if lan == 'de' else " %dCP" % (mincps[pkm_id])
+            if pkm_id in minlevels:
+                tmp += " L%d" % (minlevels[pkm_id])
+            if pkm_id in matchmodes:
+                if matchmodes[pkm_id] == 0:
+                    tmp += " UND" if lang == 'de' else " AND"
+                if matchmodes[pkm_id] == 1:
+                    tmp += " ODER" if lang == 'de' else " OR"
             tmp += "\n"
-        bot.sendMessage(chat_id, text = tmp)
+        bot.sendMessage(chat_id, text=tmp, parse_mode='Markdown')
 
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
@@ -731,9 +709,9 @@ def cmd_location_str(bot, update, args):
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Position wurde nicht gefunden (oder OpenStreetMap ist offline).')
+            bot.sendMessage(chat_id, text='Die Position wurde nicht gefunden (oder OpenStreetMap ist offline).')
         else:
-            bot.sendMessage(chat_id, text='Location was not found (or OpenStreetMap is down).')
+            bot.sendMessage(chat_id, text='The location was not found (or OpenStreetMap is down).')
         return
 
 def cmd_radius(bot, update, args):
@@ -851,9 +829,9 @@ def cmd_iv(bot, update, args):
 
     if len(args) < 1:
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Der Minimal-IV-Filter ist auf %d%% gesetzt.' % (pref.get('miniv', 0)))
+            bot.sendMessage(chat_id, text='Der Minimal-IV-Wert ist auf %d%% gesetzt.' % (pref.get('miniv', 0)))
         else:
-            bot.sendMessage(chat_id, text='The minimum IV filter is set to %d%%.' % (pref.get('miniv', 0)))
+            bot.sendMessage(chat_id, text='The minimum IVs are set to %d%%.' % (pref.get('miniv', 0)))
         return
 
     miniv = int(args[0])
@@ -864,9 +842,9 @@ def cmd_iv(bot, update, args):
 
     pref.set('miniv', miniv)
     if pref.get('language') == 'de':
-        bot.sendMessage(chat_id, text='Der Minimal-IV-Filter wurde auf %d%% gesetzt.' % (miniv))
+        bot.sendMessage(chat_id, text='Der Minimal-IV-Wert wurde auf %d%% gesetzt.' % (miniv))
     else:
-        bot.sendMessage(chat_id, text='The minimum IV filter was set to %d%%.' % (miniv))
+        bot.sendMessage(chat_id, text='The minimum IVs were set to %d%%.' % (miniv))
 
 def cmd_pkmiv(bot, update, args):
     chat_id = update.message.chat_id
@@ -895,9 +873,9 @@ def cmd_pkmiv(bot, update, args):
         if len(args) < 2:
             pkm_miniv = minivs[pkm_id] if pkm_id in minivs else pref.get('miniv', 0)
             if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text='Der Minimal-IV-Filter für %s ist auf %d%% gesetzt.' % (pokemon_name['de'][pkm_id], pkm_miniv))
+                bot.sendMessage(chat_id, text='Der Minimal-IV-Wert für %s ist auf %d%% gesetzt.' % (pokemon_name['de'][pkm_id], pkm_miniv))
             else:
-                bot.sendMessage(chat_id, text='The minimum IV filter for %s is set to %d%%.' % (pokemon_name['en'][pkm_id], pkm_miniv))
+                bot.sendMessage(chat_id, text='The minimum IVs for %s are set to %d%%.' % (pokemon_name['en'][pkm_id], pkm_miniv))
             return
 
         # Change the radius for a specific pokemon
@@ -910,9 +888,9 @@ def cmd_pkmiv(bot, update, args):
         minivs[pkm_id] = pkm_miniv
         pref.set('search_miniv', minivs)
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Der Minimal-IV-Filter für %s wurde auf %d%% gesetzt.' % (pokemon_name['de'][pkm_id], pkm_miniv))
+            bot.sendMessage(chat_id, text='Der Minimal-IV-Wert für %s wurde auf %d%% gesetzt.' % (pokemon_name['de'][pkm_id], pkm_miniv))
         else:
-            bot.sendMessage(chat_id, text='The minimum IV filter for %s was set to %d%%.' % (pokemon_name['en'][pkm_id], pkm_miniv))
+            bot.sendMessage(chat_id, text='The minimum IVs for %s were set to %d%%.' % (pokemon_name['en'][pkm_id], pkm_miniv))
 
 def cmd_rempkmiv(bot, update, args):
     chat_id = update.message.chat_id
@@ -938,9 +916,9 @@ def cmd_rempkmiv(bot, update, args):
         del minivs[pkm_id]
         pref.set('search_miniv', minivs)
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Der Minimal-IV-Filter für %s wurde zurückgesetzt.' % (pokemon_name['de'][pkm_id]))
+            bot.sendMessage(chat_id, text='Der Minimal-IV-Wert für %s wurde zurückgesetzt.' % (pokemon_name['de'][pkm_id]))
         else:
-            bot.sendMessage(chat_id, text='The minimum IV filter for %s was reset.' % (pokemon_name['en'][pkm_id]))
+            bot.sendMessage(chat_id, text='The minimum IVs for %s were reset.' % (pokemon_name['en'][pkm_id]))
 
 def cmd_cp(bot, update, args):
     chat_id = update.message.chat_id
@@ -953,9 +931,9 @@ def cmd_cp(bot, update, args):
 
     if len(args) < 1:
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Der Minimal-WP-Filter ist auf %d gesetzt.' % (pref.get('mincp', 0)))
+            bot.sendMessage(chat_id, text='Der Minimal-WP-Wert ist auf %dWP gesetzt.' % (pref.get('mincp', 0)))
         else:
-            bot.sendMessage(chat_id, text='The minimum CP filter is set to %d.' % (pref.get('mincp', 0)))
+            bot.sendMessage(chat_id, text='The minimum CP is set to %dCP.' % (pref.get('mincp', 0)))
         return
 
     mincp = int(args[0])
@@ -966,9 +944,9 @@ def cmd_cp(bot, update, args):
 
     pref.set('mincp', mincp)
     if pref.get('language') == 'de':
-        bot.sendMessage(chat_id, text='Der Minimal-WP-Filter wurde auf %d gesetzt.' % (mincp))
+        bot.sendMessage(chat_id, text='Der Minimal-WP-Wert wurde auf %dWP gesetzt.' % (mincp))
     else:
-        bot.sendMessage(chat_id, text='The minimum CP filter was set to %d.' % (mincp))
+        bot.sendMessage(chat_id, text='The minimum CP was set to %dCP.' % (mincp))
 
 def cmd_pkmcp(bot, update, args):
     chat_id = update.message.chat_id
@@ -997,9 +975,9 @@ def cmd_pkmcp(bot, update, args):
         if len(args) < 2:
             pkm_mincp = mincps[pkm_id] if pkm_id in mincps else pref.get('mincp', 0)
             if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text='Der Minimal-WP-Filter für %s ist auf %dWP gesetzt.' % (pokemon_name['de'][pkm_id], pkm_mincp))
+                bot.sendMessage(chat_id, text='Der Minimal-WP-Wert für %s ist auf %dWP gesetzt.' % (pokemon_name['de'][pkm_id], pkm_mincp))
             else:
-                bot.sendMessage(chat_id, text='The minimum CP filter for %s is set to %dCP.' % (pokemon_name['en'][pkm_id], pkm_mincp))
+                bot.sendMessage(chat_id, text='The minimum CP for %s is set to %dCP.' % (pokemon_name['en'][pkm_id], pkm_mincp))
             return
 
         pkm_mincp = int(args[1])
@@ -1011,9 +989,9 @@ def cmd_pkmcp(bot, update, args):
         mincps[pkm_id] = pkm_mincp
         pref.set('search_mincp', mincps)
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Der Minimal-WP-Filter für %s wurde auf %dWP gesetzt.' % (pokemon_name['de'][pkm_id], pkm_mincp))
+            bot.sendMessage(chat_id, text='Der Minimal-WP-Wert für %s wurde auf %dWP gesetzt.' % (pokemon_name['de'][pkm_id], pkm_mincp))
         else:
-            bot.sendMessage(chat_id, text='The minimum CP filter for %s was set to %dCP.' % (pokemon_name['en'][pkm_id], pkm_mincp))
+            bot.sendMessage(chat_id, text='The minimum CP for %s was set to %dCP.' % (pokemon_name['en'][pkm_id], pkm_mincp))
 
 def cmd_rempkmcp(bot, update, args):
     chat_id = update.message.chat_id
@@ -1039,9 +1017,222 @@ def cmd_rempkmcp(bot, update, args):
         del mincps[pkm_id]
         pref.set('search_mincp', mincps)
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Der Minimal-WP-Filter für %s wurde zurückgesetzt.' % (pokemon_name['de'][pkm_id]))
+            bot.sendMessage(chat_id, text='Der Minimal-WP-Wert für %s wurde zurückgesetzt.' % (pokemon_name['de'][pkm_id]))
         else:
-            bot.sendMessage(chat_id, text='The minimum CP filter for %s was reset.' % (pokemon_name['en'][pkm_id]))
+            bot.sendMessage(chat_id, text='The minimum CP for %s was reset.' % (pokemon_name['en'][pkm_id]))
+
+def cmd_level(bot, update, args):
+    chat_id = update.message.chat_id
+    userName = update.message.from_user.username
+
+    if isNotWhitelisted(userName, chat_id, 'level'):
+        return
+
+    pref = prefs.get(chat_id)
+
+    if len(args) < 1:
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='Das Minimal-Level ist auf %d gesetzt.' % (pref.get('minlevel', 0)))
+        else:
+            bot.sendMessage(chat_id, text='The minimum level is set to %d.' % (pref.get('minlevel', 0)))
+        return
+
+    minlevel = int(args[0])
+    if minlevel < 0:
+        minlevel = 0
+    if minlevel > 30:
+        minlevel = 30
+
+    pref.set('minlevel', minlevel)
+    if pref.get('language') == 'de':
+        bot.sendMessage(chat_id, text='Das Minimal-Level wurde auf %d gesetzt.' % (minlevel))
+    else:
+        bot.sendMessage(chat_id, text='The minimum level was set to %d.' % (minlevel))
+
+def cmd_pkmlevel(bot, update, args):
+    chat_id = update.message.chat_id
+    userName = update.message.from_user.username
+
+    if isNotWhitelisted(userName, chat_id, 'pkmlevel'):
+        return
+
+    pref = prefs.get(chat_id)
+
+    if pref.get('language') == 'de':
+        usage_message = 'Verwendung:\n/pkmlevel pokedexID 0-30'
+    else:
+        usage_message = 'Usage:\n/pkmlevel pokedexID 0-30'
+
+    if len(args) < 1:
+        bot.sendMessage(chat_id, text=usage_message)
+        return
+
+    pkm_id = args[0]
+
+    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and int(pkm_id) not in pokemon_blacklist:
+        minlevels = pref.get('search_minlevel', {})
+
+        # Only get current value
+        if len(args) < 2:
+            pkm_minlevel = minlevels[pkm_id] if pkm_id in minlevels else pref.get('minlevel', 0)
+            if pref.get('language') == 'de':
+                bot.sendMessage(chat_id, text='Das Minimal-Level für %s ist auf %d gesetzt.' % (pokemon_name['de'][pkm_id], pkm_minlevel))
+            else:
+                bot.sendMessage(chat_id, text='The minimum level for %s is set to %d.' % (pokemon_name['en'][pkm_id], pkm_minlevel))
+            return
+
+        pkm_minlevel = int(args[1])
+        if pkm_minlevel < 0:
+            pkm_minlevel = 0
+        if pkm_minlevel > 30:
+            pkm_minlevel = 30
+
+        minlevels[pkm_id] = pkm_minlevel
+        pref.set('search_minlevel', minlevels)
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='Das Minimal-Level für %s wurde auf %d gesetzt.' % (pokemon_name['de'][pkm_id], pkm_minlevel))
+        else:
+            bot.sendMessage(chat_id, text='The minimum level for %s was set to %d.' % (pokemon_name['en'][pkm_id], pkm_minlevel))
+
+def cmd_rempkmlevel(bot, update, args):
+    chat_id = update.message.chat_id
+    userName = update.message.from_user.username
+
+    if isNotWhitelisted(userName, chat_id, 'rempkmlevel'):
+        return
+
+    pref = prefs.get(chat_id)
+
+    if pref.get('language') == 'de':
+        usage_message = 'Verwendung:\n/rempkmlevel pokedexID'
+    else:
+        usage_message = 'Usage:\n/rempkmlevel pokedexID'
+
+    if len(args) < 1:
+        bot.sendMessage(chat_id, text=usage_message)
+        return
+
+    minlevels = pref.get('search_minlevel', {})
+    pkm_id = args[0]
+    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and pkm_id in minlevels:
+        del minlevels[pkm_id]
+        pref.set('search_minlevel', minlevels)
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='Das Minimal-Level für %s wurde zurückgesetzt.' % (pokemon_name['de'][pkm_id]))
+        else:
+            bot.sendMessage(chat_id, text='The minimum level for %s was reset.' % (pokemon_name['en'][pkm_id]))
+
+def cmd_matchmode(bot, update, args):
+    chat_id = update.message.chat_id
+    userName = update.message.from_user.username
+
+    if isNotWhitelisted(userName, chat_id, 'matchmode'):
+        return
+
+    pref = prefs.get(chat_id)
+
+    if len(args) < 1:
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='Der IVs/WP/Level Übereinstimmungsmodus ist aktuell auf %s gesetzt.' % (pref.get('match_mode', 0)))
+        else:
+            bot.sendMessage(chat_id, text='The IVs/CP/Level matching mode is currently set to %s.' % (pref.get('match_mode', 0)))
+        return
+
+    try:
+        matchmode = int(args[0])
+        logger.info('[%s@%s] Setting matchmode.' % (userName, chat_id))
+
+        if matchmode == 0 or matchmode == 1:
+            pref.set('match_mode', matchmode)
+            if pref.get('language') == 'de':
+                bot.sendMessage(chat_id, text='Der IVs/WP/Level Übereinstimmungsmodus wurde auf %s gesetzt.' % (matchmode))
+            else:
+                bot.sendMessage(chat_id, text='The IVs/CP/Level matching mode was set to %s.' % (matchmode))
+        else:
+            if pref.get('language') == 'de':
+                bot.sendMessage(chat_id, text='Bitte nur 0 (beide Werte) oder 1 (einer oder beide Werte) angeben.')
+            else:
+                bot.sendMessage(chat_id, text='Please only use 0 (both values) or 1 (one or both values).')
+
+    except Exception as e:
+        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='Verwendung:\n/matchmode 0/1')
+        else:
+            bot.sendMessage(chat_id, text='Usage:\n/matchmode 0/1')
+
+def cmd_pkmmatchmode(bot, update, args):
+    chat_id = update.message.chat_id
+    userName = update.message.from_user.username
+
+    if isNotWhitelisted(userName, chat_id, 'pkmmatchmode'):
+        return
+
+    pref = prefs.get(chat_id)
+
+    if pref.get('language') == 'de':
+        usage_message = 'Verwendung:\n/pkmmatchmode pokedexID 0/1'
+    else:
+        usage_message = 'Usage:\n/pkmmatchmode pokedexID 0/1'
+
+    if len(args) < 1:
+        bot.sendMessage(chat_id, text=usage_message)
+        return
+
+    pkm_id = args[0]
+
+    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and int(pkm_id) not in pokemon_blacklist:
+        matchmodes = pref.get('search_matchmode', {})
+
+        # Only get current value
+        if len(args) < 2:
+            pkm_matchmode = matchmodes[pkm_id] if pkm_id in matchmodes else pref.get('matchmode', 0)
+            if pref.get('language') == 'de':
+                bot.sendMessage(chat_id, text='Der IVs/WP/Level Übereinstimmungsmodus für %s ist auf %d gesetzt.' % (pokemon_name['de'][pkm_id], pkm_matchmode))
+            else:
+                bot.sendMessage(chat_id, text='The IVs/CP/Level matching mode for %s is set to %d.' % (pokemon_name['en'][pkm_id], pkm_matchmode))
+            return
+
+        pkm_matchmode = int(args[1])
+        if pkm_matchmode < 0:
+            pkm_matchmode = 0
+        if pkm_matchmode > 30:
+            pkm_matchmode = 30
+
+        matchmodes[pkm_id] = pkm_matchmode
+        pref.set('search_matchmode', matchmodes)
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='Der IVs/WP/Level Übereinstimmungsmodus für %s wurde auf %d gesetzt.' % (pokemon_name['de'][pkm_id], pkm_matchmode))
+        else:
+            bot.sendMessage(chat_id, text='The IVs/CP/Level matching mode for %s was set to %d.' % (pokemon_name['en'][pkm_id], pkm_matchmode))
+
+def cmd_rempkmmatchmode(bot, update, args):
+    chat_id = update.message.chat_id
+    userName = update.message.from_user.username
+
+    if isNotWhitelisted(userName, chat_id, 'rempkmmatchmode'):
+        return
+
+    pref = prefs.get(chat_id)
+
+    if pref.get('language') == 'de':
+        usage_message = 'Verwendung:\n/rempkmmatchmode pokedexID'
+    else:
+        usage_message = 'Usage:\n/rempkmmatchmode pokedexID'
+
+    if len(args) < 1:
+        bot.sendMessage(chat_id, text=usage_message)
+        return
+
+    matchmodes = pref.get('search_matchmode', {})
+    pkm_id = args[0]
+    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and pkm_id in matchmodes:
+        del matchmodes[pkm_id]
+        pref.set('search_matchmode', matchmodes)
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='Der IVs/WP/Level Übereinstimmungsmodus für %s wurde zurückgesetzt.' % (pokemon_name['de'][pkm_id]))
+        else:
+            bot.sendMessage(chat_id, text='The IVs/CP/Level matching mode for %s was reset.' % (pokemon_name['en'][pkm_id]))
 
 def isNotWhitelisted(userName, chat_id, command):
     if not whitelist.isWhitelisted(userName):
@@ -1155,10 +1346,13 @@ def buildDetailedPokemonList(chat_id):
     location = pref.get('location')
     miniv = pref.get('miniv', 0)
     mincp = pref.get('mincp', 0)
+    minlevel = pref.get('minlevel', 0)
+    matchmode = pref.get('match_mode', 0)
     dists = pref.get('search_dists', {})
     minivs = pref.get('search_miniv', {})
     mincps = pref.get('search_mincp', {})
-    matchmode = pref.get('match_mode', 0)
+    minlevels = pref.get('search_minlevel', {})
+    matchmodes = pref.get('search_matchmode', {})
     pokemonList = []
     for pkm in pokemons:
         entry = {}
@@ -1166,7 +1360,8 @@ def buildDetailedPokemonList(chat_id):
         entry['id'] = pkm_id
         entry['iv'] = minivs[pkm_id] if pkm_id in minivs else miniv
         entry['cp'] = mincps[pkm_id] if pkm_id in mincps else mincp
-        entry['match_mode'] = matchmode
+        entry['level'] = minlevels[pkm_id] if pkm_id in minlevels else minlevel
+        entry['match_mode'] = matchmodes[pkm_id] if pkm_id in matchmodes else matchmode
         if location[0] is not None:
             radius = dists[pkm_id] if pkm_id in dists else location[2]
             origin = Point(location[0], location[1])
@@ -1210,15 +1405,6 @@ def findUsersByPokeId(pokemon):
             sendOnePoke(chat_id, pokemon)
     pass
 
-def calc_pokemon_level(cp_multiplier):
-    if cp_multiplier < 0.734:
-        pokemon_level = (58.35178527 * cp_multiplier * cp_multiplier -
-                         2.838007664 * cp_multiplier + 0.8539209906)
-    else:
-        pokemon_level = 171.0112688 * cp_multiplier - 95.20425243
-    pokemon_level = int((round(pokemon_level) * 2) / 2)
-    return pokemon_level
-
 def sendOnePoke(chat_id, pokemon):
     pref = prefs.get(chat_id)
     lock = locks[chat_id]
@@ -1236,6 +1422,7 @@ def sendOnePoke(chat_id, pokemon):
         move2 = pokemon.getMove2()
         cp = pokemon.getCP()
         cp_multiplier = pokemon.getCPMultiplier()
+        level = pokemon.getLevel()
 
         mySent = sent[chat_id]
 
@@ -1289,8 +1476,8 @@ def sendOnePoke(chat_id, pokemon):
             else:
                 title += " %dCP" % cp
 
-        if cp_multiplier is not None:
-            title += " L%d" % calc_pokemon_level(cp_multiplier)
+        if level is not None:
+            title += " L%d" % level
 
         address = "💨 %s ⏱ %s" % (disappear_time_str, deltaStr)
 
@@ -1504,14 +1691,19 @@ def main():
     dp.add_handler(CommandHandler("iv", cmd_iv, pass_args=True))
     dp.add_handler(CommandHandler("cp", cmd_cp, pass_args=True))
     dp.add_handler(CommandHandler("wp", cmd_cp, pass_args=True))
+    dp.add_handler(CommandHandler("level", cmd_level, pass_args=True))
+    dp.add_handler(CommandHandler("matchmode", cmd_matchmode, pass_args=True))
     dp.add_handler(CommandHandler("pkmiv", cmd_pkmiv, pass_args=True))
     dp.add_handler(CommandHandler("pkmcp", cmd_pkmcp, pass_args=True))
     dp.add_handler(CommandHandler("pkmwp", cmd_pkmcp, pass_args=True))
+    dp.add_handler(CommandHandler("pkmlevel", cmd_pkmlevel, pass_args=True))
+    dp.add_handler(CommandHandler("pkmmatchmode", cmd_pkmmatchmode, pass_args=True))
     dp.add_handler(CommandHandler("rempkmiv", cmd_rempkmiv, pass_args=True))
     dp.add_handler(CommandHandler("rempkmcp", cmd_rempkmcp, pass_args=True))
     dp.add_handler(CommandHandler("rempkmwp", cmd_rempkmcp, pass_args=True))
+    dp.add_handler(CommandHandler("rempkmlevel", cmd_rempkmlevel, pass_args=True))
+    dp.add_handler(CommandHandler("rempkmmatchmode", cmd_rempkmmatchmode, pass_args=True))
     dp.add_handler(CommandHandler("sendwithout", cmd_sendwithout, pass_args=True))
-    dp.add_handler(CommandHandler("matchmode", cmd_matchmode, pass_args=True))
     dp.add_handler(MessageHandler([Filters.command], cmd_unknown))
 
     # log all errors

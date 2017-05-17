@@ -22,20 +22,40 @@ class DSPokemonGoMapIVMysql():
         logger.info('Connecting to remote database')
         self.__connect()
 
+    def calc_pokemon_level(cp_multiplier):
+        if cp_multiplier < 0.734:
+            pokemon_level = (58.35178527 * cp_multiplier * cp_multiplier -
+                             2.838007664 * cp_multiplier + 0.8539209906)
+        else:
+            pokemon_level = 171.0112688 * cp_multiplier - 95.20425243
+        pokemon_level = int((round(pokemon_level) * 2) / 2)
+        return pokemon_level
+
+    def get_pokemon_cpm(level):
+        cp_multiplier = [0.094, 0.166398, 0.215732, 0.25572, 0.29025,
+            0.321088, 0.349213, 0.375236, 0.399567, 0.4225,
+            0.443108, 0.462798, 0.481685, 0.499858, 0.517394,
+            0.534354, 0.550793, 0.566755, 0.582279, 0.5974,
+            0.612157, 0.626567, 0.640653, 0.654436, 0.667934,
+            0.681165, 0.694144, 0.706884, 0.719399, 0.7317]
+        return cp_multiplier[level-1]
+
     def buildPokemonQuery(self, pkm):
         queryParts = []
         queryParts.append('pokemon_id = %s' % pkm['id'])
-        ivQuery = '(individual_attack + individual_defense + individual_stamina) >= %s' % (float(pkm['iv'])/100*45) if pkm['iv'] > 0 else ''
-        cpQuery = 'cp >= %s' % pkm['cp'] if pkm['cp'] > 0 else ''
-        if ivQuery or cpQuery:
-            ivcpQuery = '(' + ivQuery
-            if ivQuery and cpQuery:
-                if pkm['match_mode'] == 0:
-                    ivcpQuery += ' AND '
-                elif pkm['match_mode'] == 1:
-                    ivcpQuery += ' OR '
-            ivcpQuery += cpQuery + ')'
-            queryParts.append(ivcpQuery)
+        subQueryParts = []
+        if pkm['iv'] > 0:
+            subQueryParts.append('(individual_attack + individual_defense + individual_stamina) >= %s' % (float(pkm['iv'])/100*45))
+        if pkm['cp'] > 0:
+            subQueryParts.append('cp >= %s' % pkm['cp'])
+        if pkm['level'] > 0:
+            subQueryParts.append('cp_multiplier >= %s' % get_pokemon_cpm(pkm['level']))
+        if pkm['match_mode'] == 0:
+            subQuery = ' AND '.join(subQueryParts)
+        elif pkm['match_mode'] == 1:
+            subQuery = ' OR '.join(subQueryParts)
+        if subQuery:
+            queryParts.append('(' + subQuery + ')')
         if 'lat_max' in pkm:
             queryParts.append('latitude BETWEEN %s AND %s' % (pkm['lat_min'], pkm['lat_max']))
             queryParts.append('longitude BETWEEN %s AND %s' % (pkm['lng_min'], pkm['lng_max']))
@@ -89,9 +109,10 @@ class DSPokemonGoMapIVMysql():
                     form = int(row[14]) if row[14] is not None else None
                     cp = int(row[15]) if row[15] is not None else None
                     cp_multiplier = float(row[16]) if row[16] is not None else None
+                    level = calc_pokemon_level(cp_multiplier) if cp_multiplier is not None else None
                     ivs = round(float((individual_attack + individual_defense + individual_stamina) / 45 * 100), 1) if individual_attack is not None else None
 
-                    poke = DSPokemon(encounter_id, spawn_point, pok_id, latitude, longitude, disappear_time, ivs, move1, move2, weight, height, gender, form, cp, cp_multiplier)
+                    poke = DSPokemon(encounter_id, spawn_point, pok_id, latitude, longitude, disappear_time, ivs, move1, move2, weight, height, gender, form, cp, cp_multiplier, level)
                     pokelist.append(poke)
 
         except pymysql.err.OperationalError as e:
