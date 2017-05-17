@@ -558,9 +558,9 @@ def cmd_list(bot, update):
                 tmp += " L%d" % (minlevels[pkm_id])
             if pkm_id in matchmodes:
                 if matchmodes[pkm_id] == 0:
-                    tmp += " UND" if lang == 'de' else " AND"
+                    tmp += " UND" if lan == 'de' else " AND"
                 if matchmodes[pkm_id] == 1:
-                    tmp += " ODER" if lang == 'de' else " OR"
+                    tmp += " ODER" if lan == 'de' else " OR"
             tmp += "\n"
         bot.sendMessage(chat_id, text=tmp, parse_mode='Markdown')
 

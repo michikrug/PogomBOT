@@ -22,7 +22,7 @@ class DSPokemonGoMapIVMysql():
         logger.info('Connecting to remote database')
         self.__connect()
 
-    def calc_pokemon_level(cp_multiplier):
+    def calc_pokemon_level(self, cp_multiplier):
         if cp_multiplier < 0.734:
             pokemon_level = (58.35178527 * cp_multiplier * cp_multiplier -
                              2.838007664 * cp_multiplier + 0.8539209906)
@@ -31,7 +31,7 @@ class DSPokemonGoMapIVMysql():
         pokemon_level = int((round(pokemon_level) * 2) / 2)
         return pokemon_level
 
-    def get_pokemon_cpm(level):
+    def get_pokemon_cpm(self, level):
         cp_multiplier = [0.094, 0.166398, 0.215732, 0.25572, 0.29025,
             0.321088, 0.349213, 0.375236, 0.399567, 0.4225,
             0.443108, 0.462798, 0.481685, 0.499858, 0.517394,
@@ -49,7 +49,7 @@ class DSPokemonGoMapIVMysql():
         if pkm['cp'] > 0:
             subQueryParts.append('cp >= %s' % pkm['cp'])
         if pkm['level'] > 0:
-            subQueryParts.append('cp_multiplier >= %s' % get_pokemon_cpm(pkm['level']))
+            subQueryParts.append('cp_multiplier >= %s' % self.get_pokemon_cpm(pkm['level']))
         if pkm['match_mode'] == 0:
             subQuery = ' AND '.join(subQueryParts)
         elif pkm['match_mode'] == 1:
@@ -109,7 +109,7 @@ class DSPokemonGoMapIVMysql():
                     form = int(row[14]) if row[14] is not None else None
                     cp = int(row[15]) if row[15] is not None else None
                     cp_multiplier = float(row[16]) if row[16] is not None else None
-                    level = calc_pokemon_level(cp_multiplier) if cp_multiplier is not None else None
+                    level = self.calc_pokemon_level(cp_multiplier) if cp_multiplier is not None else None
                     ivs = round(float((individual_attack + individual_defense + individual_stamina) / 45 * 100), 1) if individual_attack is not None else None
 
                     poke = DSPokemon(encounter_id, spawn_point, pok_id, latitude, longitude, disappear_time, ivs, move1, move2, weight, height, gender, form, cp, cp_multiplier, level)
