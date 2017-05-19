@@ -107,8 +107,8 @@ def cmd_help(bot, update):
         "/rempkmwp pokedexID - Setzt den Minimal-WP-Wert für ein bestimmtes Pokémon zurück\n" +\
         "/pkmlevel pokedexID 0-30 - Setzt das Minimal-Level für ein bestimmtes Pokémon\n" +\
         "/rempkmlevel pokedexID - Setzt das Minimal-Level für ein bestimmtes Pokémon zurück\n" +\
-        "/matchmode 0/1 - Legt den Übereinstimmungs-Modus fest (0) IV- UND WP-Wert UND Level / (1) IV- ODER WP-Wert ODER Level muss übereinstimmen\n" +\
-        "/pkmmatchmode pokedexID 0/1 - Legt den Übereinstimmungs-Modus für ein bestimmtes Pokémon fest\n" +\
+        "/matchmode 0/1/2 - Legt den Übereinstimmungs-Modus fest (0) Entfernung UND IV- UND WP-Wert UND Level / (1) Entfernung UND IV- ODER WP-Wert ODER Level muss übereinstimmen / (2) Entfernung ODER IV- ODER WP-Wert ODER Level muss übereinstimmen\n" +\
+        "/pkmmatchmode pokedexID 0/1/2 - Legt den Übereinstimmungs-Modus für ein bestimmtes Pokémon fest\n" +\
         "/rempkmmatchmode pokedexID - Setzt den Übereinstimmungs-Modus für ein bestimmtes Pokémon zurück\n\n" +\
         "*Entfernungs-Filter*\n" + \
         "/location Addresse - Setzt die Suchposition gegeben als Text\n" +\
@@ -146,8 +146,8 @@ def cmd_help(bot, update):
         "/rempkmcp pokedexID - Resets the minumum CP for a specific Pokémon\n" +\
         "/pkmlevel pokedexID 0-30 - Sets the minumum level for a specific Pokémon\n" +\
         "/rempkmlevel pokedexID - Resets the minumum level for a specific Pokémon\n" +\
-        "/matchmode 0/1 - Sets the match mode (0) IVs AND CP AND level / (1) IVs OR CP OR level has to match\n" +\
-        "/pkmmatchmode pokedexID 0/1 - Set the match mode for a specific Pokémon\n" +\
+        "/matchmode 0/1/2 - Sets the match mode (0) Distance AND IVs AND CP AND level / (1) Distance AND IVs OR CP OR level has to match / (2) Distance OR IVs OR CP OR level has to match\n" +\
+        "/pkmmatchmode pokedexID 0/1/2 - Set the match mode for a specific Pokémon\n" +\
         "/rempkmmatchmode pokedexID - Reset the match mode for a specific Pokémon\n\n" +\
         "*Distance filter*\n" + \
         "/location address - Sets the desired search location given as text\n" +\
@@ -560,7 +560,9 @@ def cmd_list(bot, update):
                 if matchmodes[pkm_id] == 0:
                     tmp += " UND" if lan == 'de' else " AND"
                 if matchmodes[pkm_id] == 1:
-                    tmp += " ODER" if lan == 'de' else " OR"
+                    tmp += " ODER1" if lan == 'de' else " OR1"
+                if matchmodes[pkm_id] == 2:
+                    tmp += " ODER2" if lan == 'de' else " OR2"
             tmp += "\n"
         bot.sendMessage(chat_id, text=tmp, parse_mode='Markdown')
 
@@ -1133,26 +1135,26 @@ def cmd_matchmode(bot, update, args):
 
     if len(args) < 1:
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Der IVs/WP/Level Übereinstimmungsmodus ist aktuell auf %s gesetzt.' % (pref.get('match_mode', 0)))
+            bot.sendMessage(chat_id, text='Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus ist aktuell auf %s gesetzt.' % (pref.get('match_mode', 0)))
         else:
-            bot.sendMessage(chat_id, text='The IVs/CP/Level matching mode is currently set to %s.' % (pref.get('match_mode', 0)))
+            bot.sendMessage(chat_id, text='The Distance/IVs/CP/Level matching mode is currently set to %s.' % (pref.get('match_mode', 0)))
         return
 
     try:
         matchmode = int(args[0])
         logger.info('[%s@%s] Setting matchmode.' % (userName, chat_id))
 
-        if matchmode == 0 or matchmode == 1:
+        if matchmode == 0 or matchmode == 1 or matchmode == 2:
             pref.set('match_mode', matchmode)
             if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text='Der IVs/WP/Level Übereinstimmungsmodus wurde auf %s gesetzt.' % (matchmode))
+                bot.sendMessage(chat_id, text='Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus wurde auf %s gesetzt.' % (matchmode))
             else:
-                bot.sendMessage(chat_id, text='The IVs/CP/Level matching mode was set to %s.' % (matchmode))
+                bot.sendMessage(chat_id, text='The Distance/IVs/CP/Level matching mode was set to %s.' % (matchmode))
         else:
             if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text='Bitte nur 0 (beide Werte) oder 1 (einer oder beide Werte) angeben.')
+                bot.sendMessage(chat_id, text='Bitte nur 0, 1 oder 2 angeben.')
             else:
-                bot.sendMessage(chat_id, text='Please only use 0 (both values) or 1 (one or both values).')
+                bot.sendMessage(chat_id, text='Please only use 0, 1 or 2.')
 
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
@@ -1188,23 +1190,23 @@ def cmd_pkmmatchmode(bot, update, args):
         if len(args) < 2:
             pkm_matchmode = matchmodes[pkm_id] if pkm_id in matchmodes else pref.get('matchmode', 0)
             if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text='Der IVs/WP/Level Übereinstimmungsmodus für %s ist auf %d gesetzt.' % (pokemon_name['de'][pkm_id], pkm_matchmode))
+                bot.sendMessage(chat_id, text='Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus für %s ist auf %d gesetzt.' % (pokemon_name['de'][pkm_id], pkm_matchmode))
             else:
-                bot.sendMessage(chat_id, text='The IVs/CP/Level matching mode for %s is set to %d.' % (pokemon_name['en'][pkm_id], pkm_matchmode))
+                bot.sendMessage(chat_id, text='The Distance/IVs/CP/Level matching mode for %s is set to %d.' % (pokemon_name['en'][pkm_id], pkm_matchmode))
             return
 
         pkm_matchmode = int(args[1])
         if pkm_matchmode < 0:
             pkm_matchmode = 0
-        if pkm_matchmode > 30:
-            pkm_matchmode = 30
+        if pkm_matchmode > 2:
+            pkm_matchmode = 2
 
         matchmodes[pkm_id] = pkm_matchmode
         pref.set('search_matchmode', matchmodes)
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Der IVs/WP/Level Übereinstimmungsmodus für %s wurde auf %d gesetzt.' % (pokemon_name['de'][pkm_id], pkm_matchmode))
+            bot.sendMessage(chat_id, text='Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus für %s wurde auf %d gesetzt.' % (pokemon_name['de'][pkm_id], pkm_matchmode))
         else:
-            bot.sendMessage(chat_id, text='The IVs/CP/Level matching mode for %s was set to %d.' % (pokemon_name['en'][pkm_id], pkm_matchmode))
+            bot.sendMessage(chat_id, text='The Distance/IVs/CP/Level matching mode for %s was set to %d.' % (pokemon_name['en'][pkm_id], pkm_matchmode))
 
 def cmd_rempkmmatchmode(bot, update, args):
     chat_id = update.message.chat_id
@@ -1230,9 +1232,9 @@ def cmd_rempkmmatchmode(bot, update, args):
         del matchmodes[pkm_id]
         pref.set('search_matchmode', matchmodes)
         if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Der IVs/WP/Level Übereinstimmungsmodus für %s wurde zurückgesetzt.' % (pokemon_name['de'][pkm_id]))
+            bot.sendMessage(chat_id, text='Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus für %s wurde zurückgesetzt.' % (pokemon_name['de'][pkm_id]))
         else:
-            bot.sendMessage(chat_id, text='The IVs/CP/Level matching mode for %s was reset.' % (pokemon_name['en'][pkm_id]))
+            bot.sendMessage(chat_id, text='The Distance/IVs/CP/Level matching mode for %s was reset.' % (pokemon_name['en'][pkm_id]))
 
 def isNotWhitelisted(userName, chat_id, command):
     if not whitelist.isWhitelisted(userName):

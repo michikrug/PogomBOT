@@ -42,23 +42,35 @@ class DSPokemonGoMapIVMysql():
 
     def buildPokemonQuery(self, pkm):
         queryParts = []
-        queryParts.append('pokemon_id = %s' % pkm['id'])
         subQueryParts = []
+        valuesQueryParts = []
+
+        queryParts.append('pokemon_id = %s' % pkm['id'])
+
         if pkm['iv'] > 0:
-            subQueryParts.append('(individual_attack + individual_defense + individual_stamina) >= %s' % (float(pkm['iv'])/100*45))
+            valuesQueryParts.append('(individual_attack + individual_defense + individual_stamina) >= %s' % (float(pkm['iv'])/100*45))
         if pkm['cp'] > 0:
-            subQueryParts.append('cp >= %s' % pkm['cp'])
+            valuesQueryParts.append('cp >= %s' % pkm['cp'])
         if pkm['level'] > 0:
-            subQueryParts.append('cp_multiplier >= %s' % self.get_pokemon_cpm(pkm['level']))
+            valuesQueryParts.append('cp_multiplier >= %s' % self.get_pokemon_cpm(pkm['level']))
         if pkm['match_mode'] == 0:
-            subQuery = ' AND '.join(subQueryParts)
+            valuesQuery = ' AND '.join(valuesQueryParts)
         elif pkm['match_mode'] == 1:
-            subQuery = ' OR '.join(subQueryParts)
-        if subQuery:
-            queryParts.append('(' + subQuery + ')')
+            valuesQuery = ' OR '.join(valuesQueryParts)
+        if valuesQuery:
+            subQueryParts.append('(' + valuesQuery + ')')
+
         if 'lat_max' in pkm:
-            queryParts.append('latitude BETWEEN %s AND %s' % (pkm['lat_min'], pkm['lat_max']))
-            queryParts.append('longitude BETWEEN %s AND %s' % (pkm['lng_min'], pkm['lng_max']))
+            locationQuery = 'latitude BETWEEN %s AND %s' % (pkm['lat_min'], pkm['lat_max'])
+            locationQuery += ' AND '
+            locationQuery += 'longitude BETWEEN %s AND %s' % (pkm['lng_min'], pkm['lng_max'])
+            subQueryParts.append('(' + locationQuery + ')')
+
+        if pkm['match_mode'] == 2:
+            queryParts.append('(' + ' OR '.join(subQueryParts) + ')')
+        else:
+            queryParts.append('(' + ' AND '.join(subQueryParts) + ')')
+
         return '(' + ' AND '.join(queryParts) + ')'
 
     def getPokemonByList(self, pokemonList, sendWithout = True):
