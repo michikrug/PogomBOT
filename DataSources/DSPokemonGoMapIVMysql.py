@@ -66,10 +66,11 @@ class DSPokemonGoMapIVMysql():
             locationQuery += 'longitude BETWEEN %s AND %s' % (pkm['lng_min'], pkm['lng_max'])
             subQueryParts.append('(' + locationQuery + ')')
 
-        if pkm['match_mode'] == 2:
-            queryParts.append('(' + ' OR '.join(subQueryParts) + ')')
-        else:
-            queryParts.append('(' + ' AND '.join(subQueryParts) + ')')
+        if subQueryParts:
+            if pkm['match_mode'] == 2:
+                queryParts.append('(' + ' OR '.join(subQueryParts) + ')')
+            else:
+                queryParts.append('(' + ' AND '.join(subQueryParts) + ')')
 
         return '(' + ' AND '.join(queryParts) + ')'
 
