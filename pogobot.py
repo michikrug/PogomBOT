@@ -1396,24 +1396,44 @@ def sendOnePoke(chat_id, pokemon):
         deltaStr = '%02dm %02ds' % (int(delta.seconds / 60), int(delta.seconds % 60))
         disappear_time_str = disappear_time.replace(tzinfo = timezone.utc).astimezone(tz = None).strftime("%H:%M:%S")
 
-        # Pokemon already sent, disappeared or we do not want to send without iv
-        if (encounter_id in mySent) or (delta.seconds <= 0) or (iv is None and not sendPokeWithoutIV):
-            logger.info('[%s] Not sending notification because: already sent / already disappeared / has no IVs. %s' % (chat_id, pokemon.getPokemonID()))
+        if encounter_id in mySent:
+            logger.info('[%s] Not sending notification. Already sent. %s' % (chat_id, pokemon.getPokemonID()))
+            lock.release()
+            return
+
+        if delta.seconds <= 0:
+            logger.info('[%s] Not sending notification. Already disappeared. %s' % (chat_id, pokemon.getPokemonID()))
+            lock.release()
+            return
+
+        if iv is None and not sendPokeWithoutIV:
+            logger.info('[%s] Not sending notification. Has no IVs. %s' % (chat_id, pokemon.getPokemonID()))
             lock.release()
             return
 
         location_data = pref.preferences.get('location')
+
+        dists = pref.get('search_dists', {})
+        if pok_id in dists:
+            location_data[2] = dists[pok_id]
+
+        matchmode = pref.preferences.get('match_mode', 0)
+
+        matchmodes = pref.get('search_matchmode', {})
+        if pok_id in matchmodes:
+            matchmode = matchmodes[pok_id]
+
+        if matchmode < 2:
+            if location_data[0] is not None and not pokemon.filterbylocation(location_data):
+                logger.info('[%s] Not sending notification. Too far away. %s' % (chat_id, pokemon.getPokemonID()))
+                lock.release()
+                return
 
         if webhookEnabled:
 
             miniv = pref.preferences.get('miniv', 0)
             mincp = pref.preferences.get('mincp', 0)
             minlevel = pref.preferences.get('minlevel', 0)
-            matchmode = pref.preferences.get('match_mode', 0)
-
-            dists = pref.get('search_dists', {})
-            if pok_id in dists:
-                location_data[2] = dists[pok_id]
 
             minivs = pref.get('search_miniv', {})
             if pok_id in minivs:
@@ -1427,26 +1447,25 @@ def sendOnePoke(chat_id, pokemon):
             if pok_id in minlevels:
                 minlevel = minlevels[pok_id]
 
-            matchmodes = pref.get('search_matchmode', {})
-            if pok_id in matchmodes:
-                matchmode = matchmodes[pok_id]
-
-            invalid = True
-
             if matchmode == 0:
-                if (location_data[0] is None or pokemon.filterbylocation(location_data)) and (iv is None or iv >= miniv) and (cp is None or cp >= mincp) and (level is None or level >= minlevel):
-                    invalid = False
-            elif matchmode == 1:
-                if (location_data[0] is None or pokemon.filterbylocation(location_data)) and ((iv is None or iv >= miniv) or (cp is None or cp >= mincp) or (level is None or level >= minlevel)):
-                    invalid = False
-            elif matchmode == 2:
-                if (location_data[0] is None or pokemon.filterbylocation(location_data)) or (iv is None or iv >= miniv) or (cp is None or cp >= mincp) or (level is None or level >= minlevel):
-                    invalid = False
+                if iv is not None and iv < miniv:
+                    logger.info('[%s] Not sending notification. IV filter mismatch. %s' % (chat_id, pokemon.getPokemonID()))
+                    lock.release()
+                    return
+                if cp is not None and cp < mincp:
+                    logger.info('[%s] Not sending notification. CP filter mismatch. %s' % (chat_id, pokemon.getPokemonID()))
+                    lock.release()
+                    return
+                if level is not None and level < minlevel:
+                    logger.info('[%s] Not sending notification. Level filter mismatch. %s' % (chat_id, pokemon.getPokemonID()))
+                    lock.release()
+                    return
 
-            if invalid:
-                logger.info('[%s] Not sending notification because: filter mismatch. %s' % (chat_id, pokemon.getPokemonID()))
-                lock.release()
-                return
+            if matchmode > 0:
+                if (iv is not None and iv < miniv) and (cp is not None and cp < mincp) and (level is not None and level < minlevel):
+                    logger.info('[%s] Not sending notification: IV/CP/Level filter mismatch. %s' % (chat_id, pokemon.getPokemonID()))
+                    lock.release()
+                    return
 
         logger.info('[%s] Sending one notification. %s' % (chat_id, pokemon.getPokemonID()))
 
