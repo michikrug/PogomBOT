@@ -570,46 +570,6 @@ def cmd_list(bot, update):
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
 
-def cmd_load(bot, update, job_queue):
-    chat_id = update.message.chat_id
-    userName = update.message.from_user.username
-
-    if isNotWhitelisted(userName, chat_id, 'load'):
-        return
-
-    pref = prefs.get(chat_id)
-
-    logger.info('[%s@%s] Attempting to load.' % (userName, chat_id))
-
-    r = pref.load()
-
-    if r is None:
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Du hast keine gespeicherten Einstellungen.')
-        else:
-            bot.sendMessage(chat_id, text='You do not have saved preferences.')
-        return
-
-    if not r:
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Du bist schon auf dem neusten Stand.')
-        else:
-            bot.sendMessage(chat_id, text='You are already up to date.')
-        return
-    else:
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Deine Einstellungen wurden erfolgreich wiederhergestellt.')
-        else:
-            bot.sendMessage(chat_id, text='Your settings were successfully restored.')
-
-    if len(pref.get('search_ids')) > 0:
-        addJob(bot, update, job_queue)
-    else:
-        if chat_id in jobs:
-            job = jobs[chat_id]
-            job.schedule_removal()
-            del jobs[chat_id]
-
 def cmd_lang(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
@@ -1425,7 +1385,6 @@ def sendOnePoke(chat_id, pokemon):
         move1 = pokemon.getMove1()
         move2 = pokemon.getMove2()
         cp = pokemon.getCP()
-        cp_multiplier = pokemon.getCPMultiplier()
         level = pokemon.getLevel()
 
         mySent = sent[chat_id]
@@ -1439,6 +1398,7 @@ def sendOnePoke(chat_id, pokemon):
 
         # Pokemon already sent, disappeared or we do not want to send without iv
         if (encounter_id in mySent) or (delta.seconds <= 0) or (iv is None and not sendPokeWithoutIV):
+            logger.info('[%s] Not sending notification because: already sent / already disappeared / has no IVs. %s' % (chat_id, pokemon.getPokemonID()))
             lock.release()
             return
 
@@ -1484,6 +1444,7 @@ def sendOnePoke(chat_id, pokemon):
                     invalid = False
 
             if invalid:
+                logger.info('[%s] Not sending notification because: filter mismatch. %s' % (chat_id, pokemon.getPokemonID()))
                 lock.release()
                 return
 
@@ -1624,18 +1585,6 @@ def read_move_names(loc):
         # Pass to ignore if some files missing.
         pass
 
-def send_load_message(chat_id):
-    logger.info('Sending load message to: <%s>' % chat_id)
-    pref = prefs.get(chat_id)
-    try:
-        if pref.get('language') == 'de':
-            telegramBot.sendMessage(chat_id, text="Leider musste der Bot neugestartet werden. \nBitte nutze den \"/load\" Befehl um deine Einstellungen wiederherzustellen.")
-        else:
-            telegramBot.sendMessage(chat_id, text="Unfortunately, the bot had to be restarted. \nPlease use the \"/load\" command to restore your settings.")
-
-    except Exception as e:
-        logger.error('Encountered error while sending load message (%s)' % (repr(e)))
-
 # Returns a set with walking dist and walking duration via Google Distance Matrix API
 def get_walking_data(user_location, lat, lng):
     data = {'walk_dist': 'unknown', 'walk_time': 'unknown'}
@@ -1714,7 +1663,6 @@ def main():
     dp.add_handler(CommandHandler("addbyrarity", cmd_addByRarity, pass_args = True, pass_job_queue=True))
     dp.add_handler(CommandHandler("clear", cmd_clear))
     dp.add_handler(CommandHandler("rem", cmd_remove, pass_args=True, pass_job_queue=True))
-    dp.add_handler(CommandHandler("load", cmd_load, pass_job_queue=True))
     dp.add_handler(CommandHandler("list", cmd_list))
     dp.add_handler(CommandHandler("lang", cmd_lang, pass_args=True))
     dp.add_handler(CommandHandler("radius", cmd_radius, pass_args=True))
