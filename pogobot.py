@@ -1442,9 +1442,10 @@ def sendOnePoke(chat_id, pokemon):
             lock.release()
             return
 
+        location_data = pref.preferences.get('location')
+
         if webhookEnabled:
 
-            location_data = pref.preferences.get('location')
             miniv = pref.preferences.get('miniv', 0)
             mincp = pref.preferences.get('mincp', 0)
             minlevel = pref.preferences.get('minlevel', 0)
