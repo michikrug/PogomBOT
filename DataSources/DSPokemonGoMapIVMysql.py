@@ -22,15 +22,6 @@ class DSPokemonGoMapIVMysql():
         logger.info('Connecting to remote database')
         self.__connect()
 
-    def calc_pokemon_level(self, cp_multiplier):
-        if cp_multiplier < 0.734:
-            pokemon_level = (58.35178527 * cp_multiplier * cp_multiplier -
-                             2.838007664 * cp_multiplier + 0.8539209906)
-        else:
-            pokemon_level = 171.0112688 * cp_multiplier - 95.20425243
-        pokemon_level = int((round(pokemon_level) * 2) / 2)
-        return pokemon_level
-
     def get_pokemon_cpm(self, level):
         cp_multiplier = [0.094, 0.166398, 0.215732, 0.25572, 0.29025,
             0.321088, 0.349213, 0.375236, 0.399567, 0.4225,
@@ -104,13 +95,12 @@ class DSPokemonGoMapIVMysql():
                 cur.execute(sqlquery)
                 rows = cur.fetchall()
                 for row in rows:
-                    encounter_id = str(row[0])
-                    spawn_point = str(row[1])
+                    encounter_id = str(row[0]) if row[0] is not None else None
+                    spawn_point = str(row[1]) if row[1] is not None else None
                     pok_id = int(row[2]) if row[2] is not None else None
                     latitude = float(row[3]) if row[3] is not None else None
                     longitude = float(row[4]) if row[4] is not None else None
-                    disappear = str(row[5])
-                    disappear_time = datetime.strptime(disappear[0:19], "%Y-%m-%d %H:%M:%S")
+                    disappear_time = datetime.strptime(str(row[5])[0:19], "%Y-%m-%d %H:%M:%S") if row[5] is not None else None
                     individual_attack = int(row[6]) if row[6] is not None else None
                     individual_defense = int(row[7]) if row[7] is not None else None
                     individual_stamina = int(row[8]) if row[8] is not None else None
@@ -122,10 +112,9 @@ class DSPokemonGoMapIVMysql():
                     form = int(row[14]) if row[14] is not None else None
                     cp = int(row[15]) if row[15] is not None else None
                     cp_multiplier = float(row[16]) if row[16] is not None else None
-                    level = self.calc_pokemon_level(cp_multiplier) if cp_multiplier is not None else None
                     ivs = round(float((individual_attack + individual_defense + individual_stamina) / 45 * 100), 1) if individual_attack is not None else None
 
-                    poke = DSPokemon(encounter_id, spawn_point, pok_id, latitude, longitude, disappear_time, ivs, move1, move2, weight, height, gender, form, cp, cp_multiplier, level)
+                    poke = DSPokemon(encounter_id, spawn_point, pok_id, latitude, longitude, disappear_time, ivs, move1, move2, weight, height, gender, form, cp, cp_multiplier)
                     pokelist.append(poke)
 
         except pymysql.err.OperationalError as e:

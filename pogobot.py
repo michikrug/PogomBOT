@@ -46,6 +46,7 @@ gmaps_client = None
 
 clearCntThreshold = 20
 dataSource = None
+webhookEnabled = False
 ivAvailable = False
 
 # User dependant - dont add
@@ -1322,8 +1323,9 @@ def addJobForChatId(chat_id, job_queue):
             job = Job(alarm, 30, repeat=True, context=(chat_id, 'Other'))
             # Add to jobs
             jobs[chat_id] = job
-            logger.info('Putting job')
-            job_queue.put(job)
+            if not webhookEnabled:
+                logger.info('Putting job')
+                job_queue.put(job)
 
             # User dependant
             if chat_id not in sent:
@@ -1428,23 +1430,8 @@ def sendOnePoke(chat_id, pokemon):
 
         mySent = sent[chat_id]
 
-        miniv = pref.preferences.get('miniv', 0)
-        mincp = pref.preferences.get('mincp', 0)
-
-        minivs = pref.get('search_miniv', {})
-        if pok_id in minivs:
-            miniv = minivs[pok_id]
-
-        mincps = pref.get('search_mincp', {})
-        if pok_id in mincps:
-            mincp = mincps[pok_id]
-
         sendPokeWithoutIV = pref.get('send_without', True)
-
         lan = pref.get('language')
-        moveNames = move_name["en"]
-        if lan in move_name:
-            moveNames = move_name[lan]
 
         delta = disappear_time - datetime.utcnow()
         deltaStr = '%02dm %02ds' % (int(delta.seconds / 60), int(delta.seconds % 60))
@@ -1455,15 +1442,49 @@ def sendOnePoke(chat_id, pokemon):
             lock.release()
             return
 
-        location_data = pref.preferences.get('location')
-        dists = pref.get('search_dists', {})
-        if pok_id in dists:
-            location_data[2] = dists[pok_id]
+        if webhookEnabled:
 
-        # Pokemon outside of given radius
-        if location_data[0] is not None and not pokemon.filterbylocation(location_data):
-            lock.release()
-            return
+            location_data = pref.preferences.get('location')
+            miniv = pref.preferences.get('miniv', 0)
+            mincp = pref.preferences.get('mincp', 0)
+            minlevel = pref.preferences.get('minlevel', 0)
+            matchmode = pref.preferences.get('match_mode', 0)
+
+            dists = pref.get('search_dists', {})
+            if pok_id in dists:
+                location_data[2] = dists[pok_id]
+
+            minivs = pref.get('search_miniv', {})
+            if pok_id in minivs:
+                miniv = minivs[pok_id]
+
+            mincps = pref.get('search_mincp', {})
+            if pok_id in mincps:
+                mincp = mincps[pok_id]
+
+            minlevels = pref.get('search_minlevel', {})
+            if pok_id in minlevels:
+                minlevel = minlevels[pok_id]
+
+            matchmodes = pref.get('search_matchmode', {})
+            if pok_id in matchmodes:
+                matchmode = matchmodes[pok_id]
+
+            invalid = True
+
+            if matchmode == 0:
+                if (location_data[0] is None or pokemon.filterbylocation(location_data)) and (iv is None or iv >= miniv) and (cp is None or cp >= mincp) and (level is None or level >= minlevel):
+                    invalid = False
+            elif matchmode == 1:
+                if (location_data[0] is None or pokemon.filterbylocation(location_data)) and ((iv is None or iv >= miniv) or (cp is None or cp >= mincp) or (level is None or level >= minlevel)):
+                    invalid = False
+            elif matchmode == 2:
+                if (location_data[0] is None or pokemon.filterbylocation(location_data)) or (iv is None or iv >= miniv) or (cp is None or cp >= mincp) or (level is None or level >= minlevel):
+                    invalid = False
+
+            if invalid:
+                lock.release()
+                return
 
         logger.info('[%s] Sending one notification. %s' % (chat_id, pokemon.getPokemonID()))
 
@@ -1499,6 +1520,9 @@ def sendOnePoke(chat_id, pokemon):
                     title += " 📍%skm" % dist
 
         if move1 is not None and move2 is not None:
+            moveNames = move_name['en']
+            if lan in move_name:
+                moveNames = move_name[lan]
             # Use language if other move languages are available.
             move1Name = moveNames[str(move1)] if str(move1) in moveNames else '?'
             move2Name = moveNames[str(move2)] if str(move2) in moveNames else '?'
@@ -1644,11 +1668,24 @@ def main():
         if fnmatch.fnmatch(file, 'moves.*.json'):
             read_move_names(file.split('.')[1])
 
+    dbType = config.get('DB_TYPE', None)
+    scannerName = config.get('SCANNER_NAME', None)
+
     global dataSource
+    global webhookEnabled
     global ivAvailable
 
-    ivAvailable = True
-    dataSource = DataSources.DSPokemonGoMapIVMysql(config.get('DB_CONNECT', None))
+    if dbType == 'mysql':
+        if scannerName == 'pokemongo-map-iv':
+            ivAvailable = True
+            dataSource = DataSources.DSPokemonGoMapIVMysql(config.get('DB_CONNECT', None))
+    elif dbType == 'webhook':
+        webhookEnabled = True
+        if scannerName == 'pokemongo-map-iv':
+            ivAvailable = True
+            dataSource = DataSources.DSPokemonGoMapIVWebhook(config.get('DB_CONNECT', None), findUsersByPokeId)
+    if not dataSource:
+        raise Exception("The combination SCANNER_NAME, DB_TYPE is not available: %s,%s" % (scannerName, dbType))
 
     global whitelist
     whitelist = Whitelist.Whitelist(config)
