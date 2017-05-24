@@ -17,7 +17,7 @@ class DSPokemon:
         self.form = form
         self.cp = cp
         self.cp_multiplier = cp_multiplier
-        self.level = self.calcPokemonLevel(cp_multiplier)
+        self.level = self.calcPokemonLevel(cp_multiplier) if cp_multiplier is not None else None
 
     def getEncounterID(self):
         return self.encounter_id
