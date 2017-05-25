@@ -37,7 +37,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
             encounter_id = str(data['encounter_id']) if data['encounter_id'] is not None else None
             spawn_point = str(data['spawnpoint_id']) if data['spawnpoint_id'] is not None else None
             pok_id = int(data['pokemon_id']) if data['pokemon_id'] is not None else None
-            latitude = float(data['longitude']) if data['longitude'] is not None else None
+            latitude = float(data['latitude']) if data['latitude'] is not None else None
             longitude = float(data['longitude']) if data['longitude'] is not None else None
             disappear_time = datetime.utcfromtimestamp(data['disappear_time']) if data['disappear_time'] is not None else None
             individual_attack = int(data['individual_attack']) if data['individual_attack'] is not None else None
