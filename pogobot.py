@@ -693,14 +693,14 @@ def cmd_list(bot, update):
         tmp += "\n"
         if lan == 'de':
             if user_location[0] is None:
-                tmp = '*Liste der überwachten Raid-Pokémon:*\n'
+                tmp += '*Liste der überwachten Raid-Pokémon:*\n'
             else:
-                tmp = '*Liste der überwachten Raid-Pokémon im Radius von %.2fkm:*\n' % (user_location[2])
+                tmp += '*Liste der überwachten Raid-Pokémon im Radius von %.2fkm:*\n' % (user_location[2])
         else:
             if user_location[0] is None:
-                tmp = '*List of watched Raid Pokémon:*\n'
+                tmp += '*List of watched Raid Pokémon:*\n'
             else:
-                tmp = '*List of watched Raid Pokémon within a radius of %.2fkm:*\n' % (user_location[2])
+                tmp += '*List of watched Raid Pokémon within a radius of %.2fkm:*\n' % (user_location[2])
         raid_dists = pref.get('raid_dists', {})
         for x in pref.get('raid_ids', []):
             pkm_id = str(x)
