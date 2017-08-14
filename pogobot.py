@@ -1587,7 +1587,7 @@ def checkAndSend(bot, chat_id):
 
             allpokes = dataSource.getPokemonByList(buildDetailedPokemonList(chat_id), sendWithout)
 
-            if len(allpokes) > 200:
+            if len(allpokes) > 50:
                 if pref.get('language') == 'de':
                     bot.sendMessage(chat_id, text="Deine Filterregeln treffen auf zu viele Pokémon zu.\nBitte überprüfe deine Einstellungen!")
                 else:
