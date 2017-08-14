@@ -197,7 +197,7 @@ def cmd_start(bot, update, job_queue):
 
     pref = prefs.get(chat_id)
 
-    if len(pref.get('search_ids'), []) > 0 or len(pref.get('raid_ids'), []) > 0:
+    if len(pref.get('search_ids', [])) > 0 or len(pref.get('raid_ids', [])) > 0:
         addJob(bot, update, job_queue)
         if pref.get('language') == 'de':
             bot.sendMessage(chat_id, text='Bot wurde gestartet.')
