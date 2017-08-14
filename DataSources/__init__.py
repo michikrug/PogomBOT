@@ -1,4 +1,5 @@
 from .DSPokemon import DSPokemon
+from .DSRaid import DSRaid
 
-from .DSPokemonGoMapIVMysql import DSPokemonGoMapIVMysql
-from .DSPokemonGoMapIVWebhook import DSPokemonGoMapIVWebhook
+from .DSRocketMapIVMysql import DSRocketMapIVMysql
+from .DSRocketMapIVWebhook import DSRocketMapIVWebhook
