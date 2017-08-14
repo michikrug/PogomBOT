@@ -72,6 +72,14 @@ pokemon_rarity = [[],
     ["83", "115", "128", "132", "144", "145", "146", "150", "151", "160", "172", "173", "174", "175", "181", "182", "186", "192", "196", "197", "199", "201", "208", "212", "214", "222", "225", "230", "233", "235", "236", "238", "239", "240", "243", "244", "245", "249", "250", "251"]
 ];
 
+raid_levels = [[],
+    ["129", "153", "156", "159"],
+    ["89", "103", "110", "125", "126"],
+    ["59", "65", "68", "94", "134", "135", "136"],
+    ["3", "6", "9", "112", "131", "143", "248"],
+    ["144", "145", "146", "150", "151", "243", "244", "245", "249", "250", "251"]
+];
+
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
 def cmd_help(bot, update):
@@ -98,7 +106,7 @@ def cmd_help(bot, update):
         "/addbyrarity 1-5 - Fügt Pokémon it der gegebenen Seltenheit zum Scanner hinzu (1 sehr häufig - 5 ultra selten)\n" + \
         "/rem pokedexID - Entfernt Pokémon mit der gegebenen ID vom Scanner\n" + \
         "/rem pokedexID1 pokedexID2 ...\n" + \
-        "/list - Zeigt eine Liste mit den überwachten Pokémon\n" + \
+        "/list - Zeigt eine Liste mit den überwachten Pokémon und Raid-Pokémon\n" + \
         "/iv 0-100 - Setzt den Minimal-IV-Wert in Prozent\n" +\
         "/wp 0-4760 - Setzt den Minimal-WP-Wert\n" +\
         "/level 0-30 - Setzt das Minimal-Level\n" +\
@@ -111,12 +119,20 @@ def cmd_help(bot, update):
         "/matchmode 0/1/2 - Legt den Übereinstimmungs-Modus fest (0) Entfernung UND IV- UND WP-Wert UND Level / (1) Entfernung UND IV- ODER WP-Wert ODER Level muss übereinstimmen / (2) Entfernung ODER IV- ODER WP-Wert ODER Level muss übereinstimmen\n" +\
         "/pkmmatchmode pokedexID 0/1/2 - Legt den Übereinstimmungs-Modus für ein bestimmtes Pokémon fest\n" +\
         "/rempkmmatchmode pokedexID - Setzt den Übereinstimmungs-Modus für ein bestimmtes Pokémon zurück\n\n" +\
+        "*Raid-Filter*\n" + \
+        "/addraid pokedexID - Fügt Raid-Pokémon mit der gegebenen ID zum Scanner hinzu\n" + \
+        "/addraid pokedexID1 pokedexID2 ...\n" + \
+        "/addraidbylevel 1-5 - Fügt Raid-Pokémon it dem gegebenen Level zum Scanner hinzu (1-5)\n" + \
+        "/remraid pokedexID - Entfernt Raid-Pokémon mit der gegebenen ID vom Scanner\n" + \
+        "/remraid pokedexID1 pokedexID2 ...\n" + \
         "*Entfernungs-Filter*\n" + \
         "/location Addresse - Setzt die Suchposition gegeben als Text\n" +\
         "/radius km - Setzt den Suchradius in km\n" +\
         "/remloc - Setzt die Suchposition und den Radius zurück\n" +\
         "/pkmradius pokedexID km - Setzt den Suchradius für ein bestimmtes Pokémon in km\n" +\
-        "/rempkmradius pokedexID - Setzt den Suchradius für ein bestimmtes Pokémon zurück\n\n" +\
+        "/rempkmradius pokedexID - Setzt den Suchradius für ein bestimmtes Pokémon zurück\n" +\
+        "/raidradius pokedexID km - Setzt den Suchradius für ein bestimmtes Raid-Pokémon in km\n" +\
+        "/remraidradius pokedexID - Setzt den Suchradius für ein bestimmtes Raid-Pokémon zurück\n\n" +\
         "*Benachrichtigungs-Einstellungen*\n" + \
         "/sendwithout true/false - Legt fest, ob Pokémon ohne IV/WP-Werte gesendet werden sollen\n" +\
         "/stickers true/false - Legt fest, ob Sticker gesendet werden sollen\n" +\
@@ -137,7 +153,7 @@ def cmd_help(bot, update):
         "/addbyrarity 1-5 - Adds Pokémon with the given rarity to scanner (1 very common - 5 ultrarare)\n" + \
         "/rem pokedexID - Removes Pokémon with the given ID from the scanner\n" + \
         "/rem pokedexID1 pokedexID2 ...\n" + \
-        "/list - Lists the watched Pokémon\n" + \
+        "/list - Lists the watched Pokémon and Raid Pokémon\n" + \
         "/iv 0-100 - Sets the minimum IVs given as percent\n" +\
         "/cp 0-4760 - Sets the minumum CP\n" +\
         "/level 0-30 - Sets the minumum level\n" +\
@@ -150,12 +166,20 @@ def cmd_help(bot, update):
         "/matchmode 0/1/2 - Sets the match mode (0) Distance AND IVs AND CP AND level / (1) Distance AND IVs OR CP OR level has to match / (2) Distance OR IVs OR CP OR level has to match\n" +\
         "/pkmmatchmode pokedexID 0/1/2 - Set the match mode for a specific Pokémon\n" +\
         "/rempkmmatchmode pokedexID - Reset the match mode for a specific Pokémon\n\n" +\
+        "*Raid filter*\n" + \
+        "/addraid pokedexID - Adds Raid Pokémon with the given ID to the scanner\n" + \
+        "/addraid pokedexID1 pokedexID2 ...\n" + \
+        "/addraidbylevel 1-5 - Adds Raid Pokémon with the given level to scanner (1-5)\n" + \
+        "/remraid pokedexID - Removes Raid Pokémon with the given ID from the scanner\n" + \
+        "/remraid pokedexID1 pokedexID2 ...\n" + \
         "*Distance filter*\n" + \
         "/location address - Sets the desired search location given as text\n" +\
         "/radius km - Sets the search radius in km\n" +\
         "/remloc - Clears the search location and radius\n" +\
         "/pkmradius pokedexID km - Sets the search radius for a specific Pokémon in km\n" +\
-        "/rempkmradius pokedexID - Resets the search radius for a specific Pokémon\n\n" +\
+        "/rempkmradius pokedexID - Resets the search radius for a specific Pokémon\n" +\
+        "/raidradius pokedexID km - Sets the search radius for a specific Raid Pokémon in km\n" +\
+        "/remraidradius pokedexID - Resets the search radius for a specific Raid Pokémon\n\n" +\
         "*Notification settings*\n" + \
         "/sendwithout true/false - Defines if Pokémon without IV/CP should be sent\n" +\
         "/stickers true/false - Defines if stickers should be sent\n" +\
@@ -419,7 +443,7 @@ def cmd_add(bot, update, args, job_queue):
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
         bot.sendMessage(chat_id, text=usage_message)
 
-def cmd_addByRarity(bot, update, args, job_queue):
+def cmd_addbyrarity(bot, update, args, job_queue):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
@@ -517,6 +541,106 @@ def cmd_remove(bot, update, args, job_queue):
         else:
             bot.sendMessage(chat_id, text='Usage:\n/rem pokedexID')
 
+def cmd_addraidbylevel(bot, update, args, job_queue):
+    chat_id = update.message.chat_id
+    userName = update.message.from_user.username
+
+    if isNotWhitelisted(userName, chat_id, 'addraidbylevel'):
+        return
+
+    pref = prefs.get(chat_id)
+
+    if pref.get('language') == 'de':
+        usage_message = 'Verwendung:\n/addraidbylevel 1-5'
+    else:
+        usage_message = 'Usage:\n/addraidbylevel 1-5'
+
+    if len(args) < 1:
+        bot.sendMessage(chat_id, text=usage_message)
+        return
+
+    addJob(bot, update, job_queue)
+    logger.info('[%s@%s] Add raid pokemon by level.' % (userName, chat_id))
+
+    try:
+        level = int(args[0])
+
+        if level < 1 or level > 5:
+            bot.sendMessage(chat_id, text=usage_message)
+            return
+
+        search = pref.get('raid_ids')
+        for x in raid_levels[level]:
+            if int(x) not in search:
+                search.append(int(x))
+        search.sort()
+        pref.set('raid_ids', search)
+        cmd_list(bot, update)
+
+    except Exception as e:
+        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        bot.sendMessage(chat_id, text=usage_message)
+
+def cmd_addraid(bot, update, args, job_queue):
+    chat_id = update.message.chat_id
+    userName = update.message.from_user.username
+
+    if isNotWhitelisted(userName, chat_id, 'addraid'):
+        return
+
+    pref = prefs.get(chat_id)
+
+    if pref.get('language') == 'de':
+        usage_message = 'Verwendung:\n/addraid pokedexID oder /addraid pokedexID1 pokedexID2 ...'
+    else:
+        usage_message = 'Usage:\n/addraid pokedexID or /addraid pokedexID1 pokedexID2 ...'
+
+    if len(args) < 1:
+        bot.sendMessage(chat_id, text=usage_message)
+        return
+
+    addJob(bot, update, job_queue)
+    logger.info('[%s@%s] Add raid.' % (userName, chat_id))
+
+    try:
+        search = pref.get('raid_ids')
+        for x in args:
+            if int(x) >= min_pokemon_id and int(x) <= max_pokemon_id and int(x) not in search:
+                search.append(int(x))
+        search.sort()
+        pref.set('raid_ids', search)
+        cmd_list(bot, update)
+
+    except Exception as e:
+        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        bot.sendMessage(chat_id, text=usage_message)
+
+def cmd_removeraid(bot, update, args, job_queue):
+    chat_id = update.message.chat_id
+    userName = update.message.from_user.username
+
+    if isNotWhitelisted(userName, chat_id, 'removeraid'):
+        return
+
+    pref = prefs.get(chat_id)
+
+    logger.info('[%s@%s] Remove raid.' % (userName, chat_id))
+
+    try:
+        search = pref.get('raid_ids')
+        for x in args:
+            if int(x) in search:
+                search.remove(int(x))
+        pref.set('raid_ids', search)
+        cmd_list(bot, update)
+
+    except Exception as e:
+        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='Verwendung:\n/remraid pokedexID')
+        else:
+            bot.sendMessage(chat_id, text='Usage:\n/remraid pokedexID')
+
 def cmd_list(bot, update):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
@@ -565,6 +689,26 @@ def cmd_list(bot, update):
                 if matchmodes[pkm_id] == 2:
                     tmp += " ODER2" if lan == 'de' else " OR2"
             tmp += "\n"
+
+        tmp += "\n"
+        if lan == 'de':
+            if user_location[0] is None:
+                tmp = '*Liste der überwachten Raid-Pokémon:*\n'
+            else:
+                tmp = '*Liste der überwachten Raid-Pokémon im Radius von %.2fkm:*\n' % (user_location[2])
+        else:
+            if user_location[0] is None:
+                tmp = '*List of watched Raid Pokémon:*\n'
+            else:
+                tmp = '*List of watched Raid Pokémon within a radius of %.2fkm:*\n' % (user_location[2])
+        raid_dists = pref.get('raid_dists', {})
+        for x in pref.get('raid_ids'):
+            pkm_id = str(x)
+            tmp += "%s %s" % (pkm_id, pokemon_name[lan][pkm_id])
+            if pkm_id in raid_dists:
+                tmp += " %.2fkm" % (raid_dists[pkm_id])
+            tmp += "\n"
+
         bot.sendMessage(chat_id, text=tmp, parse_mode='Markdown')
 
     except Exception as e:
@@ -776,6 +920,79 @@ def cmd_rempkmradius(bot, update, args):
     if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and pkm_id in dists:
         del dists[pkm_id]
         pref.set('search_dists', dists)
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='Der Suchradius für %s wurde zurückgesetzt.' % (pokemon_name['de'][pkm_id]))
+        else:
+            bot.sendMessage(chat_id, text='The search radius for %s was reset.' % (pokemon_name['en'][pkm_id]))
+
+def cmd_raidradius(bot, update, args):
+    chat_id = update.message.chat_id
+    userName = update.message.from_user.username
+
+    if isNotWhitelisted(userName, chat_id, 'raidradius'):
+        return
+
+    pref = prefs.get(chat_id)
+
+    if pref.get('language') == 'de':
+        usage_message = 'Verwendung:\n/raidradius pokedexID km'
+    else:
+        usage_message = 'Usage:\n/raidradius pokedexID km'
+
+    if len(args) < 1:
+        bot.sendMessage(chat_id, text=usage_message)
+        return
+
+    pkm_id = args[0]
+
+    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id:
+        dists = pref.get('raid_dists', {})
+
+        # Only get current value
+        if len(args) < 2:
+            pkm_dist = dists[pkm_id] if pkm_id in dists else pref.get('location')[2]
+            if pref.get('language') == 'de':
+                bot.sendMessage(chat_id, text='Der Suchradius für %s ist auf %skm gesetzt.' % (pokemon_name['de'][pkm_id], pkm_dist))
+            else:
+                bot.sendMessage(chat_id, text='The search radius for %s is set to %skm.' % (pokemon_name['en'][pkm_id], pkm_dist))
+            return
+
+        # Change the radius for a specific raid pokemon
+        pkm_dist = float(args[1])
+        if pkm_dist < 0.1:
+            pkm_dist = 0.1
+
+        dists[pkm_id] = pkm_dist
+        pref.set('raid_dists', dists)
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='Der Suchradius für %s wurde auf %skm gesetzt.' % (pokemon_name['de'][pkm_id], pkm_dist))
+        else:
+            bot.sendMessage(chat_id, text='The search radius for %s was set to %skm.' % (pokemon_name['en'][pkm_id], pkm_dist))
+
+def cmd_remraidradius(bot, update, args):
+    chat_id = update.message.chat_id
+    userName = update.message.from_user.username
+
+    if isNotWhitelisted(userName, chat_id, 'remraidradius'):
+        return
+
+    pref = prefs.get(chat_id)
+
+    if pref.get('language') == 'de':
+        usage_message = 'Verwendung:\n/remraidradius pokedexID'
+    else:
+        usage_message = 'Usage:\n/remraidradius pokedexID'
+
+    if len(args) < 1:
+        bot.sendMessage(chat_id, text=usage_message)
+        return
+
+    # Change the radius for a specific raid pokemon
+    dists = pref.get('raid_dists', {})
+    pkm_id = args[0]
+    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and pkm_id in dists:
+        del dists[pkm_id]
+        pref.set('raid_dists', dists)
         if pref.get('language') == 'de':
             bot.sendMessage(chat_id, text='Der Suchradius für %s wurde zurückgesetzt.' % (pokemon_name['de'][pkm_id]))
         else:
@@ -1336,27 +1553,54 @@ def buildDetailedPokemonList(chat_id):
         pokemonList.append(entry)
     return pokemonList
 
+def buildDetailedRaidList(chat_id):
+    pref = prefs.get(chat_id)
+    raids = pref.get('raid_ids')
+    if len(raids) == 0:
+        return []
+    location = pref.get('location')
+    dists = pref.get('raid_dists', {})
+    raidList = []
+    for raid in raids:
+        entry = {}
+        raid_pkm_id = str(raid)
+        entry['id'] = raid_pkm_id
+        if location[0] is not None:
+            radius = dists[raid_pkm_id] if raid_pkm_id in dists else location[2]
+            origin = Point(location[0], location[1])
+            entry['lat_max'] = vincenty(radius).destination(origin, 0).latitude
+            entry['lng_max'] = vincenty(radius).destination(origin, 90).longitude
+            entry['lat_min'] = vincenty(radius).destination(origin, 180).latitude
+            entry['lng_min'] = vincenty(radius).destination(origin, 270).longitude
+        raidList.append(entry)
+    return raidList
+
 def checkAndSend(bot, chat_id):
-    logger.info('[%s] Checking pokemons.' % (chat_id))
+    logger.info('[%s] Checking pokemons and raids.' % (chat_id))
     try:
         pref = prefs.get(chat_id)
         pokemons = pref.get('search_ids')
-        if len(pokemons) == 0:
-            return
+        raids = pref.get('raid_ids')
 
-        sendWithout = pref.get('send_without', True)
+        if len(pokemons) > 0:
+            sendWithout = pref.get('send_without', True)
 
-        allpokes = dataSource.getPokemonByList(buildDetailedPokemonList(chat_id), sendWithout)
+            allpokes = dataSource.getPokemonByList(buildDetailedPokemonList(chat_id), sendWithout)
 
-        if len(allpokes) > 200:
-            if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text="Deine Filterregeln treffen auf zu viele Pokémon zu.\nBitte überprüfe deine Einstellungen!")
+            if len(allpokes) > 200:
+                if pref.get('language') == 'de':
+                    bot.sendMessage(chat_id, text="Deine Filterregeln treffen auf zu viele Pokémon zu.\nBitte überprüfe deine Einstellungen!")
+                else:
+                    bot.sendMessage(chat_id, text="Your filter rules are matching too many Pokémon.\nPlease check your settings!")
             else:
-                bot.sendMessage(chat_id, text="Your filter rules are matching too many Pokémon.\nPlease check your settings!")
-            return
+                for pokemon in allpokes:
+                    sendOnePoke(chat_id, pokemon)
 
-        for pokemon in allpokes:
-            sendOnePoke(chat_id, pokemon)
+        if len(raids) > 0:
+            allraids = dataSource.getRaidsByList(buildDetailedRaidList(chat_id))
+
+            for raid in allraids:
+                sendOneRaid(chat_id, raid)
 
     except Exception as e:
         logger.error('[%s] %s' % (chat_id, repr(e)))
@@ -1369,10 +1613,18 @@ def findUsersByPokeId(pokemon):
             sendOnePoke(chat_id, pokemon)
     pass
 
+def findUsersByRaidId(raid):
+    raid_id = raid.getPokemonID()
+    logger.info('Checking raid pokemon %s for all users.' % (raid_id))
+    for chat_id in jobs:
+        if int(raid_id) in prefs.get(chat_id).get('raid_ids'):
+            sendOneRaid(chat_id, raid)
+    pass
+
 def sendOnePoke(chat_id, pokemon):
     pref = prefs.get(chat_id)
     lock = locks[chat_id]
-    logger.info('[%s] Trying to send one notification. %s' % (chat_id, pokemon.getPokemonID()))
+    logger.info('[%s] Trying to send one pokemon notification. %s' % (chat_id, pokemon.getPokemonID()))
 
     lock.acquire()
     try:
@@ -1397,17 +1649,17 @@ def sendOnePoke(chat_id, pokemon):
         disappear_time_str = disappear_time.replace(tzinfo = timezone.utc).astimezone(tz = None).strftime("%H:%M:%S")
 
         if encounter_id in mySent:
-            logger.info('[%s] Not sending notification. Already sent. %s' % (chat_id, pokemon.getPokemonID()))
+            logger.info('[%s] Not sending pokemon notification. Already sent. %s' % (chat_id, pokemon.getPokemonID()))
             lock.release()
             return
 
         if delta.seconds <= 0:
-            logger.info('[%s] Not sending notification. Already disappeared. %s' % (chat_id, pokemon.getPokemonID()))
+            logger.info('[%s] Not sending pokemon notification. Already disappeared. %s' % (chat_id, pokemon.getPokemonID()))
             lock.release()
             return
 
         if iv is None and not sendPokeWithoutIV:
-            logger.info('[%s] Not sending notification. Has no IVs. %s' % (chat_id, pokemon.getPokemonID()))
+            logger.info('[%s] Not sending pokemon notification. Has no IVs. %s' % (chat_id, pokemon.getPokemonID()))
             lock.release()
             return
 
@@ -1425,7 +1677,7 @@ def sendOnePoke(chat_id, pokemon):
 
         if matchmode < 2:
             if location_data[0] is not None and not pokemon.filterbylocation(location_data):
-                logger.info('[%s] Not sending notification. Too far away. %s' % (chat_id, pokemon.getPokemonID()))
+                logger.info('[%s] Not sending pokemon notification. Too far away. %s' % (chat_id, pokemon.getPokemonID()))
                 lock.release()
                 return
 
@@ -1449,25 +1701,25 @@ def sendOnePoke(chat_id, pokemon):
 
             if matchmode == 0:
                 if iv is not None and iv < miniv:
-                    logger.info('[%s] Not sending notification. IV filter mismatch. %s' % (chat_id, pokemon.getPokemonID()))
+                    logger.info('[%s] Not sending pokemon notification. IV filter mismatch. %s' % (chat_id, pokemon.getPokemonID()))
                     lock.release()
                     return
                 if cp is not None and cp < mincp:
-                    logger.info('[%s] Not sending notification. CP filter mismatch. %s' % (chat_id, pokemon.getPokemonID()))
+                    logger.info('[%s] Not sending pokemon notification. CP filter mismatch. %s' % (chat_id, pokemon.getPokemonID()))
                     lock.release()
                     return
                 if level is not None and level < minlevel:
-                    logger.info('[%s] Not sending notification. Level filter mismatch. %s' % (chat_id, pokemon.getPokemonID()))
+                    logger.info('[%s] Not sending pokemon notification. Level filter mismatch. %s' % (chat_id, pokemon.getPokemonID()))
                     lock.release()
                     return
 
             if matchmode > 0:
                 if (iv is not None and iv < miniv) and (cp is not None and cp < mincp) and (level is not None and level < minlevel):
-                    logger.info('[%s] Not sending notification: IV/CP/Level filter mismatch. %s' % (chat_id, pokemon.getPokemonID()))
+                    logger.info('[%s] Not sending pokemon notification: IV/CP/Level filter mismatch. %s' % (chat_id, pokemon.getPokemonID()))
                     lock.release()
                     return
 
-        logger.info('[%s] Sending one notification. %s' % (chat_id, pokemon.getPokemonID()))
+        logger.info('[%s] Sending one pokemon notification. %s' % (chat_id, pokemon.getPokemonID()))
 
         title = pokemon_name[lan][pok_id]
 
@@ -1529,7 +1781,7 @@ def sendOnePoke(chat_id, pokemon):
     lock.acquire()
     if clearCnt[chat_id] > clearCntThreshold:
         clearCnt[chat_id] = 0
-        logger.info('[%s] Cleaning pokelist.' % (chat_id))
+        logger.info('[%s] Cleaning sentlist.' % (chat_id))
         try:
             current_time = datetime.utcnow()
             toDel = []
@@ -1544,6 +1796,129 @@ def sendOnePoke(chat_id, pokemon):
     else:
         clearCnt[chat_id] = clearCnt[chat_id] + 1
     lock.release()
+
+
+def sendOneRaid(chat_id, raid):
+    pref = prefs.get(chat_id)
+    lock = locks[chat_id]
+    logger.info('[%s] Trying to send one raid notification. %s' % (chat_id, raid.getPokemonID()))
+
+    lock.acquire()
+    try:
+        gym_id = raid.getGymId()
+        name = raid.getName()
+        latitude = raid.getLatitude()
+        longitude = raid.getLongitude()
+        start = raid.getStart()
+        end = raid.getEnd()
+        pok_id = str(raid.getPokemonID())
+        cp = raid.getCP()
+        move1 = raid.getMove1()
+        move2 = raid.getMove2()
+
+        raid_id = str(gym_id) + str(end)
+
+        mySent = sent[chat_id]
+
+        lan = pref.get('language')
+
+        delta = end - datetime.utcnow()
+        deltaStr = '%02dm %02ds' % (int(delta.seconds / 60), int(delta.seconds % 60))
+        disappear_time_str = end.replace(tzinfo = timezone.utc).astimezone(tz = None).strftime("%H:%M:%S")
+
+        if raid_id in mySent:
+            logger.info('[%s] Not sending raid notification. Already sent. %s' % (chat_id, raid.getPokemonID()))
+            lock.release()
+            return
+
+        if delta.seconds <= 0:
+            logger.info('[%s] Not sending raid notification. Already ended. %s' % (chat_id, raid.getPokemonID()))
+            lock.release()
+            return
+
+        location_data = pref.preferences.get('location')
+
+        dists = pref.get('raid_dists', {})
+        if pok_id in dists:
+            location_data[2] = dists[pok_id]
+
+        if location_data[0] is not None and not raid.filterbylocation(location_data):
+            logger.info('[%s] Not sending raid notification. Too far away. %s' % (chat_id, raid.getPokemonID()))
+            lock.release()
+            return
+
+        logger.info('[%s] Sending one notification. %s' % (chat_id, raid.getPokemonID()))
+
+        title = "👹 " + pokemon_name[lan][pok_id]
+
+        if cp is not None:
+            if lan == 'de':
+                title += " %dWP" % cp
+            else:
+                title += " %dCP" % cp
+
+        address = "📍 %s\n💨 %s ⏱ %s" % (name, disappear_time_str, deltaStr)
+
+        if location_data[0] is not None:
+            if pref.get('walk_dist'):
+                walkin_data = get_walking_data(location_data, latitude, longitude)
+                if walkin_data['walk_dist'] < 1:
+                    title += " 📍%dm" % int(1000*walkin_data['walk_dist'])
+                else:
+                    title += " 📍%skm" % walkin_data['walk_dist']
+                address += " 🚶%s" % walkin_data['walk_time']
+            else:
+                dist = round(raid.getDistance(location_data), 2)
+                if dist < 1:
+                    title += " 📍%dm" % int(1000*dist)
+                else:
+                    title += " 📍%skm" % dist
+
+        if move1 is not None and move2 is not None:
+            moveNames = move_name['en']
+            if lan in move_name:
+                moveNames = move_name[lan]
+            # Use language if other move languages are available.
+            move1Name = moveNames[str(move1)] if str(move1) in moveNames else '?'
+            move2Name = moveNames[str(move2)] if str(move2) in moveNames else '?'
+            address += "\n⚔ %s / %s" % (move1Name, move2Name)
+
+        mySent[raid_id] = end
+
+        if pref.get('only_map'):
+            telegramBot.sendVenue(chat_id, latitude, longitude, title, address)
+        else:
+            if pref.get('stickers'):
+                telegramBot.sendSticker(chat_id, sticker_list.get(str(pok_id)), disable_notification=True)
+            telegramBot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
+            telegramBot.sendMessage(chat_id, text = '<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
+
+    except Exception as e:
+        logger.error('[%s] %s' % (chat_id, repr(e)))
+    lock.release()
+
+    # Clean already disappeared pokemon
+    # 2016-08-19 20:10:10.000000
+    # 2016-08-19 20:10:10
+    lock.acquire()
+    if clearCnt[chat_id] > clearCntThreshold:
+        clearCnt[chat_id] = 0
+        logger.info('[%s] Cleaning sentlist.' % (chat_id))
+        try:
+            current_time = datetime.utcnow()
+            toDel = []
+            for raid_id in mySent:
+                time = mySent[raid_id]
+                if time < current_time:
+                    toDel.append(raid_id)
+            for raid_id in toDel:
+                del mySent[raid_id]
+        except Exception as e:
+            logger.error('[%s] %s' % (chat_id, repr(e)))
+    else:
+        clearCnt[chat_id] = clearCnt[chat_id] + 1
+    lock.release()
+
 
 def read_config():
     config_path = os.path.join(
@@ -1647,12 +2022,12 @@ def main():
     if dbType == 'mysql':
         if scannerName == 'pokemongo-map-iv':
             ivAvailable = True
-            dataSource = DataSources.DSPokemonGoMapIVMysql(config.get('DB_CONNECT', None))
+            dataSource = DataSources.DSRocketMapIVMysql(config.get('DB_CONNECT', None))
     elif dbType == 'webhook':
         webhookEnabled = True
         if scannerName == 'pokemongo-map-iv':
             ivAvailable = True
-            dataSource = DataSources.DSPokemonGoMapIVWebhook(config.get('DB_CONNECT', None), findUsersByPokeId)
+            dataSource = DataSources.DSRocketMapIVWebhook(config.get('DB_CONNECT', None), findUsersByPokeId, findUsersByRaidId)
     if not dataSource:
         raise Exception("The combination SCANNER_NAME, DB_TYPE is not available: %s,%s" % (scannerName, dbType))
 
@@ -1678,10 +2053,13 @@ def main():
     dp.add_handler(CommandHandler("start", cmd_start, pass_job_queue=True))
     dp.add_handler(CommandHandler("stop", cmd_stop))
     dp.add_handler(CommandHandler("help", cmd_help))
-    dp.add_handler(CommandHandler("add", cmd_add, pass_args=True, pass_job_queue=True))
-    dp.add_handler(CommandHandler("addbyrarity", cmd_addByRarity, pass_args = True, pass_job_queue=True))
     dp.add_handler(CommandHandler("clear", cmd_clear))
+    dp.add_handler(CommandHandler("add", cmd_add, pass_args=True, pass_job_queue=True))
+    dp.add_handler(CommandHandler("addbyrarity", cmd_addbyrarity, pass_args = True, pass_job_queue=True))
     dp.add_handler(CommandHandler("rem", cmd_remove, pass_args=True, pass_job_queue=True))
+    dp.add_handler(CommandHandler("addraid", cmd_add, pass_args=True, pass_job_queue=True))
+    dp.add_handler(CommandHandler("addraidbylevel", cmd_addraidbylevel, pass_args = True, pass_job_queue=True))
+    dp.add_handler(CommandHandler("remraid", cmd_remove, pass_args=True, pass_job_queue=True))
     dp.add_handler(CommandHandler("list", cmd_list))
     dp.add_handler(CommandHandler("lang", cmd_lang, pass_args=True))
     dp.add_handler(CommandHandler("radius", cmd_radius, pass_args=True))
@@ -1695,6 +2073,8 @@ def main():
     dp.add_handler(CommandHandler("walkdist", cmd_walkdist, pass_args=True))
     dp.add_handler(CommandHandler("pkmradius", cmd_pkmradius, pass_args=True))
     dp.add_handler(CommandHandler("rempkmradius", cmd_rempkmradius, pass_args=True))
+    dp.add_handler(CommandHandler("raidradius", cmd_pkmradius, pass_args=True))
+    dp.add_handler(CommandHandler("remraidradius", cmd_rempkmradius, pass_args=True))
     dp.add_handler(CommandHandler("iv", cmd_iv, pass_args=True))
     dp.add_handler(CommandHandler("cp", cmd_cp, pass_args=True))
     dp.add_handler(CommandHandler("wp", cmd_cp, pass_args=True))

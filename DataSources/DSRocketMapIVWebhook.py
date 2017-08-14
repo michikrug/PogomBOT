@@ -1,4 +1,5 @@
 from .DSPokemon import DSPokemon
+from .DSRaid import DSRaid
 
 import os
 from datetime import datetime
@@ -55,14 +56,14 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
             poke = DSPokemon(encounter_id, spawn_point, pok_id, latitude, longitude, disappear_time, ivs, move1, move2, weight, height, gender, form, cp, cp_multiplier)
             self.instance.addPoke(poke)
+        elif js['type'] == 'raid':
+            #TODO
+            pass
         elif js['type'] == 'pokestop':
-            data = js['message']
             pass
         elif js['type'] == 'gym':
-            data = js['message']
             pass
         elif js['type'] == 'gym-details':
-            data = js['message']
             pass
         else:
             pass
@@ -71,9 +72,10 @@ class WebhookHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         return
 
-class DSPokemonGoMapIVWebhook():
-    method = None
-    def __init__(self, connectString, method):
+class DSRocketMapIVWebhook():
+    poke_method = None
+    raid_method = None
+    def __init__(self, connectString, poke_method, raid_method):
         port = int(connectString)
         logger.info('Starting webhook on port %s.' % (port))
         self.pokeDict = dict()
@@ -81,15 +83,22 @@ class DSPokemonGoMapIVWebhook():
         WebhookHandler.instance = self
         th = threading.Thread(target=startServer, args=[int(port)])
         th.start()
-        self.method = method
+        self.poke_method = poke_method
+        self.raid_method = raid_method
 
     def addPoke(self, poke):
-        pok_id = poke.getPokemonID()
-        self.method(poke)
+        self.poke_method(poke)
         pass
 
     def getPokemonByIds(self, ids, sendWithout = True):
         return []
 
     def getPokemonByList(self, pokemonList, sendWithout = True):
+        return []
+
+    def addRaid(self, raid):
+        self.raid_method(raid)
+        pass
+
+    def getRaidByList(self, raidList):
         return []

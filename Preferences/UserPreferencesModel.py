@@ -41,7 +41,9 @@ class UserPreferencesModel(object):
             search_miniv = {},
             search_mincp = {},
             search_minlevel = {},
-            search_matchmode = {}
+            search_matchmode = {},
+            raid_ids = [],
+            raid_dists = {}
         )
         self.__set_directory(directory=self.__getDefaulteDir())
         self.__set_filename(filename=self.__getDefaultFilename(chat_id))
