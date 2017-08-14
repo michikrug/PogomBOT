@@ -146,11 +146,8 @@ class DSRocketMapIVMysql():
         sqlquery = ("SELECT raid.gym_id, name, latitude, longitude, "
             "start, end, pokemon_id, cp, move_1, move_2 "
             "FROM raid JOIN gym ON gym.gym_id=raid.gym_id JOIN gymdetails ON gym.gym_id=gymdetails.gym_id "
-            "WHERE raid.last_scanned > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) AND raid.end > UTC_TIMESTAMP()")
-        sqlquery += ' AND (' + ' OR '.join(list(map(self.buildRaidQuery, raidList))) + ')'
-        if not sendWithout:
-            sqlquery += ' AND individual_attack IS NOT NULL'
-        sqlquery += ' JOIN gym ON gym.gym_id=raid.gym_id JOIN gymdetails ON gym.gym_id=gymdetails.gym_id ORDER BY end ASC'
+            "WHERE raid.last_scanned > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) AND end > UTC_TIMESTAMP()")
+        sqlquery += ' AND (' + ' OR '.join(list(map(self.buildRaidQuery, raidList))) + ') ORDER BY end ASC'
 
         return self.executeRaidQuery(sqlquery)
 

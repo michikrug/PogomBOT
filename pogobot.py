@@ -124,7 +124,7 @@ def cmd_help(bot, update):
         "/addraid pokedexID1 pokedexID2 ...\n" + \
         "/addraidbylevel 1-5 - Fügt Raid-Pokémon it dem gegebenen Level zum Scanner hinzu (1-5)\n" + \
         "/remraid pokedexID - Entfernt Raid-Pokémon mit der gegebenen ID vom Scanner\n" + \
-        "/remraid pokedexID1 pokedexID2 ...\n" + \
+        "/remraid pokedexID1 pokedexID2 ...\n\n" + \
         "*Entfernungs-Filter*\n" + \
         "/location Addresse - Setzt die Suchposition gegeben als Text\n" +\
         "/radius km - Setzt den Suchradius in km\n" +\
@@ -171,7 +171,7 @@ def cmd_help(bot, update):
         "/addraid pokedexID1 pokedexID2 ...\n" + \
         "/addraidbylevel 1-5 - Adds Raid Pokémon with the given level to scanner (1-5)\n" + \
         "/remraid pokedexID - Removes Raid Pokémon with the given ID from the scanner\n" + \
-        "/remraid pokedexID1 pokedexID2 ...\n" + \
+        "/remraid pokedexID1 pokedexID2 ...\n\n" + \
         "*Distance filter*\n" + \
         "/location address - Sets the desired search location given as text\n" +\
         "/radius km - Sets the search radius in km\n" +\
