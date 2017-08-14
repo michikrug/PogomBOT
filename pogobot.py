@@ -197,7 +197,7 @@ def cmd_start(bot, update, job_queue):
 
     pref = prefs.get(chat_id)
 
-    if len(pref.get('search_ids')) > 0:
+    if len(pref.get('search_ids'), []) > 0 || len(pref.get('raid_ids'), []) > 0:
         addJob(bot, update, job_queue)
         if pref.get('language') == 'de':
             bot.sendMessage(chat_id, text='Bot wurde gestartet.')
@@ -431,7 +431,7 @@ def cmd_add(bot, update, args, job_queue):
     logger.info('[%s@%s] Add pokemon.' % (userName, chat_id))
 
     try:
-        search = pref.get('search_ids')
+        search = pref.get('search_ids', [])
         for x in args:
             if int(x) >= min_pokemon_id and int(x) <= max_pokemon_id and int(x) not in search and int(x) not in pokemon_blacklist:
                 search.append(int(x))
@@ -471,7 +471,7 @@ def cmd_addbyrarity(bot, update, args, job_queue):
             bot.sendMessage(chat_id, text=usage_message)
             return
 
-        search = pref.get('search_ids')
+        search = pref.get('search_ids', [])
         for x in pokemon_rarity[rarity]:
             if int(x) not in search and int(x) not in pokemon_blacklist:
                 search.append(int(x))
@@ -527,7 +527,7 @@ def cmd_remove(bot, update, args, job_queue):
     logger.info('[%s@%s] Remove pokemon.' % (userName, chat_id))
 
     try:
-        search = pref.get('search_ids')
+        search = pref.get('search_ids', [])
         for x in args:
             if int(x) in search:
                 search.remove(int(x))
@@ -569,7 +569,7 @@ def cmd_addraidbylevel(bot, update, args, job_queue):
             bot.sendMessage(chat_id, text=usage_message)
             return
 
-        search = pref.get('raid_ids')
+        search = pref.get('raid_ids', [])
         for x in raid_levels[level]:
             if int(x) not in search:
                 search.append(int(x))
@@ -603,7 +603,7 @@ def cmd_addraid(bot, update, args, job_queue):
     logger.info('[%s@%s] Add raid.' % (userName, chat_id))
 
     try:
-        search = pref.get('raid_ids')
+        search = pref.get('raid_ids', [])
         for x in args:
             if int(x) >= min_pokemon_id and int(x) <= max_pokemon_id and int(x) not in search:
                 search.append(int(x))
@@ -627,7 +627,7 @@ def cmd_removeraid(bot, update, args, job_queue):
     logger.info('[%s@%s] Remove raid.' % (userName, chat_id))
 
     try:
-        search = pref.get('raid_ids')
+        search = pref.get('raid_ids', [])
         for x in args:
             if int(x) in search:
                 search.remove(int(x))
@@ -670,7 +670,7 @@ def cmd_list(bot, update):
                 tmp = '*List of watched Pokémon:*\n'
             else:
                 tmp = '*List of watched Pokémon within a radius of %.2fkm:*\n' % (user_location[2])
-        for x in pref.get('search_ids'):
+        for x in pref.get('search_ids', []):
             pkm_id = str(x)
             tmp += "%s %s" % (pkm_id, pokemon_name[lan][pkm_id])
             if pkm_id in dists:
@@ -702,7 +702,7 @@ def cmd_list(bot, update):
             else:
                 tmp = '*List of watched Raid Pokémon within a radius of %.2fkm:*\n' % (user_location[2])
         raid_dists = pref.get('raid_dists', {})
-        for x in pref.get('raid_ids'):
+        for x in pref.get('raid_ids', []):
             pkm_id = str(x)
             tmp += "%s %s" % (pkm_id, pokemon_name[lan][pkm_id])
             if pkm_id in raid_dists:
@@ -1521,7 +1521,7 @@ def addJobForChatId(chat_id, job_queue):
 
 def buildDetailedPokemonList(chat_id):
     pref = prefs.get(chat_id)
-    pokemons = pref.get('search_ids')
+    pokemons = pref.get('search_ids', [])
     if len(pokemons) == 0:
         return []
     location = pref.get('location')
@@ -1555,7 +1555,7 @@ def buildDetailedPokemonList(chat_id):
 
 def buildDetailedRaidList(chat_id):
     pref = prefs.get(chat_id)
-    raids = pref.get('raid_ids')
+    raids = pref.get('raid_ids', [])
     if len(raids) == 0:
         return []
     location = pref.get('location')
@@ -1579,8 +1579,8 @@ def checkAndSend(bot, chat_id):
     logger.info('[%s] Checking pokemons and raids.' % (chat_id))
     try:
         pref = prefs.get(chat_id)
-        pokemons = pref.get('search_ids')
-        raids = pref.get('raid_ids')
+        pokemons = pref.get('search_ids', [])
+        raids = pref.get('raid_ids', [])
 
         if len(pokemons) > 0:
             sendWithout = pref.get('send_without', True)
@@ -1609,7 +1609,7 @@ def findUsersByPokeId(pokemon):
     poke_id = pokemon.getPokemonID()
     logger.info('Checking pokemon %s for all users.' % (poke_id))
     for chat_id in jobs:
-        if int(poke_id) in prefs.get(chat_id).get('search_ids'):
+        if int(poke_id) in prefs.get(chat_id).get('search_ids', []):
             sendOnePoke(chat_id, pokemon)
     pass
 
@@ -1617,7 +1617,7 @@ def findUsersByRaidId(raid):
     raid_id = raid.getPokemonID()
     logger.info('Checking raid pokemon %s for all users.' % (raid_id))
     for chat_id in jobs:
-        if int(raid_id) in prefs.get(chat_id).get('raid_ids'):
+        if int(raid_id) in prefs.get(chat_id).get('raid_ids', []):
             sendOneRaid(chat_id, raid)
     pass
 
