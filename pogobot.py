@@ -1823,9 +1823,7 @@ def sendOneRaid(chat_id, raid):
         lan = pref.get('language')
 
         delta = end - datetime.utcnow()
-        delta_h = int(delta.seconds / 3600)
-        delta_m = int((delta.seconds - (delta_h * 3600)) / 60)
-        deltaStr = '%02dh %02dm' % (delta_h, delta_m)
+        deltaStr = '%02dh %02dm' % (int(delta.seconds / 3600), int((delta.seconds / 60) % 60))
         disappear_time_str = end.replace(tzinfo = timezone.utc).astimezone(tz = None).strftime("%H:%M:%S")
 
         if raid_id in mySent:
