@@ -33,6 +33,7 @@ class DSRocketMapIVMysql():
         return cp_multiplier[level-1]
 
     def buildPokemonQuery(self, pkm):
+        valuesQuery = None
         queryParts = []
         subQueryParts = []
         valuesQueryParts = []
