@@ -60,7 +60,7 @@ pokemon_name = dict()
 move_name = dict()
 
 min_pokemon_id = 1
-max_pokemon_id = 251
+max_pokemon_id = 386
 
 pokemon_blacklist = [10,13,16,19,21,29,32,39,41,46,48,54,60,90,92,98,116,118,120,161,163,165,167,177,183,194,198,220]
 
