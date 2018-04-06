@@ -193,7 +193,7 @@ class DSRocketMapIVMysql():
         if wildcard:
             sqlquery += "name LIKE %s"
         else:
-            sqlquery += "name=%s COLLATE utf8mb4_bin"
+            sqlquery += "name=%s COLLATE utf8_bin"
 
         gymlist = []
         try:
