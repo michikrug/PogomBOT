@@ -2142,10 +2142,9 @@ def main():
     dp.add_handler(CommandHandler("rempkmlevel", cmd_rempkmlevel, pass_args=True))
     dp.add_handler(CommandHandler("rempkmmatchmode", cmd_rempkmmatchmode, pass_args=True))
     dp.add_handler(CommandHandler("sendwithout", cmd_sendwithout, pass_args=True))
-    dp.add_handler(MessageHandler([Filters.command], cmd_unknown))
-
     dp.add_handler(CommandHandler("wo", cmd_findgym, pass_args=True))
     dp.add_handler(CommandHandler("where", cmd_findgym, pass_args=True))
+    dp.add_handler(MessageHandler([Filters.command], cmd_unknown))
 
     # log all errors
     dp.add_error_handler(error)
