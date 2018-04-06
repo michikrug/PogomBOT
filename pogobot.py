@@ -256,10 +256,7 @@ def cmd_findgym(bot, update, args):
     pref = prefs.get(chat_id)
 
     if len(args) < 1:
-        if pref.get('language') != 'en':
-            bot.sendMessage(chat_id, text='Bitte gib einen Arena-Name zur Suche ein.')
-        else:
-            bot.sendMessage(chat_id, text='Please provide a gym name to search for.')
+        bot.delete_message(chat_id=chat_id, message_id=update.message.message_id)
         return
 
     try:
