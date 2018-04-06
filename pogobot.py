@@ -1481,7 +1481,7 @@ def isNotWhitelisted(bot, update, command):
     if chat_id < 0 or not whitelist.isWhitelisted(userName):
         logger.info('[%s@%s] User blocked (%s).' % (userName, chat_id, command))
         try:
-            bot.delete_message(chat_id=query.message.chat_id, message_id=query.message.message_id)
+            bot.delete_message(chat_id=chat_id, message_id=message_id)
         except Exception as e:
             logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
         return True
