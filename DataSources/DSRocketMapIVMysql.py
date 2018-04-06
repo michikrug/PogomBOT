@@ -186,11 +186,15 @@ class DSRocketMapIVMysql():
 
         return raidlist
 
-    def getGymsByName(self, gymname):
+    def getGymsByName(self, gymname, wildcard=True):
         sqlquery = ("SELECT gym.gym_id, name, latitude, longitude "
                     "FROM gym JOIN gymdetails "
-                    "ON gym.gym_id=gymdetails.gym_id "
-                    "WHERE name LIKE %s")
+                    "ON gym.gym_id=gymdetails.gym_id WHERE ")
+        if wildcard:
+            sqlquery += "name LIKE %s"
+        else:
+            sqlquery += "name=%s COLLATE utf8mb4_bin"
+
         gymlist = []
         try:
             with self.con:

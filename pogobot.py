@@ -243,8 +243,11 @@ def cmd_stop(bot, update):
 
 def cb_button(bot, update):
     query = update.callback_query
-    cmd_findgym(bot, query, (query.data,))
-    bot.delete_message(chat_id=query.message.chat_id, message_id=query.message.message_id)
+    chat_id = query.message.chat_id
+    gyms = dataSource.getGymsByName(gymname=query.data, wildcard=False)
+    if len(gyms):
+        printGym(bot, chat_id, gyms[0])
+    bot.delete_message(chat_id=chat_id, message_id=query.message.message_id)
 
 def cmd_findgym(bot, update, args):
     chat_id = update.message.chat_id
@@ -263,20 +266,12 @@ def cmd_findgym(bot, update, args):
         gymname = ' '.join(args).lower()
         logger.info('[%s@%s] Searching for gym: %s.' % (userName, chat_id, gymname))
 
-        gyms = dataSource.getGymsByName(gymname)
+        gyms = dataSource.getGymsByName(gymname=gymname)
 
         user_location = pref.get('location')
 
         if len(gyms) == 1:
-            gym = gyms[0]
-            if chat_id < 0 or user_location[0] is None:
-                dist = ''
-            else:
-                if pref.get('language') != 'en':
-                    dist = 'Entfernung: %.2fkm' % (gym.getDistance(user_location))
-                else:
-                    dist = 'Distance: %.2fkm' % (gym.getDistance(user_location))
-            bot.sendVenue(chat_id, gym.getLatitude(), gym.getLongitude(), gym.getName(), dist)
+            printGym(bot, chat_id, gyms[0])
         elif len(gyms) > 1:
             if pref.get('language') != 'en':
                 msg = 'Es wurden mehrere Arenen gefunden. Bitte wähle aus den folgenden:'
@@ -300,6 +295,18 @@ def cmd_findgym(bot, update, args):
             bot.sendMessage(chat_id, text='Verwendung:\n/wo Arena-Name')
         else:
             bot.sendMessage(chat_id, text='Usage:\n/where gym name')
+
+def printGym(bot, chat_id, gym):
+    pref = prefs.get(chat_id)
+    user_location = pref.get('location')
+    if chat_id < 0 or user_location[0] is None:
+        dist = ''
+    else:
+        if pref.get('language') != 'en':
+            dist = 'Entfernung: %.2fkm' % (gym.getDistance(user_location))
+        else:
+            dist = 'Distance: %.2fkm' % (gym.getDistance(user_location))
+    bot.sendVenue(chat_id, gym.getLatitude(), gym.getLongitude(), gym.getName(), dist)
 
 def cmd_stickers(bot, update, args):
     chat_id = update.message.chat_id
