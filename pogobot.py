@@ -86,7 +86,7 @@ def cmd_help(bot, update):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'help'):
+    if isNotWhitelisted(bot, update, 'help'):
         return
 
     logger.info('[%s@%s] Sending help text.' % (userName, chat_id))
@@ -192,7 +192,7 @@ def cmd_start(bot, update, job_queue):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'start'):
+    if isNotWhitelisted(bot, update, 'start'):
         return
 
     pref = prefs.get(chat_id)
@@ -216,7 +216,7 @@ def cmd_stop(bot, update):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'stop'):
+    if isNotWhitelisted(bot, update, 'stop'):
         return
 
     pref = prefs.get(chat_id)
@@ -243,7 +243,7 @@ def cmd_stop(bot, update):
 
 def cb_button(bot, update):
     query = update.callback_query
-    cmd_findgym(bot, update, (query.data,))
+    cmd_findgym(bot, query, (query.data,))
     bot.delete_message(chat_id=query.message.chat_id, message_id=query.message.message_id)
 
 def cmd_findgym(bot, update, args):
@@ -305,7 +305,7 @@ def cmd_stickers(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'stickers'):
+    if isNotWhitelisted(bot, update, 'stickers'):
         return
 
     pref = prefs.get(chat_id)
@@ -347,7 +347,7 @@ def cmd_maponly(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'maponly'):
+    if isNotWhitelisted(bot, update, 'maponly'):
         return
 
     pref = prefs.get(chat_id)
@@ -389,7 +389,7 @@ def cmd_sendwithout(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'sendwithout'):
+    if isNotWhitelisted(bot, update, 'sendwithout'):
         return
 
     pref = prefs.get(chat_id)
@@ -473,7 +473,7 @@ def cmd_add(bot, update, args, job_queue):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'add'):
+    if isNotWhitelisted(bot, update, 'add'):
         return
 
     pref = prefs.get(chat_id)
@@ -507,7 +507,7 @@ def cmd_addbyrarity(bot, update, args, job_queue):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'addByRarity'):
+    if isNotWhitelisted(bot, update, 'addByRarity'):
         return
 
     pref = prefs.get(chat_id)
@@ -547,7 +547,7 @@ def cmd_clear(bot, update):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'clear'):
+    if isNotWhitelisted(bot, update, 'clear'):
         return
 
     pref = prefs.get(chat_id)
@@ -579,7 +579,7 @@ def cmd_remove(bot, update, args, job_queue):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'remove'):
+    if isNotWhitelisted(bot, update, 'remove'):
         return
 
     pref = prefs.get(chat_id)
@@ -605,7 +605,7 @@ def cmd_addraidbylevel(bot, update, args, job_queue):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'addraidbylevel'):
+    if isNotWhitelisted(bot, update, 'addraidbylevel'):
         return
 
     pref = prefs.get(chat_id)
@@ -645,7 +645,7 @@ def cmd_addraid(bot, update, args, job_queue):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'addraid'):
+    if isNotWhitelisted(bot, update, 'addraid'):
         return
 
     pref = prefs.get(chat_id)
@@ -679,7 +679,7 @@ def cmd_removeraid(bot, update, args, job_queue):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'removeraid'):
+    if isNotWhitelisted(bot, update, 'removeraid'):
         return
 
     pref = prefs.get(chat_id)
@@ -705,7 +705,7 @@ def cmd_list(bot, update):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'list'):
+    if isNotWhitelisted(bot, update, 'list'):
         return
 
     pref = prefs.get(chat_id)
@@ -778,7 +778,7 @@ def cmd_lang(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'lang'):
+    if isNotWhitelisted(bot, update, 'lang'):
         return
 
     pref = prefs.get(chat_id)
@@ -847,7 +847,7 @@ def cmd_location(bot, update):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'location'):
+    if isNotWhitelisted(bot, update, 'location'):
         return
 
     pref = prefs.get(chat_id)
@@ -859,7 +859,7 @@ def cmd_location_str(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'location_str'):
+    if isNotWhitelisted(bot, update, 'location_str'):
         return
 
     pref = prefs.get(chat_id)
@@ -885,7 +885,7 @@ def cmd_radius(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'radius'):
+    if isNotWhitelisted(bot, update, 'radius'):
         return
 
     if len(args) < 1:
@@ -901,7 +901,7 @@ def cmd_clearlocation(bot, update):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'clearlocation'):
+    if isNotWhitelisted(bot, update, 'clearlocation'):
         return
 
     setUserLocation(userName, chat_id, None, None, 1)
@@ -916,7 +916,7 @@ def cmd_pkmradius(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'pkmradius'):
+    if isNotWhitelisted(bot, update, 'pkmradius'):
         return
 
     pref = prefs.get(chat_id)
@@ -960,7 +960,7 @@ def cmd_rempkmradius(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'rempkmradius'):
+    if isNotWhitelisted(bot, update, 'rempkmradius'):
         return
 
     pref = prefs.get(chat_id)
@@ -989,7 +989,7 @@ def cmd_raidradius(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'raidradius'):
+    if isNotWhitelisted(bot, update, 'raidradius'):
         return
 
     pref = prefs.get(chat_id)
@@ -1033,7 +1033,7 @@ def cmd_remraidradius(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'remraidradius'):
+    if isNotWhitelisted(bot, update, 'remraidradius'):
         return
 
     pref = prefs.get(chat_id)
@@ -1062,7 +1062,7 @@ def cmd_iv(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'iv'):
+    if isNotWhitelisted(bot, update, 'iv'):
         return
 
     pref = prefs.get(chat_id)
@@ -1090,7 +1090,7 @@ def cmd_pkmiv(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'pkmiv'):
+    if isNotWhitelisted(bot, update, 'pkmiv'):
         return
 
     pref = prefs.get(chat_id)
@@ -1136,7 +1136,7 @@ def cmd_rempkmiv(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'rempkmiv'):
+    if isNotWhitelisted(bot, update, 'rempkmiv'):
         return
 
     pref = prefs.get(chat_id)
@@ -1164,7 +1164,7 @@ def cmd_cp(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'cp'):
+    if isNotWhitelisted(bot, update, 'cp'):
         return
 
     pref = prefs.get(chat_id)
@@ -1192,7 +1192,7 @@ def cmd_pkmcp(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'pkmcp'):
+    if isNotWhitelisted(bot, update, 'pkmcp'):
         return
 
     pref = prefs.get(chat_id)
@@ -1237,7 +1237,7 @@ def cmd_rempkmcp(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'rempkmcp'):
+    if isNotWhitelisted(bot, update, 'rempkmcp'):
         return
 
     pref = prefs.get(chat_id)
@@ -1265,7 +1265,7 @@ def cmd_level(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'level'):
+    if isNotWhitelisted(bot, update, 'level'):
         return
 
     pref = prefs.get(chat_id)
@@ -1293,7 +1293,7 @@ def cmd_pkmlevel(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'pkmlevel'):
+    if isNotWhitelisted(bot, update, 'pkmlevel'):
         return
 
     pref = prefs.get(chat_id)
@@ -1338,7 +1338,7 @@ def cmd_rempkmlevel(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'rempkmlevel'):
+    if isNotWhitelisted(bot, update, 'rempkmlevel'):
         return
 
     pref = prefs.get(chat_id)
@@ -1366,7 +1366,7 @@ def cmd_matchmode(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'matchmode'):
+    if isNotWhitelisted(bot, update, 'matchmode'):
         return
 
     pref = prefs.get(chat_id)
@@ -1405,7 +1405,7 @@ def cmd_pkmmatchmode(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'pkmmatchmode'):
+    if isNotWhitelisted(bot, update, 'pkmmatchmode'):
         return
 
     pref = prefs.get(chat_id)
@@ -1450,7 +1450,7 @@ def cmd_rempkmmatchmode(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'rempkmmatchmode'):
+    if isNotWhitelisted(bot, update, 'rempkmmatchmode'):
         return
 
     pref = prefs.get(chat_id)
@@ -1474,9 +1474,16 @@ def cmd_rempkmmatchmode(bot, update, args):
         else:
             bot.sendMessage(chat_id, text='The Distance/IVs/CP/Level matching mode for %s was reset.' % (pokemon_name['en'][pkm_id]))
 
-def isNotWhitelisted(userName, chat_id, command):
+def isNotWhitelisted(bot, update, command):
+    chat_id = update.message.chat_id
+    message_id = update.message.message_id
+    userName = update.message.from_user.username
     if chat_id < 0 or not whitelist.isWhitelisted(userName):
         logger.info('[%s@%s] User blocked (%s).' % (userName, chat_id, command))
+        try:
+            bot.delete_message(chat_id=query.message.chat_id, message_id=query.message.message_id)
+        except Exception as e:
+            logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
         return True
     return False
 
@@ -1529,7 +1536,7 @@ def cmd_unknown(bot, update):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
 
-    if isNotWhitelisted(userName, chat_id, 'unknown'):
+    if isNotWhitelisted(bot, update, 'unknown'):
         return
 
     pref = prefs.get(chat_id)
