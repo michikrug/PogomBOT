@@ -243,8 +243,8 @@ def cmd_stop(bot, update):
 
 def cb_button(bot, update):
     query = update.callback_query
-    bot.delete_message(chat_id=query.message.chat_id, message_id=query.message.message_id)
     cmd_findgym(bot, update, (query.data,))
+    bot.delete_message(chat_id=query.message.chat_id, message_id=query.message.message_id)
 
 def cmd_findgym(bot, update, args):
     chat_id = update.message.chat_id
