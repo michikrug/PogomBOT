@@ -1,5 +1,6 @@
 from .DSPokemon import DSPokemon
 from .DSRaid import DSRaid
+from .DSGym import DSGym
 
 import os
 from datetime import datetime
@@ -184,6 +185,37 @@ class DSRocketMapIVMysql():
             logger.error(e)
 
         return raidlist
+
+    def getGymsByName(self, gymname):
+        sqlquery = ("SELECT gym.gym_id, name, latitude, longitude "
+                    "FROM gym JOIN gymdetails "
+                    "ON gym.gym_id=gymdetails.gym_id "
+                    "WHERE name LIKE '%s'")
+        gymlist = []
+        try:
+            with self.con:
+                cur = self.con.cursor()
+                cur.execute(sqlquery, ('%' + gymname + '%',))
+                rows = cur.fetchall()
+                for row in rows:
+                    gym_id = str(row[0]) if row[0] is not None else None
+                    name = str(row[1]) if row[1] is not None else None
+                    latitude = float(row[2]) if row[2] is not None else None
+                    longitude = float(row[3]) if row[3] is not None else None
+
+                    gym = DSGym(gym_id, name, latitude, longitude)
+                    gymlist.append(gym)
+
+        except pymysql.err.OperationalError as e:
+            if e.args[0] == 2006:
+                self.__reconnect()
+            else:
+                logger.error(e)
+
+        except Exception as e:
+            logger.error(e)
+
+        return gymlist
 
     def __connect(self):
         self.con = pymysql.connect(user=self.__user, password=self.__passw, host=self.__host, port=self.__port, database=self.__db)

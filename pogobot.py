@@ -241,6 +241,57 @@ def cmd_stop(bot, update):
     # Remove from locks
     del locks[chat_id]
 
+def cmd_findgym(bot, update, args):
+    chat_id = update.message.chat_id
+    userName = update.message.from_user.username
+
+    pref = prefs.get(chat_id)
+
+    if len(args) < 1:
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='Bitte gib einen Arena-Name zur Suche ein.')
+        else:
+            bot.sendMessage(chat_id, text='Please provide a gym name to search for.')
+        return
+
+    try:
+        gymname = ' '.join(args).lower()
+        logger.info('[%s@%s] Searching for gym: %s.' % (userName, chat_id, gymname))
+
+        gyms = dataSource.getGymsByName(gymname)
+
+        user_location = pref.get('location')
+
+        if len(gyms) == 1:
+            gym = gyms[0]
+            if chat_id < 0 or user_location[0] is None:
+                dist = ''
+            else:
+                dist = 'Entfernung: %.2fkm' % (gym.getDistance(user_location))
+            bot.sendVenue(chat_id, gym.getLatitude(), gym.getLongitude(), gym.getName(), dist)
+        elif len(gyms) > 1:
+            if pref.get('language') == 'de':
+                msg = 'Es wurden mehrere Arenen gefunden. Bitte wähle aus den folgenden:\n'
+                for gym in gyms:
+                    msg += '/wo %s\n' % (gym.getName())
+            else:
+                msg = 'Multiple gyms were found. Please chose one of the following:\n'
+                for gym in gyms:
+                    msg += '/where %s\n' % (gym.getName())
+            bot.sendMessage(chat_id, text=msg)
+        else:
+            if pref.get('language') == 'de':
+                bot.sendMessage(chat_id, text='Es wurde keine Arena mit diesem Namen gefunden.')
+            else:
+                bot.sendMessage(chat_id, text='No gym with this name could be found.')
+
+    except Exception as e:
+        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        if pref.get('language') == 'de':
+            bot.sendMessage(chat_id, text='Verwendung:\n/wo Arena-Name')
+        else:
+            bot.sendMessage(chat_id, text='Usage:\n/where gym name')
+
 def cmd_stickers(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
@@ -1415,7 +1466,7 @@ def cmd_rempkmmatchmode(bot, update, args):
             bot.sendMessage(chat_id, text='The Distance/IVs/CP/Level matching mode for %s was reset.' % (pokemon_name['en'][pkm_id]))
 
 def isNotWhitelisted(userName, chat_id, command):
-    if not whitelist.isWhitelisted(userName):
+    if chat_id < 0 or not whitelist.isWhitelisted(userName):
         logger.info('[%s@%s] User blocked (%s).' % (userName, chat_id, command))
         return True
     return False
@@ -2092,6 +2143,9 @@ def main():
     dp.add_handler(CommandHandler("rempkmmatchmode", cmd_rempkmmatchmode, pass_args=True))
     dp.add_handler(CommandHandler("sendwithout", cmd_sendwithout, pass_args=True))
     dp.add_handler(MessageHandler([Filters.command], cmd_unknown))
+
+    dp.add_handler(CommandHandler("wo", cmd_findgym, pass_args=True))
+    dp.add_handler(CommandHandler("where", cmd_findgym, pass_args=True))
 
     # log all errors
     dp.add_error_handler(error)
