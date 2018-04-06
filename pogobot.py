@@ -248,7 +248,7 @@ def cmd_findgym(bot, update, args):
     pref = prefs.get(chat_id)
 
     if len(args) < 1:
-        if pref.get('language') == 'de':
+        if pref.get('language') != 'en':
             bot.sendMessage(chat_id, text='Bitte gib einen Arena-Name zur Suche ein.')
         else:
             bot.sendMessage(chat_id, text='Please provide a gym name to search for.')
@@ -267,10 +267,13 @@ def cmd_findgym(bot, update, args):
             if chat_id < 0 or user_location[0] is None:
                 dist = ''
             else:
-                dist = 'Entfernung: %.2fkm' % (gym.getDistance(user_location))
+                if pref.get('language') != 'en':
+                    dist = 'Entfernung: %.2fkm' % (gym.getDistance(user_location))
+                else:
+                    dist = 'Distance: %.2fkm' % (gym.getDistance(user_location))
             bot.sendVenue(chat_id, gym.getLatitude(), gym.getLongitude(), gym.getName(), dist)
         elif len(gyms) > 1:
-            if pref.get('language') == 'de':
+            if pref.get('language') != 'en':
                 msg = 'Es wurden mehrere Arenen gefunden. Bitte wähle aus den folgenden:\n'
                 for gym in gyms:
                     msg += '/wo %s\n' % (gym.getName())
@@ -280,14 +283,14 @@ def cmd_findgym(bot, update, args):
                     msg += '/where %s\n' % (gym.getName())
             bot.sendMessage(chat_id, text=msg)
         else:
-            if pref.get('language') == 'de':
+            if pref.get('language') != 'en':
                 bot.sendMessage(chat_id, text='Es wurde keine Arena mit diesem Namen gefunden.')
             else:
                 bot.sendMessage(chat_id, text='No gym with this name could be found.')
 
     except Exception as e:
         logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
-        if pref.get('language') == 'de':
+        if pref.get('language') != 'en':
             bot.sendMessage(chat_id, text='Verwendung:\n/wo Arena-Name')
         else:
             bot.sendMessage(chat_id, text='Usage:\n/where gym name')
