@@ -15,8 +15,8 @@ import sys
 if sys.version_info[0] < 3:
     raise Exception('Must be using Python 3.')
 
-from telegram.ext import Updater, CommandHandler, Job, MessageHandler, Filters
-from telegram import Bot
+from telegram.ext import Updater, CommandHandler, Job, MessageHandler, Filters, CallbackQueryHandler
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 import logging
 from datetime import datetime, timezone
 import os
@@ -241,6 +241,11 @@ def cmd_stop(bot, update):
     # Remove from locks
     del locks[chat_id]
 
+def cb_button(bot, update):
+    query = update.callback_query
+    bot.delete_message(chat_id=query.message.chat_id, message_id=query.message.message_id)
+    cmd_findgym(bot, update, (query.data,))
+
 def cmd_findgym(bot, update, args):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
@@ -274,14 +279,15 @@ def cmd_findgym(bot, update, args):
             bot.sendVenue(chat_id, gym.getLatitude(), gym.getLongitude(), gym.getName(), dist)
         elif len(gyms) > 1:
             if pref.get('language') != 'en':
-                msg = 'Es wurden mehrere Arenen gefunden. Bitte wähle aus den folgenden:\n'
-                for gym in gyms:
-                    msg += '/wo %s\n' % (gym.getName())
+                msg = 'Es wurden mehrere Arenen gefunden. Bitte wähle aus den folgenden:'
             else:
-                msg = 'Multiple gyms were found. Please choose one of the following:\n'
-                for gym in gyms:
-                    msg += '/where %s\n' % (gym.getName())
-            bot.sendMessage(chat_id, text=msg)
+                msg = 'Multiple gyms were found. Please choose one of the following:'
+
+            keyboard = []
+            for gym in gyms:
+                keyboard.append([InlineKeyboardButton(gym.getName(), callback_data=gym.getName())])
+
+            update.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(keyboard))
         else:
             if pref.get('language') != 'en':
                 bot.sendMessage(chat_id, text='Es wurde keine Arena mit diesem Namen gefunden.')
@@ -2148,6 +2154,7 @@ def main():
     dp.add_handler(CommandHandler("wo", cmd_findgym, pass_args=True))
     dp.add_handler(CommandHandler("where", cmd_findgym, pass_args=True))
     dp.add_handler(MessageHandler([Filters.command], cmd_unknown))
+    dp.add_handler(CallbackQueryHandler(cb_button))
 
     # log all errors
     dp.add_error_handler(error)
