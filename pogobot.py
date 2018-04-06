@@ -85,8 +85,8 @@ raid_levels = [[],
 def cmd_help(bot, update):
     chat_id = update.message.chat_id
     userName = update.message.from_user.username
-    if not whitelist.isWhitelisted(userName):
-        logger.info('[%s@%s] User blocked (help).' % (userName, chat_id))
+
+    if isNotWhitelisted(userName, chat_id, 'help'):
         return
 
     logger.info('[%s@%s] Sending help text.' % (userName, chat_id))
@@ -275,7 +275,7 @@ def cmd_findgym(bot, update, args):
                 for gym in gyms:
                     msg += '/wo %s\n' % (gym.getName())
             else:
-                msg = 'Multiple gyms were found. Please chose one of the following:\n'
+                msg = 'Multiple gyms were found. Please choose one of the following:\n'
                 for gym in gyms:
                     msg += '/where %s\n' % (gym.getName())
             bot.sendMessage(chat_id, text=msg)
