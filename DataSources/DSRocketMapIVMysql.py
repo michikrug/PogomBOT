@@ -192,6 +192,7 @@ class DSRocketMapIVMysql():
                     "ON gym.gym_id=gymdetails.gym_id WHERE ")
         if wildcard:
             sqlquery += "name LIKE %s"
+            gymname = '%' + gymname + '%'
         else:
             sqlquery += "name=%s COLLATE utf8_bin"
 
@@ -199,7 +200,7 @@ class DSRocketMapIVMysql():
         try:
             with self.con:
                 cur = self.con.cursor()
-                cur.execute(sqlquery, ('%' + gymname + '%',))
+                cur.execute(sqlquery, (gymname,))
                 rows = cur.fetchall()
                 for row in rows:
                     gym_id = str(row[0]) if row[0] is not None else None
