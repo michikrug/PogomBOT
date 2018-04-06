@@ -190,7 +190,7 @@ class DSRocketMapIVMysql():
         sqlquery = ("SELECT gym.gym_id, name, latitude, longitude "
                     "FROM gym JOIN gymdetails "
                     "ON gym.gym_id=gymdetails.gym_id "
-                    "WHERE name LIKE '%s'")
+                    "WHERE name LIKE %s")
         gymlist = []
         try:
             with self.con:
