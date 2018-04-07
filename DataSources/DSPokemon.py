@@ -1,13 +1,16 @@
 from geopy.distance import vincenty
 
+
 class DSPokemon:
-    def __init__(self, encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, ivs, move1, move2, weight, height, gender, form, cp, cp_multiplier):
+    def __init__(self, encounter_id, spawnpoint_id, pokemon_id, latitude,
+                 longitude, disappear_time, ivs, move1, move2, weight, height,
+                 gender, form, cp, cp_multiplier):
         self.encounter_id = encounter_id
         self.spawnpoint_id = spawnpoint_id
         self.pokemon_id = pokemon_id
         self.latitude = latitude
         self.longitude = longitude
-        self.disappear_time = disappear_time # Should be datetime
+        self.disappear_time = disappear_time  # Should be datetime
         self.ivs = ivs
         self.move1 = move1
         self.move2 = move2
@@ -17,7 +20,8 @@ class DSPokemon:
         self.form = form
         self.cp = cp
         self.cp_multiplier = cp_multiplier
-        self.level = self.calcPokemonLevel(cp_multiplier) if cp_multiplier is not None else None
+        self.level = self.calcPokemonLevel(
+            cp_multiplier) if cp_multiplier is not None else None
 
     def getEncounterID(self):
         return self.encounter_id

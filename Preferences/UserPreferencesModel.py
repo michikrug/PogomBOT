@@ -9,16 +9,18 @@
 #
 # Simon Ward 17/09/2016
 
-
-import logging
-import sys, os, copy, tempfile
+import copy
 import errno
 import json
+import logging
+import os
+import sys
+import tempfile
 
 logger = logging.getLogger(__name__)
 
-class UserPreferencesModel(object):
 
+class UserPreferencesModel(object):
     def __defaultDict(self):
         return copy.deepcopy(self.defaultDict)
 
@@ -26,25 +28,25 @@ class UserPreferencesModel(object):
         self.chat_id = chat_id
         self.loadedconfig = config
         self.defaultDict = dict(
-            location = [None, None, 1],
-            language = self.loadedconfig.get('DEFAULT_LANG', 'de'),
-            stickers = self.loadedconfig.get('STICKERS', True),
-            only_map = self.loadedconfig.get('SEND_MAP_ONLY', False),
-            walk_dist = self.loadedconfig.get('WALK_DIST', False),
-            send_without = self.loadedconfig.get('SEND_POKEMON_WITHOUT_IV', True),
-            miniv = 0,
-            mincp = 0,
-            minlevel = 0,
-            match_mode = 0,
-            search_ids = [],
-            search_dists = {},
-            search_miniv = {},
-            search_mincp = {},
-            search_minlevel = {},
-            search_matchmode = {},
-            raid_ids = [],
-            raid_dists = {}
-        )
+            location=[None, None, 1],
+            language=self.loadedconfig.get('DEFAULT_LANG', 'de'),
+            stickers=self.loadedconfig.get('STICKERS', True),
+            only_map=self.loadedconfig.get('SEND_MAP_ONLY', False),
+            walk_dist=self.loadedconfig.get('WALK_DIST', False),
+            send_without=self.loadedconfig.get('SEND_POKEMON_WITHOUT_IV',
+                                               True),
+            miniv=0,
+            mincp=0,
+            minlevel=0,
+            match_mode=0,
+            search_ids=[],
+            search_dists={},
+            search_miniv={},
+            search_mincp={},
+            search_minlevel={},
+            search_matchmode={},
+            raid_ids=[],
+            raid_dists={})
         self.__set_directory(directory=self.__getDefaulteDir())
         self.__set_filename(filename=self.__getDefaultFilename(chat_id))
         # load existing or create file
@@ -52,8 +54,7 @@ class UserPreferencesModel(object):
         logger.info('[%s] Created new / loaded preferences.' % self.chat_id)
 
     def __getDefaulteDir(self):
-        user_path = os.path.join(
-            os.path.dirname(sys.argv[0]), "userdata")
+        user_path = os.path.join(os.path.dirname(sys.argv[0]), "userdata")
         try:
             os.makedirs(user_path)
         except OSError as e:
@@ -71,25 +72,32 @@ class UserPreferencesModel(object):
         if directory is None:
             directory = os.path.expanduser('~')
         else:
-            assert os.path.isdir(directory), "Given directory '%s' is not an existing directory" % directory
+            assert os.path.isdir(
+                directory
+            ), "Given directory '%s' is not an existing directory" % directory
         # check if a directory is writable
         try:
             testfile = tempfile.TemporaryFile(dir=directory)
             testfile.close()
         except Exception as e:
-            raise Exception("Given directory '%s' is not a writable directory." % directory)
+            raise Exception("Given directory '%s' is not a writable directory."
+                            % directory)
         # set directory
         self.__directory = directory
 
     def __set_filename(self, filename):
-        assert isinstance(filename, str), "filename must be a string, '%s' is given." % filename
+        assert isinstance(
+            filename,
+            str), "filename must be a string, '%s' is given." % filename
         filename = str(filename)
-        assert os.path.basename(filename) == filename, "Given filename '%s' is not valid. \
+        assert os.path.basename(
+            filename) == filename, "Given filename '%s' is not valid. \
 A valid filename must not contain especial characters or operating system separator which is '%s' in this case." % (
-            filename, os.sep)
+                filename, os.sep)
         if not filename.endswith('.json'):
             filename += '.json'
-            logging.warning("[%s] '.json' appended to given filename '%s'" % (self.chat_id, filename))
+            logging.warning("[%s] '.json' appended to given filename '%s'" %
+                            (self.chat_id, filename))
         self.__filename = filename
 
     def __load_or_create(self):
@@ -110,29 +118,43 @@ A valid filename must not contain especial characters or operating system separa
             self.__preferences = self.__defaultDict()
             self.__dump_file()
 
-    def __dump_file(self, temp = False):
+    def __dump_file(self, temp=False):
         # Clear out program data.......
         pref_loc = self.__preferences
 
         if temp:
             try:
-                fd = tempfile.NamedTemporaryFile(dir=tempfile._get_default_tempdir(), delete=True)
+                fd = tempfile.NamedTemporaryFile(
+                    dir=tempfile._get_default_tempdir(), delete=True)
             except Exception as e:
-                logger.warn('[%s] Unable to create preferences temporary file. (%s)' % (self.chat_id, e))
-                raise Exception("Unable to create preferences temporary file. (%s)" % e)
+                logger.warn(
+                    '[%s] Unable to create preferences temporary file. (%s)' %
+                    (self.chat_id, e))
+                raise Exception(
+                    "Unable to create preferences temporary file. (%s)" % e)
         else:
             # try to open preferences file
             try:
                 fd = open(self.fullpath, 'w', encoding='utf-8')
             except Exception as e:
-                logger.warn('[%s] Unable to open preference file for writing. (%s)' % (self.chat_id, e))
-                raise Exception("Unable to open preferences file '%s." % self.fullpath)
+                logger.warn(
+                    '[%s] Unable to open preference file for writing. (%s)' %
+                    (self.chat_id, e))
+                raise Exception(
+                    "Unable to open preferences file '%s." % self.fullpath)
         try:
             with fd:
-                json.dump(pref_loc, fd, indent=4, sort_keys=True, separators=(',', ':'))
+                json.dump(
+                    pref_loc,
+                    fd,
+                    indent=4,
+                    sort_keys=True,
+                    separators=(',', ':'))
         except Exception as e:
-            logger.error('[%s] Unable to write to preferences file. (%s)' % (self.chat_id, e))
-            raise Exception("Unable to write preferences to file '%s."%self.fullpath)
+            logger.error('[%s] Unable to write to preferences file. (%s)' %
+                         (self.chat_id, e))
+            raise Exception(
+                "Unable to write preferences to file '%s." % self.fullpath)
         # close file
         fd.close()
 
@@ -213,14 +235,15 @@ A valid filename must not contain especial characters or operating system separa
             pref_loc[key] = value
             self.update_preferences(pref_loc)
         else:
-            logger.error('Can not set preference key %s for user %s' % (key, self.chat_id))
+            logger.error('Can not set preference key %s for user %s' %
+                         (key, self.chat_id))
 
     def load(self):
         pref_loc = self.preferences
         self.__load_or_create()
         return self.__isUpdated(pref_loc)
 
-    def set_preferences(self, preferences = None):
+    def set_preferences(self, preferences=None):
         """
         Set preferences and update preferences file.
 
@@ -231,7 +254,8 @@ A valid filename must not contain especial characters or operating system separa
             preferences = self.preferences
         flag, m = self.check_preferences(preferences)
         assert flag, m
-        assert isinstance(preferences, dict), "Preferences must be a dictionary"
+        assert isinstance(preferences,
+                          dict), "Preferences must be a dictionary"
         self.set_and_dump_preferences(preferences)
 
     def update_preferences(self, preferences):
@@ -243,7 +267,8 @@ A valid filename must not contain especial characters or operating system separa
         """
         flag, m = self.check_preferences(preferences)
         assert flag, m
-        assert isinstance(preferences, dict), "Preferences must be a dictionary"
+        assert isinstance(preferences,
+                          dict), "Preferences must be a dictionary"
         newPreferences = self.preferences
         newPreferences.update(preferences)
         self.set_and_dump_preferences(newPreferences)
@@ -254,6 +279,8 @@ A valid filename must not contain especial characters or operating system separa
         try:
             self.__dump_file(temp=False)
         except Exception as e:
-            logger.error("Unable to dump preferences file (%s). "
-                         "Preferences file can be corrupt, but in memory stored preferences are "
-                         "still available using and accessible using preferences property." % e)
+            logger.error(
+                "Unable to dump preferences file (%s). "
+                "Preferences file can be corrupt, but in memory stored preferences are "
+                "still available using and accessible using preferences property."
+                % e)

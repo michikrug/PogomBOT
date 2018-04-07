@@ -1,5 +1,5 @@
-import logging
 import copy
+import logging
 
 from .UserPreferencesModel import UserPreferencesModel
 
@@ -18,7 +18,8 @@ class UserPreferences:
         if chat_id in self.__users:
             return True
         else:
-            self.__users[chat_id] = UserPreferencesModel(chat_id, self.__config)
+            self.__users[chat_id] = UserPreferencesModel(
+                chat_id, self.__config)
             return False
 
     def add_config(self, config):

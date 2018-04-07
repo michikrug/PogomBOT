@@ -1,7 +1,9 @@
 from geopy.distance import vincenty
 
+
 class DSRaid:
-    def __init__(self, gym_id, name, latitude, longitude, start, end, pokemon_id, cp, move1, move2):
+    def __init__(self, gym_id, name, latitude, longitude, start, end,
+                 pokemon_id, cp, move1, move2):
         self.gym_id = gym_id
         self.name = name
         self.latitude = latitude

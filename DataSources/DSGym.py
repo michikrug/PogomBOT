@@ -1,5 +1,6 @@
 from geopy.distance import vincenty
 
+
 class DSGym:
     def __init__(self, gym_id, name, latitude, longitude):
         self.gym_id = gym_id
