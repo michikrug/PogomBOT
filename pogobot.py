@@ -286,7 +286,7 @@ def cb_button(bot, update):
     gyms = dataSource.getGymsByName(gymname=query.data, wildcard=False)
     if len(gyms):
         printGym(bot, chat_id, gyms[0])
-    #bot.delete_message(chat_id=chat_id, message_id=query.message.message_id)
+    bot.delete_message(chat_id=chat_id, message_id=query.message.message_id)
 
 
 def cmd_findgym(bot, update, args):
@@ -320,14 +320,10 @@ def cmd_findgym(bot, update, args):
             keyboard = []
             for gym in gyms:
                 keyboard.append([
-                    InlineKeyboardButton(
-                        gym.getName(), callback_data=gym.getName())
+                    InlineKeyboardButton(gym.getName(), callback_data=gym.getName())
                 ])
 
-            update.message.reply_text(
-                msg,
-                reply_markup=InlineKeyboardMarkup(
-                    keyboard, one_time_keyboard=True))
+            update.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(keyboard))
         else:
             if pref.get('language') != 'en':
                 bot.sendMessage(
