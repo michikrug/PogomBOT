@@ -1,261 +1,220 @@
 import logging
-import os
 import re
-from datetime import datetime
 
 import pymysql
 
+from .Conversion import floatOrNone, intOrNone, strOrNone, strptimeOrNone
 from .DSGym import DSGym
 from .DSPokemon import DSPokemon
 from .DSRaid import DSRaid
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
+
+
+def __get_pokemon_cpm(level):
+    cp_multiplier = [
+        0.094, 0.166398, 0.215732, 0.25572, 0.29025, 0.321088, 0.349213, 0.375236, 0.399567, 0.4225,
+        0.443108, 0.462798, 0.481685, 0.499858, 0.517394, 0.534354, 0.550793, 0.566755, 0.582279,
+        0.5974, 0.612157, 0.626567, 0.640653, 0.654436, 0.667934, 0.681165, 0.694144, 0.706884,
+        0.719399, 0.7317
+    ]
+    return cp_multiplier[level - 1]
 
 
 class DSRocketMapIVMysql():
+
     def __init__(self, connectString):
         # open the database
         sql_pattern = 'mysql://(.*?):(.*?)@(.*?):(\d*)/(\S+)'
-        (user, passw, host, port,
-         db) = re.compile(sql_pattern).findall(connectString)[0]
+        (user, passw, host, port, db) = re.compile(sql_pattern).findall(connectString)[0]
         self.__user = user
         self.__passw = passw
         self.__host = host
         self.__port = int(port)
         self.__db = db
-        logger.info('Connecting to remote database')
+        LOGGER.info('Connecting to remote database')
         self.__connect()
 
-    def get_pokemon_cpm(self, level):
-        cp_multiplier = [
-            0.094, 0.166398, 0.215732, 0.25572, 0.29025, 0.321088, 0.349213,
-            0.375236, 0.399567, 0.4225, 0.443108, 0.462798, 0.481685, 0.499858,
-            0.517394, 0.534354, 0.550793, 0.566755, 0.582279, 0.5974, 0.612157,
-            0.626567, 0.640653, 0.654436, 0.667934, 0.681165, 0.694144,
-            0.706884, 0.719399, 0.7317
-        ]
-        return cp_multiplier[level - 1]
+    @staticmethod
+    def __build_pokemon_query(pkm):
+        values_query = None
+        query_parts = []
+        sub_query_parts = []
+        values_query_parts = []
 
-    def buildPokemonQuery(self, pkm):
-        valuesQuery = None
-        queryParts = []
-        subQueryParts = []
-        valuesQueryParts = []
-
-        queryParts.append('pokemon_id = %s' % pkm['id'])
+        query_parts.append('pokemon_id = %s' % pkm['id'])
 
         if pkm['iv'] > 0:
-            valuesQueryParts.append(
-                '(individual_attack + individual_defense + individual_stamina) >= %s'
-                % (float(pkm['iv']) / 100 * 45))
+            values_query_parts.append(
+                '(individual_attack + individual_defense + individual_stamina) >= %s' %
+                (float(pkm['iv']) / 100 * 45))
         if pkm['cp'] > 0:
-            valuesQueryParts.append('cp >= %s' % pkm['cp'])
+            values_query_parts.append('cp >= %s' % pkm['cp'])
         if pkm['level'] > 0:
-            valuesQueryParts.append(
-                'cp_multiplier >= %s' % self.get_pokemon_cpm(pkm['level']))
+            values_query_parts.append('cp_multiplier >= %s' % __get_pokemon_cpm(pkm['level']))
         if pkm['match_mode'] == 0:
-            valuesQuery = ' AND '.join(valuesQueryParts)
+            values_query = ' AND '.join(values_query_parts)
         elif pkm['match_mode'] == 1:
-            valuesQuery = ' OR '.join(valuesQueryParts)
-        if valuesQuery:
-            subQueryParts.append('(' + valuesQuery + ')')
+            values_query = ' OR '.join(values_query_parts)
+        if values_query:
+            sub_query_parts.append('(' + values_query + ')')
 
         if 'lat_max' in pkm:
-            locationQuery = 'latitude BETWEEN %s AND %s' % (pkm['lat_min'],
-                                                            pkm['lat_max'])
-            locationQuery += ' AND '
-            locationQuery += 'longitude BETWEEN %s AND %s' % (pkm['lng_min'],
-                                                              pkm['lng_max'])
-            subQueryParts.append('(' + locationQuery + ')')
+            location_query = 'latitude BETWEEN %s AND %s' % (pkm['lat_min'], pkm['lat_max'])
+            location_query += ' AND '
+            location_query += 'longitude BETWEEN %s AND %s' % (pkm['lng_min'], pkm['lng_max'])
+            sub_query_parts.append('(' + location_query + ')')
 
-        if subQueryParts:
+        if sub_query_parts:
             if pkm['match_mode'] == 2:
-                queryParts.append('(' + ' OR '.join(subQueryParts) + ')')
+                query_parts.append('(' + ' OR '.join(sub_query_parts) + ')')
             else:
-                queryParts.append('(' + ' AND '.join(subQueryParts) + ')')
+                query_parts.append('(' + ' AND '.join(sub_query_parts) + ')')
 
-        return '(' + ' AND '.join(queryParts) + ')'
+        return '(' + ' AND '.join(query_parts) + ')'
 
-    def getPokemonByList(self, pokemonList, sendWithout=True):
-        sqlquery = (
-            "SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
-            "individual_attack, individual_defense, individual_stamina, move_1, move_2, weight, height, gender, form, cp, cp_multiplier "
-            "FROM pokemon WHERE last_modified > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) AND disappear_time > UTC_TIMESTAMP()"
-        )
-        sqlquery += ' AND (' + ' OR '.join(
-            list(map(self.buildPokemonQuery, pokemonList))) + ')'
-        if not sendWithout:
-            sqlquery += ' AND individual_attack IS NOT NULL'
-        sqlquery += ' ORDER BY pokemon_id ASC'
+    @staticmethod
+    def __build_raid_query(raid):
+        query_parts = []
 
-        return self.executePokemonQuery(sqlquery)
-
-    def getPokemonByIds(self, ids, sendWithout=True):
-        sqlquery = (
-            "SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
-            "individual_attack, individual_defense, individual_stamina, move_1, move_2, weight, height, gender, form, cp, cp_multiplier "
-            "FROM pokemon WHERE last_modified > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) AND disappear_time > UTC_TIMESTAMP()"
-        )
-        sqlquery += ' AND pokemon_id in (' + ','.join(map(str, ids)) + ')'
-        if not sendWithout:
-            sqlquery += ' AND individual_attack IS NOT NULL'
-        sqlquery += ' ORDER BY pokemon_id ASC'
-
-        return self.executePokemonQuery(sqlquery)
-
-    def executePokemonQuery(self, sqlquery):
-        pokelist = []
-        try:
-            with self.con:
-                cur = self.con.cursor()
-                cur.execute(sqlquery)
-                rows = cur.fetchall()
-                for row in rows:
-                    encounter_id = str(row[0]) if row[0] is not None else None
-                    spawn_point = str(row[1]) if row[1] is not None else None
-                    pokemon_id = int(row[2]) if row[2] is not None else None
-                    latitude = float(row[3]) if row[3] is not None else None
-                    longitude = float(row[4]) if row[4] is not None else None
-                    disappear_time = datetime.strptime(
-                        str(row[5])[0:19],
-                        "%Y-%m-%d %H:%M:%S") if row[5] is not None else None
-                    individual_attack = int(
-                        row[6]) if row[6] is not None else None
-                    individual_defense = int(
-                        row[7]) if row[7] is not None else None
-                    individual_stamina = int(
-                        row[8]) if row[8] is not None else None
-                    move1 = int(row[9]) if row[9] is not None else None
-                    move2 = int(row[10]) if row[10] is not None else None
-                    weight = float(row[11]) if row[11] is not None else None
-                    height = float(row[12]) if row[12] is not None else None
-                    gender = int(row[13]) if row[13] is not None else None
-                    form = int(row[14]) if row[14] is not None else None
-                    cp = int(row[15]) if row[15] is not None else None
-                    cp_multiplier = float(
-                        row[16]) if row[16] is not None else None
-                    ivs = round(
-                        float((individual_attack + individual_defense +
-                               individual_stamina) / 45 * 100),
-                        1) if individual_attack is not None else None
-
-                    poke = DSPokemon(encounter_id, spawn_point, pokemon_id,
-                                     latitude, longitude, disappear_time, ivs,
-                                     move1, move2, weight, height, gender,
-                                     form, cp, cp_multiplier)
-                    pokelist.append(poke)
-
-        except pymysql.err.OperationalError as e:
-            if e.args[0] == 2006:
-                self.__reconnect()
-            else:
-                logger.error(e)
-
-        except Exception as e:
-            logger.error('executePokemonQuery: %s' % (repr(e)))
-
-        return pokelist
-
-    def buildRaidQuery(self, raid):
-        queryParts = []
-
-        queryParts.append('pokemon_id = %s' % raid['id'])
+        query_parts.append('pokemon_id = %s' % raid['id'])
 
         if 'lat_max' in raid:
-            locationQuery = 'latitude BETWEEN %s AND %s' % (raid['lat_min'],
-                                                            raid['lat_max'])
-            locationQuery += ' AND '
-            locationQuery += 'longitude BETWEEN %s AND %s' % (raid['lng_min'],
-                                                              raid['lng_max'])
-            queryParts.append('(' + locationQuery + ')')
+            location_query = 'latitude BETWEEN %s AND %s' % (raid['lat_min'], raid['lat_max'])
+            location_query += ' AND '
+            location_query += 'longitude BETWEEN %s AND %s' % (raid['lng_min'], raid['lng_max'])
+            query_parts.append('(' + location_query + ')')
 
-        return '(' + ' AND '.join(queryParts) + ')'
+        return '(' + ' AND '.join(query_parts) + ')'
 
-    def getRaidsByList(self, raidList, sendWithout=True):
-        sqlquery = (
-            "SELECT raid.gym_id, name, latitude, longitude, "
-            "start, end, pokemon_id, cp, move_1, move_2 "
-            "FROM raid JOIN gym ON gym.gym_id=raid.gym_id JOIN gymdetails ON gym.gym_id=gymdetails.gym_id "
-            "WHERE raid.last_scanned > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) AND end > UTC_TIMESTAMP()"
-        )
-        sqlquery += ' AND (' + ' OR '.join(
-            list(map(self.buildRaidQuery, raidList))) + ') ORDER BY end ASC'
+    def get_pokemon_by_list(self, pokemon_list, send_without=True):
+        pokemon_query_parts = list(map(self.__build_pokemon_query, pokemon_list))
+        sql_query = (
+            "SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
+            "individual_attack, individual_defense, individual_stamina, move_1, move_2, "
+            "weight, height, gender, form, cp, cp_multiplier "
+            "FROM pokemon WHERE last_modified > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) "
+            "AND disappear_time > UTC_TIMESTAMP()")
+        sql_query += ' AND (' + ' OR '.join(pokemon_query_parts) + ')'
+        if not send_without:
+            sql_query += ' AND individual_attack IS NOT NULL'
+        sql_query += ' ORDER BY pokemon_id ASC'
 
-        return self.executeRaidQuery(sqlquery)
+        return self.__execute_pokemon_query(sql_query)
 
-    def executeRaidQuery(self, sqlquery):
-        raidlist = []
+    def get_pokemon_by_ids(self, ids, send_without=True):
+        sql_query = (
+            "SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
+            "individual_attack, individual_defense, individual_stamina, move_1, move_2, "
+            "weight, height, gender, form, cp, cp_multiplier "
+            "FROM pokemon WHERE last_modified > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) "
+            "AND disappear_time > UTC_TIMESTAMP()")
+        sql_query += ' AND pokemon_id in (' + ','.join(map(str, ids)) + ')'
+        if not send_without:
+            sql_query += ' AND individual_attack IS NOT NULL'
+        sql_query += ' ORDER BY pokemon_id ASC'
+
+        return self.__execute_pokemon_query(sql_query)
+
+    def __execute_pokemon_query(self, sql_query):
+        poke_list = []
         try:
             with self.con:
                 cur = self.con.cursor()
-                cur.execute(sqlquery)
+                cur.execute(sql_query)
                 rows = cur.fetchall()
                 for row in rows:
-                    gym_id = str(row[0]) if row[0] is not None else None
-                    name = str(row[1]) if row[1] is not None else None
-                    latitude = float(row[2]) if row[2] is not None else None
-                    longitude = float(row[3]) if row[3] is not None else None
-                    start = datetime.strptime(
-                        str(row[4])[0:19],
-                        "%Y-%m-%d %H:%M:%S") if row[4] is not None else None
-                    end = datetime.strptime(
-                        str(row[5])[0:19],
-                        "%Y-%m-%d %H:%M:%S") if row[5] is not None else None
-                    pokemon_id = int(row[6]) if row[6] is not None else None
-                    cp = int(row[7]) if row[7] is not None else None
-                    move1 = int(row[8]) if row[8] is not None else None
-                    move2 = int(row[9]) if row[9] is not None else None
+                    ivs = round(
+                        float((int(row[6]) + int(row[7]) + int(row[8])) / 45 * 100), 1
+                    ) if row[6] is not None and row[7] is not None and row[8] is not None else None
 
-                    raid = DSRaid(gym_id, name, latitude, longitude, start,
-                                  end, pokemon_id, cp, move1, move2)
-                    raidlist.append(raid)
+                    poke_list.append(
+                        DSPokemon(
+                            strOrNone(row[0]), strOrNone(row[1]), intOrNone(row[2]),
+                            floatOrNone(row[3]), floatOrNone(row[4]), strptimeOrNone(row[5]), ivs,
+                            intOrNone(row[9]), intOrNone(row[10]), floatOrNone(row[11]),
+                            floatOrNone(row[12]), intOrNone(row[13]), intOrNone(row[14]),
+                            intOrNone(row[15]), floatOrNone(row[16])))
 
         except pymysql.err.OperationalError as e:
             if e.args[0] == 2006:
                 self.__reconnect()
             else:
-                logger.error(e)
+                LOGGER.error(e)
 
         except Exception as e:
-            logger.error('executeRaidQuery: %s' % (repr(e)))
+            LOGGER.error('executePokemonQuery: %s' % (repr(e)))
 
-        return raidlist
+        return poke_list
 
-    def getGymsByName(self, gymname, wildcard=True):
-        sqlquery = ("SELECT gym.gym_id, name, latitude, longitude "
-                    "FROM gym JOIN gymdetails "
-                    "ON gym.gym_id=gymdetails.gym_id WHERE ")
+    def get_raids_by_list(self, raid_list):
+        raid_query_parts = list(map(self.__build_raid_query, raid_list))
+        sql_query = ("SELECT raid.gym_id, name, latitude, longitude, "
+                     "start, end, pokemon_id, cp, move_1, move_2 "
+                     "FROM raid JOIN gym ON gym.gym_id=raid.gym_id "
+                     "JOIN gymdetails ON gym.gym_id=gymdetails.gym_id "
+                     "WHERE raid.last_scanned > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) "
+                     "AND end > UTC_TIMESTAMP()")
+        sql_query += " AND (" + " OR ".join(raid_query_parts) + ")"
+        sql_query += " ORDER BY end ASC"
+
+        raid_list = []
+        try:
+            with self.con:
+                cur = self.con.cursor()
+                cur.execute(sql_query)
+                rows = cur.fetchall()
+                for row in rows:
+                    raid_list.append(
+                        DSRaid(
+                            strOrNone(row[0]), strOrNone(row[1]), floatOrNone(row[2]),
+                            floatOrNone(row[3]), strptimeOrNone(row[4]), strptimeOrNone(row[5]),
+                            intOrNone(row[6]), intOrNone(row[7]), intOrNone(row[8]),
+                            intOrNone(row[9])))
+
+        except pymysql.err.OperationalError as e:
+            if e.args[0] == 2006:
+                self.__reconnect()
+            else:
+                LOGGER.error(e)
+
+        except Exception as e:
+            LOGGER.error('executeRaidQuery: %s' % (repr(e)))
+
+        return raid_list
+
+    def get_gyms_by_name(self, gym_name, wildcard=True):
+        sql_query = ("SELECT gym.gym_id, name, latitude, longitude "
+                     "FROM gym JOIN gymdetails "
+                     "ON gym.gym_id=gymdetails.gym_id WHERE ")
         if wildcard:
-            sqlquery += "name LIKE %s"
-            gymname = '%' + gymname + '%'
+            sql_query += "name LIKE %s"
+            gym_name = '%' + gym_name + '%'
         else:
-            sqlquery += "name=%s COLLATE utf8_bin"
+            sql_query += "name=%s COLLATE utf8_bin"
 
-        gymlist = []
+        gym_list = []
         try:
             with self.con:
                 cur = self.con.cursor()
-                cur.execute(sqlquery, (gymname, ))
+                cur.execute(sql_query, (gym_name,))
                 rows = cur.fetchall()
                 for row in rows:
-                    gym_id = str(row[0]) if row[0] is not None else None
-                    name = str(row[1]) if row[1] is not None else None
-                    latitude = float(row[2]) if row[2] is not None else None
-                    longitude = float(row[3]) if row[3] is not None else None
-
-                    gym = DSGym(gym_id, name, latitude, longitude)
-                    gymlist.append(gym)
+                    gym_list.append(
+                        DSGym(
+                            strOrNone(row[0]), strOrNone(row[1]), floatOrNone(row[2]),
+                            floatOrNone(row[3])))
 
         except pymysql.err.OperationalError as e:
             if e.args[0] == 2006:
                 self.__reconnect()
             else:
-                logger.error(e)
+                LOGGER.error(e)
 
         except Exception as e:
-            logger.error('getGymsByName: %s' % (repr(e)))
+            LOGGER.error('get_gyms_by_name: %s' % (repr(e)))
 
-        return gymlist
+        return gym_list
 
     def __connect(self):
         self.con = pymysql.connect(
@@ -266,5 +225,5 @@ class DSRocketMapIVMysql():
             database=self.__db)
 
     def __reconnect(self):
-        logger.info('Reconnecting to remote database')
+        LOGGER.info('Reconnecting to remote database')
         self.__connect()

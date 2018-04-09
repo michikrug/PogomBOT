@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Simple Bot thah look inside the database and see if the pokemon requested is appeared during the last scan
+# Simple Bot that looks inside the database and see if the pokemon requested is appeared during the last scan
 # This program is dedicated to the public domain under the CC0 license.
 # First iteration made by eugenio412
 # based on timerbot made inside python-telegram-bot example folder
 
-# better on python3.4
-'''please READ FIRST the README.md'''
+# /* cSpell:disable */
 
-import errno
 import fnmatch
 import json
 import logging
@@ -18,38 +16,36 @@ import sys
 import threading
 from datetime import datetime, timezone
 
-from geopy.distance import vincenty
-from geopy.geocoders import Nominatim
-from geopy.point import Point
-
 import DataSources
 import googlemaps
 import Preferences
 import Whitelist
+from geopy.distance import vincenty
+from geopy.geocoders import Nominatim
+from geopy.point import Point
 from Stickers import sticker_list
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters, Job,
-                          MessageHandler, Updater)
+from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters, Job, MessageHandler,
+                          Updater)
 
 if sys.version_info[0] < 3:
     raise Exception('Must be using Python 3.')
 
 # Enable logging
 logging.basicConfig(
-    format='%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s',
-    level=logging.INFO)
+    format='%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s', level=logging.INFO)
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 prefs = Preferences.UserPreferences()
 jobs = dict()
-geolocator = Nominatim()
-telegramBot = None
+geo_locator = Nominatim()
+telegram_bot = None
 gmaps_client = None
 
 clearCntThreshold = 20
-dataSource = None
-webhookEnabled = False
-ivAvailable = False
+data_source = None
+webhook_enabled = False
+iv_available = False
 
 # User dependant - dont add
 sent = dict()
@@ -63,39 +59,35 @@ min_pokemon_id = 1
 max_pokemon_id = 386
 
 pokemon_blacklist = [
-    10, 13, 16, 19, 21, 29, 32, 39, 41, 46, 48, 54, 60, 90, 92, 98, 116, 118,
-    120, 161, 163, 165, 167, 177, 183, 194, 198, 220
+    10, 13, 16, 19, 21, 29, 32, 39, 41, 46, 48, 54, 60, 90, 92, 98, 116, 118, 120, 161, 163, 165,
+    167, 177, 183, 194, 198, 220
 ]
 
 pokemon_rarity = [[], [
-    "10", "13", "16", "19", "21", "29", "32", "41", "46", "48", "98", "133",
-    "161", "163", "165", "167", "177", "183", "194", "198", "220"
+    "10", "13", "16", "19", "21", "29", "32", "41", "46", "48", "98", "133", "161", "163", "165",
+    "167", "177", "183", "194", "198", "220"
 ], [
-    "14", "17", "20", "35", "39", "43", "52", "54", "60", "63", "69", "72",
-    "79", "81", "90", "92", "96", "116", "118", "120", "122", "124", "129",
-    "162", "166", "168", "170", "178", "187", "190", "209", "215", "216"
+    "14", "17", "20", "35", "39", "43", "52", "54", "60", "63", "69", "72", "79", "81", "90", "92",
+    "96", "116", "118", "120", "122", "124", "129", "162", "166", "168", "170", "178", "187", "190",
+    "209", "215", "216"
 ], [
-    "1", "4", "7", "8", "11", "12", "15", "18", "22", "23", "25", "27", "30",
-    "33", "37", "42", "44", "47", "49", "50", "56", "58", "61", "66", "70",
-    "74", "77", "84", "86", "88", "93", "95", "97", "99", "100", "102", "104",
-    "109", "111", "117", "119", "123", "125", "127", "138", "140", "147",
-    "152", "155", "158", "164", "169", "184", "185", "188", "191", "193",
-    "195", "200", "202", "203", "204", "206", "207", "210", "211", "213",
-    "217", "218", "221", "223", "224", "226", "227", "228", "231", "234"
+    "1", "4", "7", "8", "11", "12", "15", "18", "22", "23", "25", "27", "30", "33", "37", "42",
+    "44", "47", "49", "50", "56", "58", "61", "66", "70", "74", "77", "84", "86", "88", "93", "95",
+    "97", "99", "100", "102", "104", "109", "111", "117", "119", "123", "125", "127", "138", "140",
+    "147", "152", "155", "158", "164", "169", "184", "185", "188", "191", "193", "195", "200",
+    "202", "203", "204", "206", "207", "210", "211", "213", "217", "218", "221", "223", "224",
+    "226", "227", "228", "231", "234"
 ], [
-    "2", "3", "5", "6", "9", "24", "26", "28", "31", "34", "36", "38", "40",
-    "45", "51", "53", "55", "57", "59", "62", "64", "65", "67", "68", "71",
-    "73", "75", "76", "78", "80", "82", "85", "87", "89", "91", "94", "101",
-    "103", "105", "106", "107", "108", "110", "112", "113", "114", "121",
-    "126", "130", "131", "134", "135", "136", "137", "139", "141", "142",
-    "143", "148", "149", "153", "154", "156", "157", "159", "171", "176",
-    "179", "180", "189", "205", "219", "229", "232", "237", "241", "242",
-    "246", "247", "248"
+    "2", "3", "5", "6", "9", "24", "26", "28", "31", "34", "36", "38", "40", "45", "51", "53", "55",
+    "57", "59", "62", "64", "65", "67", "68", "71", "73", "75", "76", "78", "80", "82", "85", "87",
+    "89", "91", "94", "101", "103", "105", "106", "107", "108", "110", "112", "113", "114", "121",
+    "126", "130", "131", "134", "135", "136", "137", "139", "141", "142", "143", "148", "149",
+    "153", "154", "156", "157", "159", "171", "176", "179", "180", "189", "205", "219", "229",
+    "232", "237", "241", "242", "246", "247", "248"
 ], [
-    "83", "115", "128", "132", "144", "145", "146", "150", "151", "160", "172",
-    "173", "174", "175", "181", "182", "186", "192", "196", "197", "199",
-    "201", "208", "212", "214", "222", "225", "230", "233", "235", "236",
-    "238", "239", "240", "243", "244", "245", "249", "250", "251"
+    "83", "115", "128", "132", "144", "145", "146", "150", "151", "160", "172", "173", "174", "175",
+    "181", "182", "186", "192", "196", "197", "199", "201", "208", "212", "214", "222", "225",
+    "230", "233", "235", "236", "238", "239", "240", "243", "244", "245", "249", "250", "251"
 ]]
 
 raid_levels = [[],
@@ -103,20 +95,19 @@ raid_levels = [[],
                ["89", "103", "110", "125", "126"],
                ["59", "65", "68", "94", "134", "135", "136"],
                ["3", "6", "9", "112", "131", "143", "248"],
-               ["144", "145", "146", "150", "151", "243", "244", "245","249", "250", "251"]
-              ]
+               ["144", "145", "146", "150", "151", "243", "244", "245", "249", "250", "251"]]
 
 
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
 def cmd_help(bot, update):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'help'):
+    if is_not_whitelisted(bot, update, 'help'):
         return
 
-    logger.info('[%s@%s] Sending help text.' % (userName, chat_id))
+    LOGGER.info('[%s@%s] Sending help text.' % (user_name, chat_id))
 
     pref = prefs.get(chat_id)
     if pref.get('language') == 'de':
@@ -218,15 +209,15 @@ def cmd_help(bot, update):
 
 def cmd_start(bot, update, job_queue):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'start'):
+    if is_not_whitelisted(bot, update, 'start'):
         return
 
     pref = prefs.get(chat_id)
 
-    if len(pref.get('search_ids', [])) > 0 or len(pref.get('raid_ids', [])) > 0:
-        addJob(bot, update, job_queue)
+    if pref.get('search_ids', []) or pref.get('raid_ids', []):
+        add_job(update, job_queue)
         if pref.get('language') == 'de':
             bot.sendMessage(chat_id, text='Bot wurde gestartet.')
         else:
@@ -241,28 +232,25 @@ def cmd_start(bot, update, job_queue):
         else:
             bot.sendMessage(
                 chat_id,
-                text=
-                'Hello! You seem to be new here. Here is a list of available commands:'
-            )
+                text='Hello! You seem to be new here. Here is a list of available commands:')
         cmd_help(bot, update)
 
-    logger.info('[%s@%s] Starting.' % (userName, chat_id))
+    LOGGER.info('[%s@%s] Starting.' % (user_name, chat_id))
 
 
 def cmd_stop(bot, update):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'stop'):
+    if is_not_whitelisted(bot, update, 'stop'):
         return
 
     pref = prefs.get(chat_id)
 
-    logger.info('[%s@%s] Stopping.' % (userName, chat_id))
+    LOGGER.info('[%s@%s] Stopping.' % (user_name, chat_id))
 
     if pref.get('language') == 'de':
-        bot.sendMessage(
-            chat_id, text='Bot wurde pausiert. Nutze /start zum Fortsetzen.')
+        bot.sendMessage(chat_id, text='Bot wurde pausiert. Nutze /start zum Fortsetzen.')
     else:
         bot.sendMessage(chat_id, text='Bot was paused. Use /start to resume.')
 
@@ -283,34 +271,30 @@ def cmd_stop(bot, update):
 def cb_button(bot, update):
     query = update.callback_query
     chat_id = query.message.chat_id
-    gyms = dataSource.getGymsByName(gymname=query.data, wildcard=False)
-    if len(gyms):
-        printGym(bot, chat_id, gyms[0])
+    gyms = data_source.get_gyms_by_name(gym_name=query.data, wildcard=False)
+    if gyms:
+        print_gym(bot, chat_id, gyms[0])
     bot.delete_message(chat_id=chat_id, message_id=query.message.message_id)
 
 
-def cmd_findgym(bot, update, args):
+def cmd_find_gym(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
     pref = prefs.get(chat_id)
 
     if len(args) < 1:
-        bot.delete_message(
-            chat_id=chat_id, message_id=update.message.message_id)
+        bot.delete_message(chat_id=chat_id, message_id=update.message.message_id)
         return
 
     try:
-        gymname = ' '.join(args).lower()
-        logger.info('[%s@%s] Searching for gym: %s.' % (userName, chat_id,
-                                                        gymname))
+        gym_name = ' '.join(args).lower()
+        LOGGER.info('[%s@%s] Searching for gym: %s.' % (user_name, chat_id, gym_name))
 
-        gyms = dataSource.getGymsByName(gymname=gymname)
-
-        user_location = pref.get('location')
+        gyms = data_source.get_gyms_by_name(gym_name=gym_name)
 
         if len(gyms) == 1:
-            printGym(bot, chat_id, gyms[0])
+            print_gym(bot, chat_id, gyms[0])
         elif len(gyms) > 1:
             if pref.get('language') != 'en':
                 msg = 'Es wurden mehrere Arenen gefunden. Bitte wähle aus den folgenden:'
@@ -319,47 +303,41 @@ def cmd_findgym(bot, update, args):
 
             keyboard = []
             for gym in gyms:
-                keyboard.append([
-                    InlineKeyboardButton(gym.getName(), callback_data=gym.getName())
-                ])
+                keyboard.append([InlineKeyboardButton(gym.get_name(), callback_data=gym.get_name())])
 
             update.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(keyboard))
         else:
             if pref.get('language') != 'en':
-                bot.sendMessage(
-                    chat_id,
-                    text='Es wurde keine Arena mit diesem Namen gefunden.')
+                bot.sendMessage(chat_id, text='Es wurde keine Arena mit diesem Namen gefunden.')
             else:
-                bot.sendMessage(
-                    chat_id, text='No gym with this name could be found.')
+                bot.sendMessage(chat_id, text='No gym with this name could be found.')
 
     except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         if pref.get('language') != 'en':
             bot.sendMessage(chat_id, text='Verwendung:\n/wo Arena-Name')
         else:
             bot.sendMessage(chat_id, text='Usage:\n/where gym name')
 
 
-def printGym(bot, chat_id, gym):
+def print_gym(bot, chat_id, gym):
     pref = prefs.get(chat_id)
     user_location = pref.get('location')
     if chat_id < 0 or user_location[0] is None:
         dist = ''
     else:
         if pref.get('language') != 'en':
-            dist = 'Entfernung: %.2fkm' % (gym.getDistance(user_location))
+            dist = 'Entfernung: %.2fkm' % (gym.get_distance(user_location))
         else:
-            dist = 'Distance: %.2fkm' % (gym.getDistance(user_location))
-    bot.sendVenue(chat_id,
-                  gym.getLatitude(), gym.getLongitude(), gym.getName(), dist)
+            dist = 'Distance: %.2fkm' % (gym.get_distance(user_location))
+    bot.sendVenue(chat_id, gym.get_latitude(), gym.get_longitude(), gym.get_name(), dist)
 
 
 def cmd_stickers(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'stickers'):
+    if is_not_whitelisted(bot, update, 'stickers'):
         return
 
     pref = prefs.get(chat_id)
@@ -367,19 +345,15 @@ def cmd_stickers(bot, update, args):
     if len(args) < 1:
         if pref.get('language') == 'de':
             bot.sendMessage(
-                chat_id,
-                text='Sticker sind aktuell auf %s gesetzt.' %
-                (pref.get('stickers')))
+                chat_id, text='Sticker sind aktuell auf %s gesetzt.' % (pref.get('stickers')))
         else:
             bot.sendMessage(
-                chat_id,
-                text='Stickers are currently set to %s.' %
-                (pref.get('stickers')))
+                chat_id, text='Stickers are currently set to %s.' % (pref.get('stickers')))
         return
 
     try:
         stick = args[0].lower()
-        logger.info('[%s@%s] Setting stickers.' % (userName, chat_id))
+        LOGGER.info('[%s@%s] Setting stickers.' % (user_name, chat_id))
 
         if stick == 'true' or stick == 'false':
             stick = False
@@ -387,36 +361,29 @@ def cmd_stickers(bot, update, args):
                 stick = True
             pref.set('stickers', stick)
             if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id, text='Sticker wurden auf %s gesetzt.' % (stick))
+                bot.sendMessage(chat_id, text='Sticker wurden auf %s gesetzt.' % (stick))
             else:
-                bot.sendMessage(
-                    chat_id, text='Stickers were set to %s.' % (stick))
+                bot.sendMessage(chat_id, text='Stickers were set to %s.' % (stick))
         else:
             if pref.get('language') == 'de':
                 bot.sendMessage(
-                    chat_id,
-                    text=
-                    'Bitte nur True (aktivieren) oder False (deaktivieren) angeben.'
-                )
+                    chat_id, text='Bitte nur True (aktivieren) oder False (deaktivieren) angeben.')
             else:
-                bot.sendMessage(
-                    chat_id,
-                    text='Please only use True (enable) or False (disable).')
+                bot.sendMessage(chat_id, text='Please only use True (enable) or False (disable).')
 
     except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         if pref.get('language') == 'de':
             bot.sendMessage(chat_id, text='Verwendung:\n/stickers true/false')
         else:
             bot.sendMessage(chat_id, text='Usage:\n/stickers true/false')
 
 
-def cmd_maponly(bot, update, args):
+def cmd_map_only(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'maponly'):
+    if is_not_whitelisted(bot, update, 'maponly'):
         return
 
     pref = prefs.get(chat_id)
@@ -425,18 +392,15 @@ def cmd_maponly(bot, update, args):
         if pref.get('language') == 'de':
             bot.sendMessage(
                 chat_id,
-                text='"Nur Karte anzeigen" ist aktuell auf %s gesetzt.' %
-                (pref.get('only_map')))
+                text='"Nur Karte anzeigen" ist aktuell auf %s gesetzt.' % (pref.get('only_map')))
         else:
             bot.sendMessage(
-                chat_id,
-                text='"Only show map" is currently set to %s.' %
-                (pref.get('only_map')))
+                chat_id, text='"Only show map" is currently set to %s.' % (pref.get('only_map')))
         return
 
     try:
         omap = args[0].lower()
-        logger.info('[%s@%s] Setting maponly.' % (userName, chat_id))
+        LOGGER.info('[%s@%s] Setting maponly.' % (user_name, chat_id))
 
         if omap == 'true' or omap == 'false':
             omap = False
@@ -444,37 +408,29 @@ def cmd_maponly(bot, update, args):
                 omap = True
             pref.set('only_map', omap)
             if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id,
-                    text='"Nur Karte anzeigen" wurde auf %s gesetzt.' % (omap))
+                bot.sendMessage(chat_id, text='"Nur Karte anzeigen" wurde auf %s gesetzt.' % (omap))
             else:
-                bot.sendMessage(
-                    chat_id, text='"Only show map" was set to %s.' % (omap))
+                bot.sendMessage(chat_id, text='"Only show map" was set to %s.' % (omap))
         else:
             if pref.get('language') == 'de':
                 bot.sendMessage(
-                    chat_id,
-                    text=
-                    'Bitte nur True (aktivieren) oder False (deaktivieren) angeben.'
-                )
+                    chat_id, text='Bitte nur True (aktivieren) oder False (deaktivieren) angeben.')
             else:
-                bot.sendMessage(
-                    chat_id,
-                    text='Please only use True (enable) or False (disable).')
+                bot.sendMessage(chat_id, text='Please only use True (enable) or False (disable).')
 
     except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         if pref.get('language') == 'de':
             bot.sendMessage(chat_id, text='Verwendung:\n/maponly true/false')
         else:
             bot.sendMessage(chat_id, text='Usage:\n/maponly true/false')
 
 
-def cmd_sendwithout(bot, update, args):
+def cmd_send_without(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'sendwithout'):
+    if is_not_whitelisted(bot, update, 'sendwithout'):
         return
 
     pref = prefs.get(chat_id)
@@ -483,9 +439,8 @@ def cmd_sendwithout(bot, update, args):
         if pref.get('language') == 'de':
             bot.sendMessage(
                 chat_id,
-                text=
-                '"Pokémon ohne IV/WP-Werte senden" ist aktuell auf %s gesetzt.'
-                % (pref.get('send_without', True)))
+                text='"Pokémon ohne IV/WP-Werte senden" ist aktuell auf %s gesetzt.' %
+                (pref.get('send_without', True)))
         else:
             bot.sendMessage(
                 chat_id,
@@ -495,7 +450,7 @@ def cmd_sendwithout(bot, update, args):
 
     try:
         sendwithout = args[0].lower()
-        logger.info('[%s@%s] Setting sendwithout.' % (userName, chat_id))
+        LOGGER.info('[%s@%s] Setting sendwithout.' % (user_name, chat_id))
 
         if sendwithout == 'true' or sendwithout == 'false':
             sendwithout = False
@@ -505,40 +460,30 @@ def cmd_sendwithout(bot, update, args):
             if pref.get('language') == 'de':
                 bot.sendMessage(
                     chat_id,
-                    text=
-                    '"Pokémon ohne IV/WP-Werte senden" wurde auf %s gesetzt.' %
-                    (sendwithout))
+                    text='"Pokémon ohne IV/WP-Werte senden" wurde auf %s gesetzt.' % (sendwithout))
             else:
                 bot.sendMessage(
-                    chat_id,
-                    text='"Send Pokémon without IV/CP" was set to %s.' %
-                    (sendwithout))
+                    chat_id, text='"Send Pokémon without IV/CP" was set to %s.' % (sendwithout))
         else:
             if pref.get('language') == 'de':
                 bot.sendMessage(
-                    chat_id,
-                    text=
-                    'Bitte nur True (aktivieren) oder False (deaktivieren) angeben.'
-                )
+                    chat_id, text='Bitte nur True (aktivieren) oder False (deaktivieren) angeben.')
             else:
-                bot.sendMessage(
-                    chat_id,
-                    text='Please only use True (enable) or False (disable).')
+                bot.sendMessage(chat_id, text='Please only use True (enable) or False (disable).')
 
     except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id, text='Verwendung:\n/sendwithout true/false')
+            bot.sendMessage(chat_id, text='Verwendung:\n/sendwithout true/false')
         else:
             bot.sendMessage(chat_id, text='Usage:\n/sendwithout true/false')
 
 
-def cmd_walkdist(bot, update, args):
+def cmd_walk_dist(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
-    if not whitelist.isAdmin(userName):
-        logger.info('[%s@%s] User blocked (walkdist).' % (userName, chat_id))
+    user_name = update.message.from_user.username
+    if not whitelist.is_admin(user_name):
+        LOGGER.info('[%s@%s] User blocked (walkdist).' % (user_name, chat_id))
         return
 
     pref = prefs.get(chat_id)
@@ -547,8 +492,8 @@ def cmd_walkdist(bot, update, args):
         if pref.get('language') == 'de':
             bot.sendMessage(
                 chat_id,
-                text='"Zeige Laufdistanz und -zeit" ist aktuell gesetzt auf %s.'
-                % (pref.get('walk_dist')))
+                text='"Zeige Laufdistanz und -zeit" ist aktuell gesetzt auf %s.' %
+                (pref.get('walk_dist')))
         else:
             bot.sendMessage(
                 chat_id,
@@ -558,7 +503,7 @@ def cmd_walkdist(bot, update, args):
 
     try:
         wdist = args[0].lower()
-        logger.info('[%s@%s] Setting walkdist.' % (userName, chat_id))
+        LOGGER.info('[%s@%s] Setting walkdist.' % (user_name, chat_id))
 
         if wdist == 'true' or wdist == 'false':
             wdist = False
@@ -567,28 +512,19 @@ def cmd_walkdist(bot, update, args):
             pref.set('walk_dist', wdist)
             if pref.get('language') == 'de':
                 bot.sendMessage(
-                    chat_id,
-                    text='"Zeige Laufdistanz und -zeit" wurde auf %s gesetzt.'
-                    % (wdist))
+                    chat_id, text='"Zeige Laufdistanz und -zeit" wurde auf %s gesetzt.' % (wdist))
             else:
                 bot.sendMessage(
-                    chat_id,
-                    text='"Show walking distance/time" was set to %s.' %
-                    (wdist))
+                    chat_id, text='"Show walking distance/time" was set to %s.' % (wdist))
         else:
             if pref.get('language') == 'de':
                 bot.sendMessage(
-                    chat_id,
-                    text=
-                    'Bitte nur True (aktivieren) oder False (deaktivieren) angeben.'
-                )
+                    chat_id, text='Bitte nur True (aktivieren) oder False (deaktivieren) angeben.')
             else:
-                bot.sendMessage(
-                    chat_id,
-                    text='Please only use True (enable) or False (disable).')
+                bot.sendMessage(chat_id, text='Please only use True (enable) or False (disable).')
 
     except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         if pref.get('language') == 'de':
             bot.sendMessage(chat_id, text='Verwendung:\n/walkdist true/false')
         else:
@@ -597,9 +533,9 @@ def cmd_walkdist(bot, update, args):
 
 def cmd_add(bot, update, args, job_queue):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'add'):
+    if is_not_whitelisted(bot, update, 'add'):
         return
 
     pref = prefs.get(chat_id)
@@ -613,8 +549,8 @@ def cmd_add(bot, update, args, job_queue):
         bot.sendMessage(chat_id, text=usage_message)
         return
 
-    addJob(bot, update, job_queue)
-    logger.info('[%s@%s] Add pokemon.' % (userName, chat_id))
+    add_job(update, job_queue)
+    LOGGER.info('[%s@%s] Add pokemon.' % (user_name, chat_id))
 
     try:
         search = pref.get('search_ids', [])
@@ -627,15 +563,15 @@ def cmd_add(bot, update, args, job_queue):
         cmd_list(bot, update)
 
     except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         bot.sendMessage(chat_id, text=usage_message)
 
 
-def cmd_addbyrarity(bot, update, args, job_queue):
+def cmd_add_by_rarity(bot, update, args, job_queue):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'addByRarity'):
+    if is_not_whitelisted(bot, update, 'addByRarity'):
         return
 
     pref = prefs.get(chat_id)
@@ -649,8 +585,8 @@ def cmd_addbyrarity(bot, update, args, job_queue):
         bot.sendMessage(chat_id, text=usage_message)
         return
 
-    addJob(bot, update, job_queue)
-    logger.info('[%s@%s] Add pokemon by rarity.' % (userName, chat_id))
+    add_job(update, job_queue)
+    LOGGER.info('[%s@%s] Add pokemon by rarity.' % (user_name, chat_id))
 
     try:
         rarity = int(args[0])
@@ -668,27 +604,26 @@ def cmd_addbyrarity(bot, update, args, job_queue):
         cmd_list(bot, update)
 
     except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         bot.sendMessage(chat_id, text=usage_message)
 
 
 def cmd_clear(bot, update):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'clear'):
+    if is_not_whitelisted(bot, update, 'clear'):
         return
 
     pref = prefs.get(chat_id)
 
     if pref.get('language') == 'de':
-        bot.sendMessage(
-            chat_id,
-            text='Deine Einstellungen wurden erfolgreich zurückgesetzt.')
+        bot.sendMessage(chat_id, text='Deine Einstellungen wurden erfolgreich zurückgesetzt.')
     else:
         bot.sendMessage(chat_id, text='Your settings were successfully reset.')
-    """Removes the job if the user changed their mind"""
-    logger.info('[%s@%s] Clear list.' % (userName, chat_id))
+
+    # Removes the job if the user changed their mind
+    LOGGER.info('[%s@%s] Clear list.' % (user_name, chat_id))
 
     pref.reset_user()
 
@@ -706,16 +641,16 @@ def cmd_clear(bot, update):
     del locks[chat_id]
 
 
-def cmd_remove(bot, update, args, job_queue):
+def cmd_remove(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'remove'):
+    if is_not_whitelisted(bot, update, 'remove'):
         return
 
     pref = prefs.get(chat_id)
 
-    logger.info('[%s@%s] Remove pokemon.' % (userName, chat_id))
+    LOGGER.info('[%s@%s] Remove pokemon.' % (user_name, chat_id))
 
     try:
         search = pref.get('search_ids', [])
@@ -726,18 +661,18 @@ def cmd_remove(bot, update, args, job_queue):
         cmd_list(bot, update)
 
     except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         if pref.get('language') == 'de':
             bot.sendMessage(chat_id, text='Verwendung:\n/rem pokedexID')
         else:
             bot.sendMessage(chat_id, text='Usage:\n/rem pokedexID')
 
 
-def cmd_addraidbylevel(bot, update, args, job_queue):
+def cmd_add_raid_by_level(bot, update, args, job_queue):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'addraidbylevel'):
+    if is_not_whitelisted(bot, update, 'addraidbylevel'):
         return
 
     pref = prefs.get(chat_id)
@@ -751,8 +686,8 @@ def cmd_addraidbylevel(bot, update, args, job_queue):
         bot.sendMessage(chat_id, text=usage_message)
         return
 
-    addJob(bot, update, job_queue)
-    logger.info('[%s@%s] Add raid pokemon by level.' % (userName, chat_id))
+    add_job(update, job_queue)
+    LOGGER.info('[%s@%s] Add raid pokemon by level.' % (user_name, chat_id))
 
     try:
         level = int(args[0])
@@ -770,15 +705,15 @@ def cmd_addraidbylevel(bot, update, args, job_queue):
         cmd_list(bot, update)
 
     except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         bot.sendMessage(chat_id, text=usage_message)
 
 
-def cmd_addraid(bot, update, args, job_queue):
+def cmd_add_raid(bot, update, args, job_queue):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'addraid'):
+    if is_not_whitelisted(bot, update, 'addraid'):
         return
 
     pref = prefs.get(chat_id)
@@ -792,34 +727,33 @@ def cmd_addraid(bot, update, args, job_queue):
         bot.sendMessage(chat_id, text=usage_message)
         return
 
-    addJob(bot, update, job_queue)
-    logger.info('[%s@%s] Add raid.' % (userName, chat_id))
+    add_job(update, job_queue)
+    LOGGER.info('[%s@%s] Add raid.' % (user_name, chat_id))
 
     try:
         search = pref.get('raid_ids', [])
         for x in args:
-            if int(x) >= min_pokemon_id and int(x) <= max_pokemon_id and int(
-                    x) not in search:
+            if int(x) >= min_pokemon_id and int(x) <= max_pokemon_id and int(x) not in search:
                 search.append(int(x))
         search.sort()
         pref.set('raid_ids', search)
         cmd_list(bot, update)
 
     except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         bot.sendMessage(chat_id, text=usage_message)
 
 
-def cmd_removeraid(bot, update, args, job_queue):
+def cmd_remove_raid(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'removeraid'):
+    if is_not_whitelisted(bot, update, 'removeraid'):
         return
 
     pref = prefs.get(chat_id)
 
-    logger.info('[%s@%s] Remove raid.' % (userName, chat_id))
+    LOGGER.info('[%s@%s] Remove raid.' % (user_name, chat_id))
 
     try:
         search = pref.get('raid_ids', [])
@@ -830,7 +764,7 @@ def cmd_removeraid(bot, update, args, job_queue):
         cmd_list(bot, update)
 
     except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         if pref.get('language') == 'de':
             bot.sendMessage(chat_id, text='Verwendung:\n/remraid pokedexID')
         else:
@@ -839,14 +773,14 @@ def cmd_removeraid(bot, update, args, job_queue):
 
 def cmd_list(bot, update):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'list'):
+    if is_not_whitelisted(bot, update, 'list'):
         return
 
     pref = prefs.get(chat_id)
 
-    logger.info('[%s@%s] List.' % (userName, chat_id))
+    LOGGER.info('[%s@%s] List.' % (user_name, chat_id))
 
     try:
         lan = pref.get('language')
@@ -860,14 +794,12 @@ def cmd_list(bot, update):
             if user_location[0] is None:
                 tmp = '*Liste der überwachten Pokémon:*\n'
             else:
-                tmp = '*Liste der überwachten Pokémon im Radius von %.2fkm:*\n' % (
-                    user_location[2])
+                tmp = '*Liste der überwachten Pokémon im Radius von %.2fkm:*\n' % (user_location[2])
         else:
             if user_location[0] is None:
                 tmp = '*List of watched Pokémon:*\n'
             else:
-                tmp = '*List of watched Pokémon within a radius of %.2fkm:*\n' % (
-                    user_location[2])
+                tmp = '*List of watched Pokémon within a radius of %.2fkm:*\n' % (user_location[2])
         for x in pref.get('search_ids', []):
             pkm_id = str(x)
             tmp += "%s %s" % (pkm_id, pokemon_name[lan][pkm_id])
@@ -876,9 +808,7 @@ def cmd_list(bot, update):
             if pkm_id in minivs:
                 tmp += " %d%%" % (minivs[pkm_id])
             if pkm_id in mincps:
-                tmp += " %dWP" % (
-                    mincps[pkm_id]) if lan == 'de' else " %dCP" % (
-                        mincps[pkm_id])
+                tmp += " %dWP" % (mincps[pkm_id]) if lan == 'de' else " %dCP" % (mincps[pkm_id])
             if pkm_id in minlevels:
                 tmp += " L%d" % (minlevels[pkm_id])
             if pkm_id in matchmodes:
@@ -914,14 +844,14 @@ def cmd_list(bot, update):
         bot.sendMessage(chat_id, text=tmp, parse_mode='Markdown')
 
     except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
 
 
 def cmd_lang(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'lang'):
+    if is_not_whitelisted(bot, update, 'lang'):
         return
 
     pref = prefs.get(chat_id)
@@ -929,168 +859,142 @@ def cmd_lang(bot, update, args):
     if len(args) < 1:
         if pref.get('language') == 'de':
             bot.sendMessage(
-                chat_id,
-                text='Deine Sprache ist aktuell auf %s gesetzt.' %
-                (pref.get('language')))
+                chat_id, text='Deine Sprache ist aktuell auf %s gesetzt.' % (pref.get('language')))
         else:
             bot.sendMessage(
-                chat_id,
-                text='Your language is currently set to %s.' %
-                (pref.get('language')))
+                chat_id, text='Your language is currently set to %s.' % (pref.get('language')))
         return
 
     try:
         lan = args[0]
-        logger.info('[%s@%s] Setting lang.' % (userName, chat_id))
+        LOGGER.info('[%s@%s] Setting lang.' % (user_name, chat_id))
 
         if lan == 'de' or lan == 'en':
             pref.set('language', lan)
             if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id, text='Sprache wurde auf %s gesetzt.' % (lan))
+                bot.sendMessage(chat_id, text='Sprache wurde auf %s gesetzt.' % (lan))
             else:
-                bot.sendMessage(
-                    chat_id, text='Language was set to %s.' % (lan))
+                bot.sendMessage(chat_id, text='Language was set to %s.' % (lan))
         else:
             if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id, text='Diese Sprache ist leider nicht verfügbar.')
+                bot.sendMessage(chat_id, text='Diese Sprache ist leider nicht verfügbar.')
             else:
-                bot.sendMessage(
-                    chat_id, text='This language isn\'t available.')
+                bot.sendMessage(chat_id, text='This language isn\'t available.')
 
     except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         if pref.get('language') == 'de':
             bot.sendMessage(chat_id, text='Verwendung:\n/lang de/en')
         else:
             bot.sendMessage(chat_id, text='Usage:\n/lang de/en')
 
 
-def setUserLocation(userName, chat_id, latitude, longitude, radius):
+def set_user_location(user_name, chat_id, latitude, longitude, radius):
     pref = prefs.get(chat_id)
-    user_location = pref.get('location')
     if radius is not None and radius < 0.1:
         radius = 0.1
     pref.set('location', [latitude, longitude, radius])
-    logger.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' %
-                (userName, chat_id, latitude, longitude, radius))
+    LOGGER.info('[%s@%s] Setting scan location to Lat %s, Lon %s, R %s' %
+                (user_name, chat_id, latitude, longitude, radius))
 
 
-def sendCurrentLocation(bot, chat_id, set_new=False):
+def send_current_location(bot, chat_id, set_new=False):
     pref = prefs.get(chat_id)
     user_location = pref.get('location')
     if user_location[0] is None:
         if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id, text='Du hast keine Suchposition angegeben.')
+            bot.sendMessage(chat_id, text='Du hast keine Suchposition angegeben.')
         else:
-            bot.sendMessage(
-                chat_id, text='You have not supplied a scan location.')
+            bot.sendMessage(chat_id, text='You have not supplied a scan location.')
     else:
         if set_new:
             if pref.get('language') == 'de':
                 bot.sendMessage(
-                    chat_id,
-                    text='Setze neue Suchposition mit Radius %skm' %
-                    (user_location[2]))
+                    chat_id, text='Setze neue Suchposition mit Radius %skm' % (user_location[2]))
             else:
                 bot.sendMessage(
-                    chat_id,
-                    text='Setting new scan location with radius %skm' %
-                    (user_location[2]))
+                    chat_id, text='Setting new scan location with radius %skm' % (user_location[2]))
         else:
             if pref.get('language') == 'de':
                 bot.sendMessage(
                     chat_id,
-                    text='Dies ist deine aktuelle Suchposition mit Radius %skm'
-                    % (user_location[2]))
+                    text='Dies ist deine aktuelle Suchposition mit Radius %skm' %
+                    (user_location[2]))
             else:
                 bot.sendMessage(
                     chat_id,
-                    text='This is your current scan location with radius %skm'
-                    % (user_location[2]))
-        bot.sendLocation(
-            chat_id,
-            user_location[0],
-            user_location[1],
-            disable_notification=True)
+                    text='This is your current scan location with radius %skm' % (user_location[2]))
+        bot.sendLocation(chat_id, user_location[0], user_location[1], disable_notification=True)
 
 
 def cmd_location(bot, update):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'location'):
+    if is_not_whitelisted(bot, update, 'location'):
         return
 
     pref = prefs.get(chat_id)
     user_location = update.message.location
-    setUserLocation(userName, chat_id, user_location.latitude,
-                    user_location.longitude, pref.get('location')[2])
-    sendCurrentLocation(bot, chat_id, True)
+    set_user_location(user_name, chat_id, user_location.latitude, user_location.longitude,
+                      pref.get('location')[2])
+    send_current_location(bot, chat_id, True)
 
 
 def cmd_location_str(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'location_str'):
+    if is_not_whitelisted(bot, update, 'location_str'):
         return
 
     pref = prefs.get(chat_id)
 
     if len(args) < 1:
-        sendCurrentLocation(bot, chat_id)
+        send_current_location(bot, chat_id)
         return
 
     try:
-        user_location = geolocator.geocode(' '.join(args))
-        setUserLocation(userName, chat_id, user_location.latitude,
-                        user_location.longitude, pref.get('location')[2])
-        sendCurrentLocation(bot, chat_id, True)
+        user_location = geo_locator.geocode(' '.join(args))
+        set_user_location(user_name, chat_id, user_location.latitude, user_location.longitude,
+                          pref.get('location')[2])
+        send_current_location(bot, chat_id, True)
 
     except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         if pref.get('language') == 'de':
             bot.sendMessage(
-                chat_id,
-                text=
-                'Die Position wurde nicht gefunden (oder OpenStreetMap ist offline).'
-            )
+                chat_id, text='Die Position wurde nicht gefunden (oder OpenStreetMap ist offline).')
         else:
-            bot.sendMessage(
-                chat_id,
-                text='The location was not found (or OpenStreetMap is down).')
+            bot.sendMessage(chat_id, text='The location was not found (or OpenStreetMap is down).')
         return
 
 
 def cmd_radius(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'radius'):
+    if is_not_whitelisted(bot, update, 'radius'):
         return
 
     if len(args) < 1:
-        sendCurrentLocation(bot, chat_id)
+        send_current_location(bot, chat_id)
         return
 
     pref = prefs.get(chat_id)
     user_location = pref.get('location')
-    setUserLocation(userName, chat_id, user_location[0], user_location[1],
-                    float(args[0]))
-    sendCurrentLocation(bot, chat_id, True)
+    set_user_location(user_name, chat_id, user_location[0], user_location[1], float(args[0]))
+    send_current_location(bot, chat_id, True)
 
 
-def cmd_clearlocation(bot, update):
+def cmd_clear_location(bot, update):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'clearlocation'):
+    if is_not_whitelisted(bot, update, 'clearlocation'):
         return
 
-    setUserLocation(userName, chat_id, None, None, 1)
+    set_user_location(user_name, chat_id, None, None, 1)
 
     pref = prefs.get(chat_id)
     if pref.get('language') == 'de':
@@ -1099,11 +1003,10 @@ def cmd_clearlocation(bot, update):
         bot.sendMessage(chat_id, text='Your scan location has been removed.')
 
 
-def cmd_pkmradius(bot, update, args):
+def cmd_pkm_radius(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'pkmradius'):
+    if is_not_whitelisted(bot, update, 'pkmradius'):
         return
 
     pref = prefs.get(chat_id)
@@ -1125,8 +1028,7 @@ def cmd_pkmradius(bot, update, args):
 
         # Only get current value
         if len(args) < 2:
-            pkm_dist = dists[pkm_id] if pkm_id in dists else pref.get(
-                'location')[2]
+            pkm_dist = dists[pkm_id] if pkm_id in dists else pref.get('location')[2]
             if pref.get('language') == 'de':
                 bot.sendMessage(
                     chat_id,
@@ -1135,8 +1037,8 @@ def cmd_pkmradius(bot, update, args):
             else:
                 bot.sendMessage(
                     chat_id,
-                    text='The search radius for %s is set to %skm.' %
-                    (pokemon_name['en'][pkm_id], pkm_dist))
+                    text='The search radius for %s is set to %skm.' % (pokemon_name['en'][pkm_id],
+                                                                       pkm_dist))
             return
 
         # Change the radius for a specific pokemon
@@ -1149,20 +1051,19 @@ def cmd_pkmradius(bot, update, args):
         if pref.get('language') == 'de':
             bot.sendMessage(
                 chat_id,
-                text='Der Suchradius für %s wurde auf %skm gesetzt.' %
-                (pokemon_name['de'][pkm_id], pkm_dist))
+                text='Der Suchradius für %s wurde auf %skm gesetzt.' % (pokemon_name['de'][pkm_id],
+                                                                        pkm_dist))
         else:
             bot.sendMessage(
                 chat_id,
-                text='The search radius for %s was set to %skm.' %
-                (pokemon_name['en'][pkm_id], pkm_dist))
+                text='The search radius for %s was set to %skm.' % (pokemon_name['en'][pkm_id],
+                                                                    pkm_dist))
 
 
-def cmd_rempkmradius(bot, update, args):
+def cmd_rem_pkm_radius(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'rempkmradius'):
+    if is_not_whitelisted(bot, update, 'rempkmradius'):
         return
 
     pref = prefs.get(chat_id)
@@ -1179,27 +1080,22 @@ def cmd_rempkmradius(bot, update, args):
     # Change the radius for a specific pokemon
     dists = pref.get('search_dists', {})
     pkm_id = args[0]
-    if int(pkm_id) >= min_pokemon_id and int(
-            pkm_id) <= max_pokemon_id and pkm_id in dists:
+    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and pkm_id in dists:
         del dists[pkm_id]
         pref.set('search_dists', dists)
         if pref.get('language') == 'de':
             bot.sendMessage(
                 chat_id,
-                text='Der Suchradius für %s wurde zurückgesetzt.' %
-                (pokemon_name['de'][pkm_id]))
+                text='Der Suchradius für %s wurde zurückgesetzt.' % (pokemon_name['de'][pkm_id]))
         else:
             bot.sendMessage(
-                chat_id,
-                text='The search radius for %s was reset.' %
-                (pokemon_name['en'][pkm_id]))
+                chat_id, text='The search radius for %s was reset.' % (pokemon_name['en'][pkm_id]))
 
 
-def cmd_raidradius(bot, update, args):
+def cmd_raid_radius(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'raidradius'):
+    if is_not_whitelisted(bot, update, 'raidradius'):
         return
 
     pref = prefs.get(chat_id)
@@ -1220,8 +1116,7 @@ def cmd_raidradius(bot, update, args):
 
         # Only get current value
         if len(args) < 2:
-            pkm_dist = dists[pkm_id] if pkm_id in dists else pref.get(
-                'location')[2]
+            pkm_dist = dists[pkm_id] if pkm_id in dists else pref.get('location')[2]
             if pref.get('language') == 'de':
                 bot.sendMessage(
                     chat_id,
@@ -1230,8 +1125,8 @@ def cmd_raidradius(bot, update, args):
             else:
                 bot.sendMessage(
                     chat_id,
-                    text='The search radius for %s is set to %skm.' %
-                    (pokemon_name['en'][pkm_id], pkm_dist))
+                    text='The search radius for %s is set to %skm.' % (pokemon_name['en'][pkm_id],
+                                                                       pkm_dist))
             return
 
         # Change the radius for a specific raid pokemon
@@ -1244,20 +1139,19 @@ def cmd_raidradius(bot, update, args):
         if pref.get('language') == 'de':
             bot.sendMessage(
                 chat_id,
-                text='Der Suchradius für %s wurde auf %skm gesetzt.' %
-                (pokemon_name['de'][pkm_id], pkm_dist))
+                text='Der Suchradius für %s wurde auf %skm gesetzt.' % (pokemon_name['de'][pkm_id],
+                                                                        pkm_dist))
         else:
             bot.sendMessage(
                 chat_id,
-                text='The search radius for %s was set to %skm.' %
-                (pokemon_name['en'][pkm_id], pkm_dist))
+                text='The search radius for %s was set to %skm.' % (pokemon_name['en'][pkm_id],
+                                                                    pkm_dist))
 
 
 def cmd_remraidradius(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'remraidradius'):
+    if is_not_whitelisted(bot, update, 'remraidradius'):
         return
 
     pref = prefs.get(chat_id)
@@ -1274,27 +1168,22 @@ def cmd_remraidradius(bot, update, args):
     # Change the radius for a specific raid pokemon
     dists = pref.get('raid_dists', {})
     pkm_id = args[0]
-    if int(pkm_id) >= min_pokemon_id and int(
-            pkm_id) <= max_pokemon_id and pkm_id in dists:
+    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and pkm_id in dists:
         del dists[pkm_id]
         pref.set('raid_dists', dists)
         if pref.get('language') == 'de':
             bot.sendMessage(
                 chat_id,
-                text='Der Suchradius für %s wurde zurückgesetzt.' %
-                (pokemon_name['de'][pkm_id]))
+                text='Der Suchradius für %s wurde zurückgesetzt.' % (pokemon_name['de'][pkm_id]))
         else:
             bot.sendMessage(
-                chat_id,
-                text='The search radius for %s was reset.' %
-                (pokemon_name['en'][pkm_id]))
+                chat_id, text='The search radius for %s was reset.' % (pokemon_name['en'][pkm_id]))
 
 
 def cmd_iv(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'iv'):
+    if is_not_whitelisted(bot, update, 'iv'):
         return
 
     pref = prefs.get(chat_id)
@@ -1302,14 +1191,10 @@ def cmd_iv(bot, update, args):
     if len(args) < 1:
         if pref.get('language') == 'de':
             bot.sendMessage(
-                chat_id,
-                text='Der Minimal-IV-Wert ist auf %d%% gesetzt.' %
-                (pref.get('miniv', 0)))
+                chat_id, text='Der Minimal-IV-Wert ist auf %d%% gesetzt.' % (pref.get('miniv', 0)))
         else:
             bot.sendMessage(
-                chat_id,
-                text='The minimum IVs are set to %d%%.' %
-                (pref.get('miniv', 0)))
+                chat_id, text='The minimum IVs are set to %d%%.' % (pref.get('miniv', 0)))
         return
 
     miniv = int(args[0])
@@ -1320,19 +1205,15 @@ def cmd_iv(bot, update, args):
 
     pref.set('miniv', miniv)
     if pref.get('language') == 'de':
-        bot.sendMessage(
-            chat_id,
-            text='Der Minimal-IV-Wert wurde auf %d%% gesetzt.' % (miniv))
+        bot.sendMessage(chat_id, text='Der Minimal-IV-Wert wurde auf %d%% gesetzt.' % (miniv))
     else:
-        bot.sendMessage(
-            chat_id, text='The minimum IVs were set to %d%%.' % (miniv))
+        bot.sendMessage(chat_id, text='The minimum IVs were set to %d%%.' % (miniv))
 
 
-def cmd_pkmiv(bot, update, args):
+def cmd_pkm_iv(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'pkmiv'):
+    if is_not_whitelisted(bot, update, 'pkmiv'):
         return
 
     pref = prefs.get(chat_id)
@@ -1354,8 +1235,7 @@ def cmd_pkmiv(bot, update, args):
 
         # Only get current value
         if len(args) < 2:
-            pkm_miniv = minivs[pkm_id] if pkm_id in minivs else pref.get(
-                'miniv', 0)
+            pkm_miniv = minivs[pkm_id] if pkm_id in minivs else pref.get('miniv', 0)
             if pref.get('language') == 'de':
                 bot.sendMessage(
                     chat_id,
@@ -1364,8 +1244,8 @@ def cmd_pkmiv(bot, update, args):
             else:
                 bot.sendMessage(
                     chat_id,
-                    text='The minimum IVs for %s are set to %d%%.' %
-                    (pokemon_name['en'][pkm_id], pkm_miniv))
+                    text='The minimum IVs for %s are set to %d%%.' % (pokemon_name['en'][pkm_id],
+                                                                      pkm_miniv))
             return
 
         # Change the radius for a specific pokemon
@@ -1385,15 +1265,14 @@ def cmd_pkmiv(bot, update, args):
         else:
             bot.sendMessage(
                 chat_id,
-                text='The minimum IVs for %s were set to %d%%.' %
-                (pokemon_name['en'][pkm_id], pkm_miniv))
+                text='The minimum IVs for %s were set to %d%%.' % (pokemon_name['en'][pkm_id],
+                                                                   pkm_miniv))
 
 
-def cmd_rempkmiv(bot, update, args):
+def cmd_rem_pkm_iv(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'rempkmiv'):
+    if is_not_whitelisted(bot, update, 'rempkmiv'):
         return
 
     pref = prefs.get(chat_id)
@@ -1409,8 +1288,7 @@ def cmd_rempkmiv(bot, update, args):
 
     minivs = pref.get('search_miniv', {})
     pkm_id = args[0]
-    if int(pkm_id) >= min_pokemon_id and int(
-            pkm_id) <= max_pokemon_id and pkm_id in minivs:
+    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and pkm_id in minivs:
         del minivs[pkm_id]
         pref.set('search_miniv', minivs)
         if pref.get('language') == 'de':
@@ -1420,16 +1298,13 @@ def cmd_rempkmiv(bot, update, args):
                 (pokemon_name['de'][pkm_id]))
         else:
             bot.sendMessage(
-                chat_id,
-                text='The minimum IVs for %s were reset.' %
-                (pokemon_name['en'][pkm_id]))
+                chat_id, text='The minimum IVs for %s were reset.' % (pokemon_name['en'][pkm_id]))
 
 
 def cmd_cp(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'cp'):
+    if is_not_whitelisted(bot, update, 'cp'):
         return
 
     pref = prefs.get(chat_id)
@@ -1437,13 +1312,9 @@ def cmd_cp(bot, update, args):
     if len(args) < 1:
         if pref.get('language') == 'de':
             bot.sendMessage(
-                chat_id,
-                text='Der Minimal-WP-Wert ist auf %dWP gesetzt.' %
-                (pref.get('mincp', 0)))
+                chat_id, text='Der Minimal-WP-Wert ist auf %dWP gesetzt.' % (pref.get('mincp', 0)))
         else:
-            bot.sendMessage(
-                chat_id,
-                text='The minimum CP is set to %dCP.' % (pref.get('mincp', 0)))
+            bot.sendMessage(chat_id, text='The minimum CP is set to %dCP.' % (pref.get('mincp', 0)))
         return
 
     mincp = int(args[0])
@@ -1454,19 +1325,15 @@ def cmd_cp(bot, update, args):
 
     pref.set('mincp', mincp)
     if pref.get('language') == 'de':
-        bot.sendMessage(
-            chat_id,
-            text='Der Minimal-WP-Wert wurde auf %dWP gesetzt.' % (mincp))
+        bot.sendMessage(chat_id, text='Der Minimal-WP-Wert wurde auf %dWP gesetzt.' % (mincp))
     else:
-        bot.sendMessage(
-            chat_id, text='The minimum CP was set to %dCP.' % (mincp))
+        bot.sendMessage(chat_id, text='The minimum CP was set to %dCP.' % (mincp))
 
 
-def cmd_pkmcp(bot, update, args):
+def cmd_pkm_cp(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'pkmcp'):
+    if is_not_whitelisted(bot, update, 'pkmcp'):
         return
 
     pref = prefs.get(chat_id)
@@ -1488,8 +1355,7 @@ def cmd_pkmcp(bot, update, args):
 
         # Only get current value
         if len(args) < 2:
-            pkm_mincp = mincps[pkm_id] if pkm_id in mincps else pref.get(
-                'mincp', 0)
+            pkm_mincp = mincps[pkm_id] if pkm_id in mincps else pref.get('mincp', 0)
             if pref.get('language') == 'de':
                 bot.sendMessage(
                     chat_id,
@@ -1498,8 +1364,8 @@ def cmd_pkmcp(bot, update, args):
             else:
                 bot.sendMessage(
                     chat_id,
-                    text='The minimum CP for %s is set to %dCP.' %
-                    (pokemon_name['en'][pkm_id], pkm_mincp))
+                    text='The minimum CP for %s is set to %dCP.' % (pokemon_name['en'][pkm_id],
+                                                                    pkm_mincp))
             return
 
         pkm_mincp = int(args[1])
@@ -1518,15 +1384,14 @@ def cmd_pkmcp(bot, update, args):
         else:
             bot.sendMessage(
                 chat_id,
-                text='The minimum CP for %s was set to %dCP.' %
-                (pokemon_name['en'][pkm_id], pkm_mincp))
+                text='The minimum CP for %s was set to %dCP.' % (pokemon_name['en'][pkm_id],
+                                                                 pkm_mincp))
 
 
-def cmd_rempkmcp(bot, update, args):
+def cmd_rem_pkm_cp(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'rempkmcp'):
+    if is_not_whitelisted(bot, update, 'rempkmcp'):
         return
 
     pref = prefs.get(chat_id)
@@ -1542,8 +1407,7 @@ def cmd_rempkmcp(bot, update, args):
 
     mincps = pref.get('search_mincp', {})
     pkm_id = args[0]
-    if int(pkm_id) >= min_pokemon_id and int(
-            pkm_id) <= max_pokemon_id and pkm_id in mincps:
+    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and pkm_id in mincps:
         del mincps[pkm_id]
         pref.set('search_mincp', mincps)
         if pref.get('language') == 'de':
@@ -1553,16 +1417,13 @@ def cmd_rempkmcp(bot, update, args):
                 (pokemon_name['de'][pkm_id]))
         else:
             bot.sendMessage(
-                chat_id,
-                text='The minimum CP for %s was reset.' %
-                (pokemon_name['en'][pkm_id]))
+                chat_id, text='The minimum CP for %s was reset.' % (pokemon_name['en'][pkm_id]))
 
 
 def cmd_level(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'level'):
+    if is_not_whitelisted(bot, update, 'level'):
         return
 
     pref = prefs.get(chat_id)
@@ -1570,14 +1431,10 @@ def cmd_level(bot, update, args):
     if len(args) < 1:
         if pref.get('language') == 'de':
             bot.sendMessage(
-                chat_id,
-                text='Das Minimal-Level ist auf %d gesetzt.' %
-                (pref.get('minlevel', 0)))
+                chat_id, text='Das Minimal-Level ist auf %d gesetzt.' % (pref.get('minlevel', 0)))
         else:
             bot.sendMessage(
-                chat_id,
-                text='The minimum level is set to %d.' %
-                (pref.get('minlevel', 0)))
+                chat_id, text='The minimum level is set to %d.' % (pref.get('minlevel', 0)))
         return
 
     minlevel = int(args[0])
@@ -1588,19 +1445,15 @@ def cmd_level(bot, update, args):
 
     pref.set('minlevel', minlevel)
     if pref.get('language') == 'de':
-        bot.sendMessage(
-            chat_id,
-            text='Das Minimal-Level wurde auf %d gesetzt.' % (minlevel))
+        bot.sendMessage(chat_id, text='Das Minimal-Level wurde auf %d gesetzt.' % (minlevel))
     else:
-        bot.sendMessage(
-            chat_id, text='The minimum level was set to %d.' % (minlevel))
+        bot.sendMessage(chat_id, text='The minimum level was set to %d.' % (minlevel))
 
 
-def cmd_pkmlevel(bot, update, args):
+def cmd_pkm_level(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'pkmlevel'):
+    if is_not_whitelisted(bot, update, 'pkmlevel'):
         return
 
     pref = prefs.get(chat_id)
@@ -1622,8 +1475,7 @@ def cmd_pkmlevel(bot, update, args):
 
         # Only get current value
         if len(args) < 2:
-            pkm_minlevel = minlevels[
-                pkm_id] if pkm_id in minlevels else pref.get('minlevel', 0)
+            pkm_minlevel = minlevels[pkm_id] if pkm_id in minlevels else pref.get('minlevel', 0)
             if pref.get('language') == 'de':
                 bot.sendMessage(
                     chat_id,
@@ -1632,8 +1484,8 @@ def cmd_pkmlevel(bot, update, args):
             else:
                 bot.sendMessage(
                     chat_id,
-                    text='The minimum level for %s is set to %d.' %
-                    (pokemon_name['en'][pkm_id], pkm_minlevel))
+                    text='The minimum level for %s is set to %d.' % (pokemon_name['en'][pkm_id],
+                                                                     pkm_minlevel))
             return
 
         pkm_minlevel = int(args[1])
@@ -1647,20 +1499,19 @@ def cmd_pkmlevel(bot, update, args):
         if pref.get('language') == 'de':
             bot.sendMessage(
                 chat_id,
-                text='Das Minimal-Level für %s wurde auf %d gesetzt.' %
-                (pokemon_name['de'][pkm_id], pkm_minlevel))
+                text='Das Minimal-Level für %s wurde auf %d gesetzt.' % (pokemon_name['de'][pkm_id],
+                                                                         pkm_minlevel))
         else:
             bot.sendMessage(
                 chat_id,
-                text='The minimum level for %s was set to %d.' %
-                (pokemon_name['en'][pkm_id], pkm_minlevel))
+                text='The minimum level for %s was set to %d.' % (pokemon_name['en'][pkm_id],
+                                                                  pkm_minlevel))
 
 
-def cmd_rempkmlevel(bot, update, args):
+def cmd_rem_pkm_level(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'rempkmlevel'):
+    if is_not_whitelisted(bot, update, 'rempkmlevel'):
         return
 
     pref = prefs.get(chat_id)
@@ -1676,27 +1527,23 @@ def cmd_rempkmlevel(bot, update, args):
 
     minlevels = pref.get('search_minlevel', {})
     pkm_id = args[0]
-    if int(pkm_id) >= min_pokemon_id and int(
-            pkm_id) <= max_pokemon_id and pkm_id in minlevels:
+    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and pkm_id in minlevels:
         del minlevels[pkm_id]
         pref.set('search_minlevel', minlevels)
         if pref.get('language') == 'de':
             bot.sendMessage(
                 chat_id,
-                text='Das Minimal-Level für %s wurde zurückgesetzt.' %
-                (pokemon_name['de'][pkm_id]))
+                text='Das Minimal-Level für %s wurde zurückgesetzt.' % (pokemon_name['de'][pkm_id]))
         else:
             bot.sendMessage(
-                chat_id,
-                text='The minimum level for %s was reset.' %
-                (pokemon_name['en'][pkm_id]))
+                chat_id, text='The minimum level for %s was reset.' % (pokemon_name['en'][pkm_id]))
 
 
 def cmd_matchmode(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
+    user_name = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'matchmode'):
+    if is_not_whitelisted(bot, update, 'matchmode'):
         return
 
     pref = prefs.get(chat_id)
@@ -1705,35 +1552,30 @@ def cmd_matchmode(bot, update, args):
         if pref.get('language') == 'de':
             bot.sendMessage(
                 chat_id,
-                text=
-                'Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus ist aktuell auf %s gesetzt.'
+                text='Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus ist aktuell auf %s gesetzt.'
                 % (pref.get('match_mode', 0)))
         else:
             bot.sendMessage(
                 chat_id,
-                text=
-                'The Distance/IVs/CP/Level matching mode is currently set to %s.'
-                % (pref.get('match_mode', 0)))
+                text='The Distance/IVs/CP/Level matching mode is currently set to %s.' %
+                (pref.get('match_mode', 0)))
         return
 
     try:
         matchmode = int(args[0])
-        logger.info('[%s@%s] Setting matchmode.' % (userName, chat_id))
+        LOGGER.info('[%s@%s] Setting matchmode.' % (user_name, chat_id))
 
         if matchmode == 0 or matchmode == 1 or matchmode == 2:
             pref.set('match_mode', matchmode)
             if pref.get('language') == 'de':
                 bot.sendMessage(
                     chat_id,
-                    text=
-                    'Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus wurde auf %s gesetzt.'
+                    text='Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus wurde auf %s gesetzt.'
                     % (matchmode))
             else:
                 bot.sendMessage(
                     chat_id,
-                    text=
-                    'The Distance/IVs/CP/Level matching mode was set to %s.' %
-                    (matchmode))
+                    text='The Distance/IVs/CP/Level matching mode was set to %s.' % (matchmode))
         else:
             if pref.get('language') == 'de':
                 bot.sendMessage(chat_id, text='Bitte nur 0, 1 oder 2 angeben.')
@@ -1741,7 +1583,7 @@ def cmd_matchmode(bot, update, args):
                 bot.sendMessage(chat_id, text='Please only use 0, 1 or 2.')
 
     except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         if pref.get('language') == 'de':
             bot.sendMessage(chat_id, text='Verwendung:\n/matchmode 0/1')
         else:
@@ -1750,9 +1592,8 @@ def cmd_matchmode(bot, update, args):
 
 def cmd_pkmmatchmode(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'pkmmatchmode'):
+    if is_not_whitelisted(bot, update, 'pkmmatchmode'):
         return
 
     pref = prefs.get(chat_id)
@@ -1774,8 +1615,7 @@ def cmd_pkmmatchmode(bot, update, args):
 
         # Only get current value
         if len(args) < 2:
-            pkm_matchmode = matchmodes[
-                pkm_id] if pkm_id in matchmodes else pref.get('matchmode', 0)
+            pkm_matchmode = matchmodes[pkm_id] if pkm_id in matchmodes else pref.get('matchmode', 0)
             if pref.get('language') == 'de':
                 bot.sendMessage(
                     chat_id,
@@ -1785,9 +1625,8 @@ def cmd_pkmmatchmode(bot, update, args):
             else:
                 bot.sendMessage(
                     chat_id,
-                    text=
-                    'The Distance/IVs/CP/Level matching mode for %s is set to %d.'
-                    % (pokemon_name['en'][pkm_id], pkm_matchmode))
+                    text='The Distance/IVs/CP/Level matching mode for %s is set to %d.' %
+                    (pokemon_name['en'][pkm_id], pkm_matchmode))
             return
 
         pkm_matchmode = int(args[1])
@@ -1801,22 +1640,19 @@ def cmd_pkmmatchmode(bot, update, args):
         if pref.get('language') == 'de':
             bot.sendMessage(
                 chat_id,
-                text=
-                'Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus für %s wurde auf %d gesetzt.'
+                text='Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus für %s wurde auf %d gesetzt.'
                 % (pokemon_name['de'][pkm_id], pkm_matchmode))
         else:
             bot.sendMessage(
                 chat_id,
-                text=
-                'The Distance/IVs/CP/Level matching mode for %s was set to %d.'
-                % (pokemon_name['en'][pkm_id], pkm_matchmode))
+                text='The Distance/IVs/CP/Level matching mode for %s was set to %d.' %
+                (pokemon_name['en'][pkm_id], pkm_matchmode))
 
 
 def cmd_rempkmmatchmode(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'rempkmmatchmode'):
+    if is_not_whitelisted(bot, update, 'rempkmmatchmode'):
         return
 
     pref = prefs.get(chat_id)
@@ -1832,142 +1668,126 @@ def cmd_rempkmmatchmode(bot, update, args):
 
     matchmodes = pref.get('search_matchmode', {})
     pkm_id = args[0]
-    if int(pkm_id) >= min_pokemon_id and int(
-            pkm_id) <= max_pokemon_id and pkm_id in matchmodes:
+    if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and pkm_id in matchmodes:
         del matchmodes[pkm_id]
         pref.set('search_matchmode', matchmodes)
         if pref.get('language') == 'de':
             bot.sendMessage(
                 chat_id,
-                text=
-                'Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus für %s wurde zurückgesetzt.'
+                text='Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus für %s wurde zurückgesetzt.'
                 % (pokemon_name['de'][pkm_id]))
         else:
             bot.sendMessage(
                 chat_id,
-                text='The Distance/IVs/CP/Level matching mode for %s was reset.'
-                % (pokemon_name['en'][pkm_id]))
+                text='The Distance/IVs/CP/Level matching mode for %s was reset.' %
+                (pokemon_name['en'][pkm_id]))
 
 
-def isNotWhitelisted(bot, update, command):
+def is_not_whitelisted(bot, update, command):
     chat_id = update.message.chat_id
     message_id = update.message.message_id
-    userName = update.message.from_user.username
-    if chat_id < 0 or not whitelist.isWhitelisted(userName):
-        logger.info('[%s@%s] User blocked (%s).' % (userName, chat_id,
-                                                    command))
+    user_name = update.message.from_user.username
+    if chat_id < 0 or not whitelist.is_whitelisted(user_name):
+        LOGGER.info('[%s@%s] User blocked (%s).' % (user_name, chat_id, command))
         try:
             bot.delete_message(chat_id=chat_id, message_id=message_id)
         except Exception as e:
-            logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+            LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         return True
     return False
 
 
-def cmd_addToWhitelist(bot, update, args):
+def cmd_add_to_whitelist(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
-    if not whitelist.isWhitelistEnabled():
+    user_name = update.message.from_user.username
+    if not whitelist.is_whitelist_enabled():
         bot.sendMessage(chat_id, text='Whitelist is disabled.')
         return
-    if not whitelist.isAdmin(userName):
-        logger.info('[%s@%s] User blocked (addToWhitelist).' % (userName,
-                                                                chat_id))
+    if not whitelist.is_admin(user_name):
+        LOGGER.info('[%s@%s] User blocked (addToWhitelist).' % (user_name, chat_id))
         return
 
     if len(args) < 1:
         bot.sendMessage(
-            chat_id,
-            text='Usage: /wladd <username> or /wladd <username_1> <username_2>'
-        )
+            chat_id, text='Usage: /wladd <username> or /wladd <username_1> <username_2>')
         return
 
     try:
         for x in args:
-            whitelist.addUser(x)
+            whitelist.add_user(x)
         bot.sendMessage(chat_id, "Added to whitelist.")
     except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         bot.sendMessage(
-            chat_id,
-            text='Usage: /wladd <username> or /wladd <username_1> <username_2>'
-        )
+            chat_id, text='Usage: /wladd <username> or /wladd <username_1> <username_2>')
 
 
-def cmd_remFromWhitelist(bot, update, args):
+def cmd_rem_from_whitelist(bot, update, args):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
-    if not whitelist.isWhitelistEnabled():
+    user_name = update.message.from_user.username
+    if not whitelist.is_whitelist_enabled():
         bot.sendMessage(chat_id, text='Whitelist is disabled.')
         return
-    if not whitelist.isAdmin(userName):
-        logger.info('[%s@%s] User blocked (remFromWhitelist).' % (userName,
-                                                                  chat_id))
+    if not whitelist.is_admin(user_name):
+        LOGGER.info('[%s@%s] User blocked (remFromWhitelist).' % (user_name, chat_id))
         return
 
     if len(args) < 1:
         bot.sendMessage(
-            chat_id,
-            text='Usage: /wlrem <username> or /wlrem <username_1> <username_2>'
-        )
+            chat_id, text='Usage: /wlrem <username> or /wlrem <username_1> <username_2>')
         return
 
     try:
         for x in args:
-            whitelist.remUser(x)
+            whitelist.rem_user(x)
         bot.sendMessage(chat_id, "Removed from whitelist.")
 
     except Exception as e:
-        logger.error('[%s@%s] %s' % (userName, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         bot.sendMessage(
-            chat_id,
-            text='Usage: /wlrem <username> or /wlrem <username_1> <username_2>'
-        )
+            chat_id, text='Usage: /wlrem <username> or /wlrem <username_1> <username_2>')
 
 
 def cmd_unknown(bot, update):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
 
-    if isNotWhitelisted(bot, update, 'unknown'):
+    if is_not_whitelisted(bot, update, 'unknown'):
         return
 
     pref = prefs.get(chat_id)
 
     if pref.get('language') == 'de':
-        bot.sendMessage(
-            chat_id, text='Diesen Befehl verstehe ich leider nicht.')
+        bot.sendMessage(chat_id, text='Diesen Befehl verstehe ich leider nicht.')
     else:
-        bot.sendMessage(
-            chat_id, text='Unfortunately, I do not understand this command.')
+        bot.sendMessage(chat_id, text='Unfortunately, I do not understand this command.')
 
 
 ## Functions
-def error(bot, update, error):
-    logger.warn('Update "%s" caused error "%s"' % (update, error))
+def handle_error(bot, update, error):
+    LOGGER.warning('Update "%s" caused error "%s"' % (update, error))
 
 
 def alarm(bot, job):
     chat_id = job.context[0]
-    logger.info('[%s] Checking alarm.' % (chat_id))
-    checkAndSend(bot, chat_id)
+    LOGGER.info('[%s] Checking alarm.' % (chat_id))
+    check_and_send(bot, chat_id)
 
 
-def addJob(bot, update, job_queue):
+def add_job(update, job_queue):
     chat_id = update.message.chat_id
-    userName = update.message.from_user.username
-    logger.info('[%s@%s] Adding job.' % (userName, chat_id))
-    addJobForChatId(chat_id, job_queue)
+    user_name = update.message.from_user.username
+    LOGGER.info('[%s@%s] Adding job.' % (user_name, chat_id))
+    add_job_for_chat_id(chat_id, job_queue)
 
 
-def addJobForChatId(chat_id, job_queue):
+def add_job_for_chat_id(chat_id, job_queue):
     try:
         if chat_id not in jobs:
             job = Job(alarm, 30, repeat=True, context=(chat_id, 'Other'))
             # Add to jobs
             jobs[chat_id] = job
-            if not webhookEnabled:
-                logger.info('Putting job')
+            if not webhook_enabled:
+                LOGGER.info('Putting job')
                 job_queue.put(job)
 
             # User dependant
@@ -1978,18 +1798,14 @@ def addJobForChatId(chat_id, job_queue):
             if chat_id not in clearCnt:
                 clearCnt[chat_id] = 0
 
-            return True
-
     except Exception as e:
-        logger.error('[%s] %s' % (chat_id, repr(e)))
-
-    return False
+        LOGGER.error('[%s] %s' % (chat_id, repr(e)))
 
 
-def buildDetailedPokemonList(chat_id):
+def build_detailed_pokemon_list(chat_id):
     pref = prefs.get(chat_id)
     pokemons = pref.get('search_ids', [])
-    if len(pokemons) == 0:
+    if not pokemons:
         return []
     location = pref.get('location')
     miniv = pref.get('miniv', 0)
@@ -2001,7 +1817,7 @@ def buildDetailedPokemonList(chat_id):
     mincps = pref.get('search_mincp', {})
     minlevels = pref.get('search_minlevel', {})
     matchmodes = pref.get('search_matchmode', {})
-    pokemonList = []
+    pokemon_list = []
     for pkm in pokemons:
         entry = {}
         pkm_id = str(pkm)
@@ -2009,61 +1825,53 @@ def buildDetailedPokemonList(chat_id):
         entry['iv'] = minivs[pkm_id] if pkm_id in minivs else miniv
         entry['cp'] = mincps[pkm_id] if pkm_id in mincps else mincp
         entry['level'] = minlevels[pkm_id] if pkm_id in minlevels else minlevel
-        entry['match_mode'] = matchmodes[
-            pkm_id] if pkm_id in matchmodes else matchmode
+        entry['match_mode'] = matchmodes[pkm_id] if pkm_id in matchmodes else matchmode
         if location[0] is not None:
             radius = dists[pkm_id] if pkm_id in dists else location[2]
             origin = Point(location[0], location[1])
             entry['lat_max'] = vincenty(radius).destination(origin, 0).latitude
-            entry['lng_max'] = vincenty(radius).destination(origin,
-                                                            90).longitude
-            entry['lat_min'] = vincenty(radius).destination(origin,
-                                                            180).latitude
-            entry['lng_min'] = vincenty(radius).destination(origin,
-                                                            270).longitude
-        pokemonList.append(entry)
-    return pokemonList
+            entry['lng_max'] = vincenty(radius).destination(origin, 90).longitude
+            entry['lat_min'] = vincenty(radius).destination(origin, 180).latitude
+            entry['lng_min'] = vincenty(radius).destination(origin, 270).longitude
+        pokemon_list.append(entry)
+    return pokemon_list
 
 
-def buildDetailedRaidList(chat_id):
+def build_detailed_raid_list(chat_id):
     pref = prefs.get(chat_id)
     raids = pref.get('raid_ids', [])
-    if len(raids) == 0:
+    if not raids:
         return []
     location = pref.get('location')
     dists = pref.get('raid_dists', {})
-    raidList = []
+    raid_list = []
     for raid in raids:
         entry = {}
         raid_pkm_id = str(raid)
         entry['id'] = raid_pkm_id
         if location[0] is not None:
-            radius = dists[raid_pkm_id] if raid_pkm_id in dists else location[
-                2]
+            radius = dists[raid_pkm_id] if raid_pkm_id in dists else location[2]
             origin = Point(location[0], location[1])
             entry['lat_max'] = vincenty(radius).destination(origin, 0).latitude
-            entry['lng_max'] = vincenty(radius).destination(origin,
-                                                            90).longitude
-            entry['lat_min'] = vincenty(radius).destination(origin,
-                                                            180).latitude
-            entry['lng_min'] = vincenty(radius).destination(origin,
-                                                            270).longitude
-        raidList.append(entry)
-    return raidList
+            entry['lng_max'] = vincenty(radius).destination(origin, 90).longitude
+            entry['lat_min'] = vincenty(radius).destination(origin, 180).latitude
+            entry['lng_min'] = vincenty(radius).destination(origin, 270).longitude
+        raid_list.append(entry)
+    return raid_list
 
 
-def checkAndSend(bot, chat_id):
-    logger.info('[%s] Checking pokemons and raids.' % (chat_id))
+def check_and_send(bot, chat_id):
+    LOGGER.info('[%s] Checking pokemons and raids.' % (chat_id))
     try:
         pref = prefs.get(chat_id)
         pokemons = pref.get('search_ids', [])
         raids = pref.get('raid_ids', [])
 
-        if len(pokemons) > 0:
-            sendWithout = pref.get('send_without', True)
+        if pokemons:
+            send_without = pref.get('send_without', True)
 
-            allpokes = dataSource.getPokemonByList(
-                buildDetailedPokemonList(chat_id), sendWithout)
+            allpokes = data_source.get_pokemon_by_list(
+                build_detailed_pokemon_list(chat_id), send_without)
 
             if len(allpokes) > 50:
                 if pref.get('language') == 'de':
@@ -2080,85 +1888,77 @@ def checkAndSend(bot, chat_id):
                     )
             else:
                 for pokemon in allpokes:
-                    sendOnePoke(chat_id, pokemon)
+                    send_one_poke(chat_id, pokemon)
 
-        if len(raids) > 0:
-            allraids = dataSource.getRaidsByList(
-                buildDetailedRaidList(chat_id))
+        if raids:
+            all_raids = data_source.get_raids_by_list(build_detailed_raid_list(chat_id))
 
-            for raid in allraids:
-                sendOneRaid(chat_id, raid)
+            for raid in all_raids:
+                send_one_raid(chat_id, raid)
 
     except Exception as e:
-        logger.error('[%s] %s' % (chat_id, repr(e)))
+        LOGGER.error('[%s] %s' % (chat_id, repr(e)))
 
 
-def findUsersByPokeId(pokemon):
-    poke_id = pokemon.getPokemonID()
-    logger.info('Checking pokemon %s for all users.' % (poke_id))
+def find_users_by_poke_id(pokemon):
+    poke_id = pokemon.get_pokemon_id()
+    LOGGER.info('Checking pokemon %s for all users.' % (poke_id))
     for chat_id in jobs:
         if int(poke_id) in prefs.get(chat_id).get('search_ids', []):
-            sendOnePoke(chat_id, pokemon)
-    pass
+            send_one_poke(chat_id, pokemon)
 
 
-def findUsersByRaidId(raid):
-    raid_id = raid.getPokemonID()
-    logger.info('Checking raid pokemon %s for all users.' % (raid_id))
+def find_users_by_raid_id(raid):
+    raid_id = raid.get_pokemon_id()
+    LOGGER.info('Checking raid pokemon %s for all users.' % (raid_id))
     for chat_id in jobs:
         if int(raid_id) in prefs.get(chat_id).get('raid_ids', []):
-            sendOneRaid(chat_id, raid)
-    pass
+            send_one_raid(chat_id, raid)
 
 
-def sendOnePoke(chat_id, pokemon):
+def send_one_poke(chat_id, pokemon):
     pref = prefs.get(chat_id)
     lock = locks[chat_id]
-    logger.info('[%s] Trying to send one pokemon notification. %s' %
-                (chat_id, pokemon.getPokemonID()))
+    LOGGER.info('[%s] Trying to send one pokemon notification. %s' % (chat_id,
+                                                                      pokemon.get_pokemon_id()))
 
     lock.acquire()
     try:
-        encounter_id = pokemon.getEncounterID()
-        pok_id = str(pokemon.getPokemonID())
-        latitude = pokemon.getLatitude()
-        longitude = pokemon.getLongitude()
-        disappear_time = pokemon.getDisappearTime()
-        iv = pokemon.getIVs()
-        move1 = pokemon.getMove1()
-        move2 = pokemon.getMove2()
-        cp = pokemon.getCP()
-        level = pokemon.getLevel()
+        encounter_id = pokemon.get_encounter_id()
+        pok_id = str(pokemon.get_pokemon_id())
+        latitude = pokemon.get_latitude()
+        longitude = pokemon.get_longitude()
+        disappear_time = pokemon.get_disappear_time()
+        iv = pokemon.get_ivs()
+        move1 = pokemon.get_move1()
+        move2 = pokemon.get_move2()
+        cp = pokemon.get_cp()
+        level = pokemon.get_level()
 
         mySent = sent[chat_id]
 
-        sendPokeWithoutIV = pref.get('send_without', True)
+        send_poke_without_iv = pref.get('send_without', True)
         lan = pref.get('language')
 
         delta = disappear_time - datetime.utcnow()
-        deltaStr = '%02dm %02ds' % (int(delta.seconds / 60),
-                                    int(delta.seconds % 60))
-        disappear_time_str = disappear_time.replace(
-            tzinfo=timezone.utc).astimezone(tz=None).strftime("%H:%M:%S")
+        deltaStr = '%02dm %02ds' % (int(delta.seconds / 60), int(delta.seconds % 60))
+        disappear_time_str = disappear_time.replace(tzinfo=timezone.utc).astimezone(
+            tz=None).strftime("%H:%M:%S")
 
         if encounter_id in mySent:
-            logger.info(
-                '[%s] Not sending pokemon notification. Already sent. %s' %
-                (chat_id, pokemon.getPokemonID()))
+            LOGGER.info('[%s] Not sending pokemon notification. Already sent. %s' % (chat_id,
+                                                                                     pok_id))
             lock.release()
             return
 
         if delta.seconds <= 0:
-            logger.info(
-                '[%s] Not sending pokemon notification. Already disappeared. %s'
-                % (chat_id, pokemon.getPokemonID()))
+            LOGGER.info('[%s] Not sending pokemon notification. Already disappeared. %s' % (chat_id,
+                                                                                            pok_id))
             lock.release()
             return
 
-        if iv is None and not sendPokeWithoutIV:
-            logger.info(
-                '[%s] Not sending pokemon notification. Has no IVs. %s' %
-                (chat_id, pokemon.getPokemonID()))
+        if iv is None and not send_poke_without_iv:
+            LOGGER.info('[%s] Not sending pokemon notification. Has no IVs. %s' % (chat_id, pok_id))
             lock.release()
             return
 
@@ -2175,15 +1975,13 @@ def sendOnePoke(chat_id, pokemon):
             matchmode = matchmodes[pok_id]
 
         if matchmode < 2:
-            if location_data[0] is not None and not pokemon.filterbylocation(
-                    location_data):
-                logger.info(
-                    '[%s] Not sending pokemon notification. Too far away. %s' %
-                    (chat_id, pokemon.getPokemonID()))
+            if location_data[0] is not None and not pokemon.filter_by_location(location_data):
+                LOGGER.info('[%s] Not sending pokemon notification. Too far away. %s' % (chat_id,
+                                                                                         pok_id))
                 lock.release()
                 return
 
-        if webhookEnabled:
+        if webhook_enabled:
 
             miniv = pref.preferences.get('miniv', 0)
             mincp = pref.preferences.get('mincp', 0)
@@ -2203,37 +2001,32 @@ def sendOnePoke(chat_id, pokemon):
 
             if matchmode == 0:
                 if iv is not None and iv < miniv:
-                    logger.info(
-                        '[%s] Not sending pokemon notification. IV filter mismatch. %s'
-                        % (chat_id, pokemon.getPokemonID()))
+                    LOGGER.info('[%s] Not sending pokemon notification. IV filter mismatch. %s' %
+                                (chat_id, pok_id))
                     lock.release()
                     return
                 if cp is not None and cp < mincp:
-                    logger.info(
-                        '[%s] Not sending pokemon notification. CP filter mismatch. %s'
-                        % (chat_id, pokemon.getPokemonID()))
+                    LOGGER.info('[%s] Not sending pokemon notification. CP filter mismatch. %s' %
+                                (chat_id, pok_id))
                     lock.release()
                     return
                 if level is not None and level < minlevel:
-                    logger.info(
-                        '[%s] Not sending pokemon notification. Level filter mismatch. %s'
-                        % (chat_id, pokemon.getPokemonID()))
+                    LOGGER.info('[%s] Not sending pokemon notification. Level filter mismatch. %s' %
+                                (chat_id, pok_id))
                     lock.release()
                     return
 
             if matchmode > 0:
-                if (iv is not None and
-                        iv < miniv) and (cp is not None and
-                                         cp < mincp) and (level is not None and
-                                                          level < minlevel):
-                    logger.info(
-                        '[%s] Not sending pokemon notification: IV/CP/Level filter mismatch. %s'
-                        % (chat_id, pokemon.getPokemonID()))
+                if (iv is not None and iv < miniv) and (cp is not None and
+                                                        cp < mincp) and (level is not None and
+                                                                         level < minlevel):
+                    LOGGER.info(
+                        '[%s] Not sending pokemon notification: IV/CP/Level filter mismatch. %s' %
+                        (chat_id, pok_id))
                     lock.release()
                     return
 
-        logger.info('[%s] Sending one pokemon notification. %s' %
-                    (chat_id, pokemon.getPokemonID()))
+        LOGGER.info('[%s] Sending one pokemon notification. %s' % (chat_id, pok_id))
 
         title = pokemon_name[lan][pok_id]
 
@@ -2253,15 +2046,14 @@ def sendOnePoke(chat_id, pokemon):
 
         if location_data[0] is not None:
             if pref.get('walk_dist'):
-                walkin_data = get_walking_data(location_data, latitude,
-                                               longitude)
+                walkin_data = get_walking_data(location_data, latitude, longitude)
                 if walkin_data['walk_dist'] < 1:
                     title += " 📍%dm" % int(1000 * walkin_data['walk_dist'])
                 else:
                     title += " 📍%skm" % walkin_data['walk_dist']
                 address += " 🚶%s" % walkin_data['walk_time']
             else:
-                dist = round(pokemon.getDistance(location_data), 2)
+                dist = round(pokemon.get_distance(location_data), 2)
                 if dist < 1:
                     title += " 📍%dm" % int(1000 * dist)
                 else:
@@ -2272,31 +2064,24 @@ def sendOnePoke(chat_id, pokemon):
             if lan in move_name:
                 moveNames = move_name[lan]
             # Use language if other move languages are available.
-            move1Name = moveNames[str(move1)] if str(
-                move1) in moveNames else '?'
-            move2Name = moveNames[str(move2)] if str(
-                move2) in moveNames else '?'
+            move1Name = moveNames[str(move1)] if str(move1) in moveNames else '?'
+            move2Name = moveNames[str(move2)] if str(move2) in moveNames else '?'
             address += "\n⚔ %s / %s" % (move1Name, move2Name)
 
         mySent[encounter_id] = disappear_time
 
         if pref.get('only_map'):
-            telegramBot.sendVenue(chat_id, latitude, longitude, title, address)
+            telegram_bot.sendVenue(chat_id, latitude, longitude, title, address)
         else:
             if pref.get('stickers'):
-                telegramBot.sendSticker(
-                    chat_id,
-                    sticker_list.get(str(pok_id)),
-                    disable_notification=True)
-            telegramBot.sendLocation(
-                chat_id, latitude, longitude, disable_notification=True)
-            telegramBot.sendMessage(
-                chat_id,
-                text='<b>%s</b> \n%s' % (title, address),
-                parse_mode='HTML')
+                telegram_bot.sendSticker(
+                    chat_id, sticker_list.get(str(pok_id)), disable_notification=True)
+            telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
+            telegram_bot.sendMessage(
+                chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
 
     except Exception as e:
-        logger.error('[%s] %s' % (chat_id, repr(e)))
+        LOGGER.error('[%s] %s' % (chat_id, repr(e)))
     lock.release()
 
     # Clean already disappeared pokemon
@@ -2305,7 +2090,7 @@ def sendOnePoke(chat_id, pokemon):
     lock.acquire()
     if clearCnt[chat_id] > clearCntThreshold:
         clearCnt[chat_id] = 0
-        logger.info('[%s] Cleaning sentlist.' % (chat_id))
+        LOGGER.info('[%s] Cleaning sentlist.' % (chat_id))
         try:
             current_time = datetime.utcnow()
             toDel = []
@@ -2316,30 +2101,28 @@ def sendOnePoke(chat_id, pokemon):
             for encounter_id in toDel:
                 del mySent[encounter_id]
         except Exception as e:
-            logger.error('[%s] %s' % (chat_id, repr(e)))
+            LOGGER.error('[%s] %s' % (chat_id, repr(e)))
     else:
         clearCnt[chat_id] = clearCnt[chat_id] + 1
     lock.release()
 
 
-def sendOneRaid(chat_id, raid):
+def send_one_raid(chat_id, raid):
     pref = prefs.get(chat_id)
     lock = locks[chat_id]
-    logger.info('[%s] Trying to send one raid notification. %s' %
-                (chat_id, raid.getPokemonID()))
+    LOGGER.info('[%s] Trying to send one raid notification. %s' % (chat_id, raid.get_pokemon_id()))
 
     lock.acquire()
     try:
-        gym_id = raid.getGymId()
-        name = raid.getName()
-        latitude = raid.getLatitude()
-        longitude = raid.getLongitude()
-        start = raid.getStart()
-        end = raid.getEnd()
-        pok_id = str(raid.getPokemonID())
-        cp = raid.getCP()
-        move1 = raid.getMove1()
-        move2 = raid.getMove2()
+        gym_id = raid.get_gym_id()
+        name = raid.get_name()
+        latitude = raid.get_latitude()
+        longitude = raid.get_longitude()
+        end = raid.get_end()
+        pok_id = str(raid.get_pokemon_id())
+        cp = raid.get_cp()
+        move1 = raid.get_move1()
+        move2 = raid.get_move2()
 
         raid_id = str(gym_id) + str(end)
 
@@ -2348,22 +2131,17 @@ def sendOneRaid(chat_id, raid):
         lan = pref.get('language')
 
         delta = end - datetime.utcnow()
-        deltaStr = '%02dh %02dm' % (int(delta.seconds / 3600), int(
-            (delta.seconds / 60) % 60))
+        deltaStr = '%02dh %02dm' % (int(delta.seconds / 3600), int((delta.seconds / 60) % 60))
         disappear_time_str = end.replace(tzinfo=timezone.utc).astimezone(
             tz=None).strftime("%H:%M:%S")
 
         if raid_id in mySent:
-            logger.info(
-                '[%s] Not sending raid notification. Already sent. %s' %
-                (chat_id, raid.getPokemonID()))
+            LOGGER.info('[%s] Not sending raid notification. Already sent. %s' % (chat_id, pok_id))
             lock.release()
             return
 
         if delta.seconds <= 0:
-            logger.info(
-                '[%s] Not sending raid notification. Already ended. %s' %
-                (chat_id, raid.getPokemonID()))
+            LOGGER.info('[%s] Not sending raid notification. Already ended. %s' % (chat_id, pok_id))
             lock.release()
             return
 
@@ -2373,16 +2151,12 @@ def sendOneRaid(chat_id, raid):
         if pok_id in dists:
             location_data[2] = dists[pok_id]
 
-        if location_data[0] is not None and not raid.filterbylocation(
-                location_data):
-            logger.info(
-                '[%s] Not sending raid notification. Too far away. %s' %
-                (chat_id, raid.getPokemonID()))
+        if location_data[0] is not None and not raid.filter_by_location(location_data):
+            LOGGER.info('[%s] Not sending raid notification. Too far away. %s' % (chat_id, pok_id))
             lock.release()
             return
 
-        logger.info('[%s] Sending one notification. %s' %
-                    (chat_id, raid.getPokemonID()))
+        LOGGER.info('[%s] Sending one notification. %s' % (chat_id, pok_id))
 
         title = "👹 " + pokemon_name[lan][pok_id]
 
@@ -2396,15 +2170,14 @@ def sendOneRaid(chat_id, raid):
 
         if location_data[0] is not None:
             if pref.get('walk_dist'):
-                walkin_data = get_walking_data(location_data, latitude,
-                                               longitude)
+                walkin_data = get_walking_data(location_data, latitude, longitude)
                 if walkin_data['walk_dist'] < 1:
                     title += " 📍%dm" % int(1000 * walkin_data['walk_dist'])
                 else:
                     title += " 📍%skm" % walkin_data['walk_dist']
                 address += " 🚶%s" % walkin_data['walk_time']
             else:
-                dist = round(raid.getDistance(location_data), 2)
+                dist = round(raid.get_distance(location_data), 2)
                 if dist < 1:
                     title += " 📍%dm" % int(1000 * dist)
                 else:
@@ -2415,40 +2188,33 @@ def sendOneRaid(chat_id, raid):
             if lan in move_name:
                 moveNames = move_name[lan]
             # Use language if other move languages are available.
-            move1Name = moveNames[str(move1)] if str(
-                move1) in moveNames else '?'
-            move2Name = moveNames[str(move2)] if str(
-                move2) in moveNames else '?'
+            move1Name = moveNames[str(move1)] if str(move1) in moveNames else '?'
+            move2Name = moveNames[str(move2)] if str(move2) in moveNames else '?'
             address += "\n⚔ %s / %s" % (move1Name, move2Name)
 
         mySent[raid_id] = end
 
         if pref.get('only_map'):
-            telegramBot.sendVenue(chat_id, latitude, longitude, title, address)
+            telegram_bot.sendVenue(chat_id, latitude, longitude, title, address)
         else:
             if pref.get('stickers'):
-                telegramBot.sendSticker(
-                    chat_id,
-                    sticker_list.get(str(pok_id)),
-                    disable_notification=True)
-            telegramBot.sendLocation(
-                chat_id, latitude, longitude, disable_notification=True)
-            telegramBot.sendMessage(
-                chat_id,
-                text='<b>%s</b> \n%s' % (title, address),
-                parse_mode='HTML')
+                telegram_bot.sendSticker(
+                    chat_id, sticker_list.get(str(pok_id)), disable_notification=True)
+            telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
+            telegram_bot.sendMessage(
+                chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
 
     except Exception as e:
-        logger.error('[%s] %s' % (chat_id, repr(e)))
+        LOGGER.error('[%s] %s' % (chat_id, repr(e)))
     lock.release()
 
-    # Clean already disappeared pokemon
+    # Clean already disappeared raids
     # 2016-08-19 20:10:10.000000
     # 2016-08-19 20:10:10
     lock.acquire()
     if clearCnt[chat_id] > clearCntThreshold:
         clearCnt[chat_id] = 0
-        logger.info('[%s] Cleaning sentlist.' % (chat_id))
+        LOGGER.info('[%s] Cleaning sentlist.' % (chat_id))
         try:
             current_time = datetime.utcnow()
             toDel = []
@@ -2459,7 +2225,7 @@ def sendOneRaid(chat_id, raid):
             for raid_id in toDel:
                 del mySent[raid_id]
         except Exception as e:
-            logger.error('[%s] %s' % (chat_id, repr(e)))
+            LOGGER.error('[%s] %s' % (chat_id, repr(e)))
     else:
         clearCnt[chat_id] = clearCnt[chat_id] + 1
     lock.release()
@@ -2467,7 +2233,7 @@ def sendOneRaid(chat_id, raid):
 
 def read_config():
     config_path = os.path.join(os.path.dirname(sys.argv[0]), "config-bot.json")
-    logger.info('Reading config: <%s>' % config_path)
+    LOGGER.info('Reading config: <%s>' % config_path)
     global config
 
     try:
@@ -2475,7 +2241,7 @@ def read_config():
             config = json.loads(f.read())
 
     except Exception as e:
-        logger.error('%s' % (repr(e)))
+        LOGGER.error('%s' % (repr(e)))
         config = {}
 
     report_config()
@@ -2487,21 +2253,20 @@ def report_config():
     for admin in admins_list:
         tmp = '%s, %s' % (tmp, admin)
     tmp = tmp[2:]
-    logger.info('LIST_OF_ADMINS: <%s>' % (tmp))
-    logger.info('TELEGRAM_TOKEN: <%s>' % (config.get('TELEGRAM_TOKEN', None)))
-    logger.info('GMAPS_KEY: <%s>' % (config.get('GMAPS_KEY', None)))
-    logger.info('SCANNER_NAME: <%s>' % (config.get('SCANNER_NAME', None)))
-    logger.info('DB_TYPE: <%s>' % (config.get('DB_TYPE', None)))
-    logger.info('DB_CONNECT: <%s>' % (config.get('DB_CONNECT', None)))
-    logger.info('DEFAULT_LANG: <%s>' % (config.get('DEFAULT_LANG', None)))
-    logger.info('SEND_MAP_ONLY: <%s>' % (config.get('SEND_MAP_ONLY', None)))
-    logger.info('STICKERS: <%s>' % (config.get('STICKERS', None)))
-    logger.info('SEND_POKEMON_WITHOUT_IV: <%s>' %
-                (config.get('SEND_POKEMON_WITHOUT_IV', None)))
+    LOGGER.info('LIST_OF_ADMINS: <%s>' % (tmp))
+    LOGGER.info('TELEGRAM_TOKEN: <%s>' % (config.get('TELEGRAM_TOKEN', None)))
+    LOGGER.info('GMAPS_KEY: <%s>' % (config.get('GMAPS_KEY', None)))
+    LOGGER.info('SCANNER_NAME: <%s>' % (config.get('SCANNER_NAME', None)))
+    LOGGER.info('DB_TYPE: <%s>' % (config.get('DB_TYPE', None)))
+    LOGGER.info('DB_CONNECT: <%s>' % (config.get('DB_CONNECT', None)))
+    LOGGER.info('DEFAULT_LANG: <%s>' % (config.get('DEFAULT_LANG', None)))
+    LOGGER.info('SEND_MAP_ONLY: <%s>' % (config.get('SEND_MAP_ONLY', None)))
+    LOGGER.info('STICKERS: <%s>' % (config.get('STICKERS', None)))
+    LOGGER.info('SEND_POKEMON_WITHOUT_IV: <%s>' % (config.get('SEND_POKEMON_WITHOUT_IV', None)))
 
 
 def read_pokemon_names(loc):
-    logger.info('Reading pokemon names. <%s>' % loc)
+    LOGGER.info('Reading pokemon names. <%s>' % loc)
     config_path = "locales/pokemon." + loc + ".json"
 
     try:
@@ -2509,13 +2274,11 @@ def read_pokemon_names(loc):
             pokemon_name[loc] = json.loads(f.read())
 
     except Exception as e:
-        logger.error('%s' % (repr(e)))
-        # Pass to ignore if some files missing.
-        pass
+        LOGGER.error('%s' % (repr(e)))
 
 
 def read_move_names(loc):
-    logger.info('Reading move names. <%s>' % loc)
+    LOGGER.info('Reading move names. <%s>' % loc)
     config_path = "locales/moves." + loc + ".json"
 
     try:
@@ -2523,41 +2286,34 @@ def read_move_names(loc):
             move_name[loc] = json.loads(f.read())
 
     except Exception as e:
-        logger.error('%s' % (repr(e)))
-        # Pass to ignore if some files missing.
-        pass
+        LOGGER.error('%s' % (repr(e)))
 
 
 # Returns a set with walking dist and walking duration via Google Distance Matrix API
 def get_walking_data(user_location, lat, lng):
     data = {'walk_dist': 'unknown', 'walk_time': 'unknown'}
     if gmaps_client is None:
-        logger.error(
-            'Google Maps Client not available. Unable to get walking data.')
+        LOGGER.error('Google Maps Client not available. Unable to get walking data.')
         return data
     if user_location[0] is None:
-        logger.error('No location has been set. Unable to get walking data.')
+        LOGGER.error('No location has been set. Unable to get walking data.')
         return data
     origin = "{},{}".format(user_location[0], user_location[1])
     dest = "{},{}".format(lat, lng)
     try:
-        result = gmaps_client.distance_matrix(
-            origin, dest, mode='walking', units='metric')
+        result = gmaps_client.distance_matrix(origin, dest, mode='walking', units='metric')
         result = result.get('rows')[0].get('elements')[0]
-        data['walk_dist'] = float(
-            result.get('distance').get('text').replace(' km', ''))
-        data['walk_time'] = result.get('duration').get('text').replace(
-            ' hours', 'h').replace(' hour', 'h').replace(' mins', 'm').replace(
-                ' min', 'm')
+        data['walk_dist'] = float(result.get('distance').get('text').replace(' km', ''))
+        data['walk_time'] = result.get('duration').get('text').replace(' hours', 'h').replace(
+            ' hour', 'h').replace(' mins', 'm').replace(' min', 'm')
 
     except Exception as e:
-        logger.error('Encountered error while getting walking data (%s)' %
-                     (repr(e)))
+        LOGGER.error('Encountered error while getting walking data (%s)' % (repr(e)))
     return data
 
 
 def main():
-    logger.info('Starting...')
+    LOGGER.info('Starting...')
     read_config()
 
     # Read lang files
@@ -2568,29 +2324,26 @@ def main():
         if fnmatch.fnmatch(file, 'moves.*.json'):
             read_move_names(file.split('.')[1])
 
-    dbType = config.get('DB_TYPE', None)
-    scannerName = config.get('SCANNER_NAME', None)
+    db_type = config.get('DB_TYPE', None)
+    scanner_name = config.get('SCANNER_NAME', None)
 
-    global dataSource
-    global webhookEnabled
-    global ivAvailable
+    global data_source
+    global webhook_enabled
+    global iv_available
 
-    if dbType == 'mysql':
-        if scannerName == 'pokemongo-map-iv':
-            ivAvailable = True
-            dataSource = DataSources.DSRocketMapIVMysql(
-                config.get('DB_CONNECT', None))
-    elif dbType == 'webhook':
-        webhookEnabled = True
-        if scannerName == 'pokemongo-map-iv':
-            ivAvailable = True
-            dataSource = DataSources.DSRocketMapIVWebhook(
-                config.get('DB_CONNECT', None), findUsersByPokeId,
-                findUsersByRaidId)
-    if not dataSource:
-        raise Exception(
-            "The combination SCANNER_NAME, DB_TYPE is not available: %s,%s" %
-            (scannerName, dbType))
+    if db_type == 'mysql':
+        if scanner_name == 'pokemongo-map-iv':
+            iv_available = True
+            data_source = DataSources.DSRocketMapIVMysql(config.get('DB_CONNECT', None))
+    elif db_type == 'webhook':
+        webhook_enabled = True
+        if scanner_name == 'pokemongo-map-iv':
+            iv_available = True
+            data_source = DataSources.DSRocketMapIVWebhook(
+                config.get('DB_CONNECT', None), find_users_by_poke_id, find_users_by_raid_id)
+    if not data_source:
+        raise Exception("The combination SCANNER_NAME, DB_TYPE is not available: %s,%s" %
+                        (scanner_name, db_type))
 
     global whitelist
     whitelist = Whitelist.Whitelist(config)
@@ -2598,16 +2351,16 @@ def main():
     #ask it to the bot father in telegram
     token = config.get('TELEGRAM_TOKEN', None)
     updater = Updater(token)
-    global telegramBot
-    telegramBot = Bot(token)
-    logger.info("BotName: <%s>" % (telegramBot.name))
+
+    global telegram_bot
+    telegram_bot = Bot(token)
+    LOGGER.info("BotName: <%s>" % (telegram_bot.name))
 
     # Get the Google Maps API
     global gmaps_client
     google_key = config.get('GMAPS_KEY', None)
     gmaps_client = googlemaps.Client(
-        key=google_key, timeout=3,
-        retry_timeout=4) if google_key is not None else None
+        key=google_key, timeout=3, retry_timeout=4) if google_key is not None else None
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
@@ -2617,75 +2370,53 @@ def main():
     dp.add_handler(CommandHandler("stop", cmd_stop))
     dp.add_handler(CommandHandler("help", cmd_help))
     dp.add_handler(CommandHandler("clear", cmd_clear))
+    dp.add_handler(CommandHandler("add", cmd_add, pass_args=True, pass_job_queue=True))
     dp.add_handler(
-        CommandHandler("add", cmd_add, pass_args=True, pass_job_queue=True))
-    dp.add_handler(
-        CommandHandler(
-            "addbyrarity",
-            cmd_addbyrarity,
-            pass_args=True,
-            pass_job_queue=True))
-    dp.add_handler(
-        CommandHandler("rem", cmd_remove, pass_args=True, pass_job_queue=True))
+        CommandHandler("addbyrarity", cmd_add_by_rarity, pass_args=True, pass_job_queue=True))
+    dp.add_handler(CommandHandler("rem", cmd_remove, pass_args=True))
+    dp.add_handler(CommandHandler("addraid", cmd_add_raid, pass_args=True, pass_job_queue=True))
     dp.add_handler(
         CommandHandler(
-            "addraid", cmd_addraid, pass_args=True, pass_job_queue=True))
-    dp.add_handler(
-        CommandHandler(
-            "addraidbylevel",
-            cmd_addraidbylevel,
-            pass_args=True,
-            pass_job_queue=True))
-    dp.add_handler(
-        CommandHandler(
-            "remraid", cmd_removeraid, pass_args=True, pass_job_queue=True))
+            "addraidbylevel", cmd_add_raid_by_level, pass_args=True, pass_job_queue=True))
+    dp.add_handler(CommandHandler("remraid", cmd_remove_raid, pass_args=True))
     dp.add_handler(CommandHandler("list", cmd_list))
     dp.add_handler(CommandHandler("lang", cmd_lang, pass_args=True))
     dp.add_handler(CommandHandler("radius", cmd_radius, pass_args=True))
-    dp.add_handler(
-        CommandHandler("location", cmd_location_str, pass_args=True))
-    dp.add_handler(CommandHandler("remloc", cmd_clearlocation))
+    dp.add_handler(CommandHandler("location", cmd_location_str, pass_args=True))
+    dp.add_handler(CommandHandler("remloc", cmd_clear_location))
     dp.add_handler(MessageHandler(Filters.location, cmd_location))
-    dp.add_handler(CommandHandler("wladd", cmd_addToWhitelist, pass_args=True))
-    dp.add_handler(
-        CommandHandler("wlrem", cmd_remFromWhitelist, pass_args=True))
+    dp.add_handler(CommandHandler("wladd", cmd_add_to_whitelist, pass_args=True))
+    dp.add_handler(CommandHandler("wlrem", cmd_rem_from_whitelist, pass_args=True))
     dp.add_handler(CommandHandler("stickers", cmd_stickers, pass_args=True))
-    dp.add_handler(CommandHandler("maponly", cmd_maponly, pass_args=True))
-    dp.add_handler(CommandHandler("walkdist", cmd_walkdist, pass_args=True))
-    dp.add_handler(CommandHandler("pkmradius", cmd_pkmradius, pass_args=True))
-    dp.add_handler(
-        CommandHandler("rempkmradius", cmd_rempkmradius, pass_args=True))
-    dp.add_handler(
-        CommandHandler("raidradius", cmd_raidradius, pass_args=True))
-    dp.add_handler(
-        CommandHandler("remraidradius", cmd_remraidradius, pass_args=True))
+    dp.add_handler(CommandHandler("maponly", cmd_map_only, pass_args=True))
+    dp.add_handler(CommandHandler("walkdist", cmd_walk_dist, pass_args=True))
+    dp.add_handler(CommandHandler("pkmradius", cmd_pkm_radius, pass_args=True))
+    dp.add_handler(CommandHandler("rempkmradius", cmd_rem_pkm_radius, pass_args=True))
+    dp.add_handler(CommandHandler("raidradius", cmd_raid_radius, pass_args=True))
+    dp.add_handler(CommandHandler("remraidradius", cmd_remraidradius, pass_args=True))
     dp.add_handler(CommandHandler("iv", cmd_iv, pass_args=True))
     dp.add_handler(CommandHandler("cp", cmd_cp, pass_args=True))
     dp.add_handler(CommandHandler("wp", cmd_cp, pass_args=True))
     dp.add_handler(CommandHandler("level", cmd_level, pass_args=True))
     dp.add_handler(CommandHandler("matchmode", cmd_matchmode, pass_args=True))
-    dp.add_handler(CommandHandler("pkmiv", cmd_pkmiv, pass_args=True))
-    dp.add_handler(CommandHandler("pkmcp", cmd_pkmcp, pass_args=True))
-    dp.add_handler(CommandHandler("pkmwp", cmd_pkmcp, pass_args=True))
-    dp.add_handler(CommandHandler("pkmlevel", cmd_pkmlevel, pass_args=True))
-    dp.add_handler(
-        CommandHandler("pkmmatchmode", cmd_pkmmatchmode, pass_args=True))
-    dp.add_handler(CommandHandler("rempkmiv", cmd_rempkmiv, pass_args=True))
-    dp.add_handler(CommandHandler("rempkmcp", cmd_rempkmcp, pass_args=True))
-    dp.add_handler(CommandHandler("rempkmwp", cmd_rempkmcp, pass_args=True))
-    dp.add_handler(
-        CommandHandler("rempkmlevel", cmd_rempkmlevel, pass_args=True))
-    dp.add_handler(
-        CommandHandler("rempkmmatchmode", cmd_rempkmmatchmode, pass_args=True))
-    dp.add_handler(
-        CommandHandler("sendwithout", cmd_sendwithout, pass_args=True))
-    dp.add_handler(CommandHandler("wo", cmd_findgym, pass_args=True))
-    dp.add_handler(CommandHandler("where", cmd_findgym, pass_args=True))
-    dp.add_handler(MessageHandler([Filters.command], cmd_unknown))
+    dp.add_handler(CommandHandler("pkmiv", cmd_pkm_iv, pass_args=True))
+    dp.add_handler(CommandHandler("pkmcp", cmd_pkm_cp, pass_args=True))
+    dp.add_handler(CommandHandler("pkmwp", cmd_pkm_cp, pass_args=True))
+    dp.add_handler(CommandHandler("pkmlevel", cmd_pkm_level, pass_args=True))
+    dp.add_handler(CommandHandler("pkmmatchmode", cmd_pkmmatchmode, pass_args=True))
+    dp.add_handler(CommandHandler("rempkmiv", cmd_rem_pkm_iv, pass_args=True))
+    dp.add_handler(CommandHandler("rempkmcp", cmd_rem_pkm_cp, pass_args=True))
+    dp.add_handler(CommandHandler("rempkmwp", cmd_rem_pkm_cp, pass_args=True))
+    dp.add_handler(CommandHandler("rempkmlevel", cmd_rem_pkm_level, pass_args=True))
+    dp.add_handler(CommandHandler("rempkmmatchmode", cmd_rempkmmatchmode, pass_args=True))
+    dp.add_handler(CommandHandler("sendwithout", cmd_send_without, pass_args=True))
+    dp.add_handler(CommandHandler("wo", cmd_find_gym, pass_args=True))
+    dp.add_handler(CommandHandler("where", cmd_find_gym, pass_args=True))
+    dp.add_handler(MessageHandler(Filters.command, cmd_unknown))
     dp.add_handler(CallbackQueryHandler(cb_button))
 
     # log all errors
-    dp.add_error_handler(error)
+    dp.add_error_handler(handle_error)
 
     # add the configuration to the preferences
     prefs.add_config(config)
@@ -2694,7 +2425,7 @@ def main():
     updater.start_polling(bootstrap_retries=3, read_latency=5)
     j = updater.job_queue
 
-    logger.info('Started!')
+    LOGGER.info('Started!')
 
     # Send restart notification to all known users
     userdirectory = 'userdata/'
@@ -2703,8 +2434,8 @@ def main():
             chat_id = int(file.split('.')[0])
             pref = prefs.get(chat_id)
             pref.load()
-            if len(pref.get('search_ids', [])) > 0:
-                addJobForChatId(chat_id, j)
+            if pref.get('search_ids', []) or pref.get('raid_ids', []):
+                add_job_for_chat_id(chat_id, j)
 
     # Block until the you presses Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since

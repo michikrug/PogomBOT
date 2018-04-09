@@ -5,17 +5,14 @@ import os
 import sys
 
 if len(sys.argv) < 3:
-    print(
-        "Usage: \n\tpython3 %s <FULL_PATH_TO_PGO-MAP> <FULL_PATH_LOCALES_OUTPUT>"
-        % (sys.argv[0]))
+    print("Usage: \n\tpython3 %s <FULL_PATH_TO_PGO-MAP> <FULL_PATH_LOCALES_OUTPUT>" % (sys.argv[0]))
     sys.exit()
 
 # Enable logging
 logging.basicConfig(
-    format='%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s',
-    level=logging.INFO)
+    format='%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s', level=logging.INFO)
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def convertTo(pokemon_en, lang):
@@ -30,13 +27,12 @@ def convertTo(pokemon_en, lang):
             lang_name = poke_lang[en_name]
             newlang_poke[poke_id] = lang_name
         except Exception as e:
-            logger.error("[%s] Missing: %s - %s" % (lang, poke_id, en_name))
-            logger.error("[%s] %s" % (lang, repr(e)))
+            LOGGER.error("[%s] Missing: %s - %s" % (lang, poke_id, en_name))
+            LOGGER.error("[%s] %s" % (lang, repr(e)))
 
     fileName = os.path.join(path_output, "pokemon." + lang + ".json")
     with open(fileName, 'w', encoding='utf-8') as f:
-        json.dump(
-            newlang_poke, f, indent=4, sort_keys=True, separators=(',', ':'))
+        json.dump(newlang_poke, f, indent=4, sort_keys=True, separators=(',', ':'))
 
 
 def main():

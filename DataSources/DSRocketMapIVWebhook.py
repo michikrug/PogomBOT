@@ -1,18 +1,16 @@
-import itertools
 import json
 import logging
-import os
 import threading
-from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
+from .Conversion import (floatOrNone, intOrNone, strOrNone,
+                         utcfromtimestampOrNone)
 from .DSPokemon import DSPokemon
-from .DSRaid import DSRaid
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
-def startServer(port):
+def start_server(port):
     server = HTTPServer(('0.0.0.0', port), WebhookHandler)
     server.serve_forever()
 
@@ -37,52 +35,21 @@ class WebhookHandler(BaseHTTPRequestHandler):
         js = json.loads(payload)
         if js['type'] == 'pokemon':
             data = js['message']
-            encounter_id = str(data[
-                'encounter_id']) if data['encounter_id'] is not None else None
-            spawn_point = str(data['spawnpoint_id']
-                              ) if data['spawnpoint_id'] is not None else None
-            pok_id = int(
-                data['pokemon_id']) if data['pokemon_id'] is not None else None
-            latitude = float(
-                data['latitude']) if data['latitude'] is not None else None
-            longitude = float(
-                data['longitude']) if data['longitude'] is not None else None
-            disappear_time = datetime.utcfromtimestamp(
-                data['disappear_time']
-            ) if data['disappear_time'] is not None else None
-            individual_attack = int(
-                data['individual_attack']
-            ) if data['individual_attack'] is not None else None
-            individual_defense = int(
-                data['individual_defense']
-            ) if data['individual_defense'] is not None else None
-            individual_stamina = int(
-                data['individual_stamina']
-            ) if data['individual_stamina'] is not None else None
-            move1 = int(data['move_1']) if data['move_1'] is not None else None
-            move2 = int(data['move_2']) if data['move_2'] is not None else None
-            weight = float(
-                data['weight']) if data['weight'] is not None else None
-            height = float(
-                data['height']) if data['height'] is not None else None
-            gender = int(
-                data['gender']) if data['gender'] is not None else None
-            form = int(data['form']) if data['form'] is not None else None
-            cp = int(data['cp']) if data['cp'] is not None else None
-            cp_multiplier = float(
-                data['cp_multiplier']
-            ) if data['cp_multiplier'] is not None else None
             ivs = round(
-                float((
-                    individual_attack + individual_defense + individual_stamina
-                ) / 45 * 100), 1) if individual_attack is not None else None
+                float((int(data['individual_attack']) + int(data['individual_defense']) +
+                       int(data['individual_stamina'])) / 45 * 100),
+                1) if data['individual_attack'] is not None else None
 
-            poke = DSPokemon(encounter_id, spawn_point, pok_id, latitude,
-                             longitude, disappear_time, ivs, move1, move2,
-                             weight, height, gender, form, cp, cp_multiplier)
-            self.instance.addPoke(poke)
+            self.instance.add_poke(
+                DSPokemon(
+                    strOrNone(data['encounter_id']), strOrNone(data['spawnpoint_id']),
+                    intOrNone(data['pokemon_id']), floatOrNone(data['latitude']),
+                    floatOrNone(data['longitude']), utcfromtimestampOrNone(data['disappear_time']),
+                    ivs, intOrNone(data['move_1']), intOrNone(data['move_2']),
+                    floatOrNone(data['weight']), floatOrNone(data['height']),
+                    intOrNone(data['gender']), intOrNone(data['form']), intOrNone(data['cp']),
+                    floatOrNone(data['cp_multiplier'])))
         elif js['type'] == 'raid':
-            #TODO
             pass
         elif js['type'] == 'pokestop':
             pass
@@ -105,28 +72,28 @@ class DSRocketMapIVWebhook():
 
     def __init__(self, connectString, poke_method, raid_method):
         port = int(connectString)
-        logger.info('Starting webhook on port %s.' % (port))
-        self.pokeDict = dict()
+        LOGGER.info('Starting webhook on port %s.' % (port))
         self.lock = threading.Lock()
         WebhookHandler.instance = self
-        th = threading.Thread(target=startServer, args=[int(port)])
+        th = threading.Thread(target=start_server, args=[int(port)])
         th.start()
         self.poke_method = poke_method
         self.raid_method = raid_method
 
-    def addPoke(self, poke):
+    def add_poke(self, poke):
         self.poke_method(poke)
-        pass
 
-    def getPokemonByIds(self, ids, sendWithout=True):
+    def get_pokemon_by_ids(self, ids, send_without=True):
         return []
 
-    def getPokemonByList(self, pokemonList, sendWithout=True):
+    def get_pokemon_by_list(self, pokemon_list, send_without=True):
         return []
 
-    def addRaid(self, raid):
+    def add_raid(self, raid):
         self.raid_method(raid)
-        pass
 
-    def getRaidByList(self, raidList):
+    def get_raids_by_list(self, raid_list):
+        return []
+
+    def get_gyms_by_name(self, gym_name):
         return []

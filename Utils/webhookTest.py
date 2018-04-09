@@ -19,7 +19,7 @@ import urllib.request
 #   - move_2: None
 
 try:
-    conditionsSetURL = 'http://127.0.0.1:2100/'
+    conditions_set_url = 'http://127.0.0.1:2100/'
 
     poke_iv_disabled = {
         "type": "pokemon",
@@ -65,12 +65,10 @@ try:
         }
     }
 
-    newConditions = poke_iv_disabled
-    params = json.dumps(newConditions).encode('utf8')
+    new_conditions = poke_iv_disabled
+    params = json.dumps(new_conditions).encode('utf8')
     req = urllib.request.Request(
-        conditionsSetURL,
-        data=params,
-        headers={'content-type': 'application/json'})
+        conditions_set_url, data=params, headers={'content-type': 'application/json'})
     response = urllib.request.urlopen(req)
     print(response.read().decode('utf8'))
 except Exception as e:
