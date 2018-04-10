@@ -9,6 +9,7 @@
 # /* cSpell:disable */
 
 import fnmatch
+import gettext
 import json
 import logging
 import os
@@ -16,17 +17,18 @@ import sys
 import threading
 from datetime import datetime, timezone
 
-import DataSources
 import googlemaps
-import Preferences
-import Whitelist
 from geopy.distance import vincenty
 from geopy.geocoders import Nominatim
 from geopy.point import Point
-from Stickers import sticker_list
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters, Job, MessageHandler,
-                          Updater)
+from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters, Job,
+                          MessageHandler, Updater)
+
+import DataSources
+import Preferences
+import Whitelist
+from Stickers import sticker_list
 
 if sys.version_info[0] < 3:
     raise Exception('Must be using Python 3.')
@@ -36,6 +38,9 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s', level=logging.INFO)
 
 LOGGER = logging.getLogger(__name__)
+
+_ = gettext.gettext
+
 prefs = Preferences.UserPreferences()
 jobs = dict()
 geo_locator = Nominatim()
@@ -97,6 +102,10 @@ raid_levels = [[],
                ["3", "6", "9", "112", "131", "143", "248"],
                ["144", "145", "146", "150", "151", "243", "244", "245", "249", "250", "251"]]
 
+def set_lang(lang):
+    global _
+    translation = gettext.translation('base', localedir='locales', languages=[lang], fallback=True)
+    _ = translation.gettext
 
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
@@ -110,99 +119,54 @@ def cmd_help(bot, update):
     LOGGER.info('[%s@%s] Sending help text.' % (user_name, chat_id))
 
     pref = prefs.get(chat_id)
-    if pref.get('language') == 'de':
-        text = "*Der PoGo Chemnitz Bot beherrscht die folgenden Befehle:*\n\n" + \
-        "*Allgemein*\n" + \
-        "/start - Startet den Bot (z.B. nach dem Pausieren)\n" + \
-        "/stop - Pausiert den Bot (nutze /start zum Fortsetzen)\n" + \
-        "/lang de/en - Setzt die Sprache des Bots\n" + \
-        "/clear - Setzt alle deine Einstellungen zurück\n" + \
-        "/help - Zeigt eine Liste mit verfügbaren Befehlen\n\n" + \
-        "*Pokémon-Filter*\n" + \
-        "/add pokedexID - Fügt Pokémon mit der gegebenen ID zum Scanner hinzu\n" + \
-        "/add pokedexID1 pokedexID2 ...\n" + \
-        "/addbyrarity 1-5 - Fügt Pokémon it der gegebenen Seltenheit zum Scanner hinzu (1 sehr häufig - 5 ultra selten)\n" + \
-        "/rem pokedexID - Entfernt Pokémon mit der gegebenen ID vom Scanner\n" + \
-        "/rem pokedexID1 pokedexID2 ...\n" + \
-        "/list - Zeigt eine Liste mit den überwachten Pokémon und Raid-Pokémon\n" + \
-        "/iv 0-100 - Setzt den Minimal-IV-Wert in Prozent\n" +\
-        "/wp 0-4760 - Setzt den Minimal-WP-Wert\n" +\
-        "/level 0-30 - Setzt das Minimal-Level\n" +\
-        "/pkmiv pokedexID 0-100 - Setzt den Minimal-IV-Wert für ein bestimmtes Pokémon in Prozent\n" +\
-        "/rempkmiv pokedexID - Setzt den Minimal-IV-Wert für ein bestimmtes Pokémon zurück\n" +\
-        "/pkmwp pokedexID 0-4760 - Setzt den Minimal-WP-Wert für ein bestimmtes Pokémon\n" +\
-        "/rempkmwp pokedexID - Setzt den Minimal-WP-Wert für ein bestimmtes Pokémon zurück\n" +\
-        "/pkmlevel pokedexID 0-30 - Setzt das Minimal-Level für ein bestimmtes Pokémon\n" +\
-        "/rempkmlevel pokedexID - Setzt das Minimal-Level für ein bestimmtes Pokémon zurück\n" +\
-        "/matchmode 0/1/2 - Legt den Übereinstimmungs-Modus fest (0) Entfernung UND IV- UND WP-Wert UND Level / (1) Entfernung UND IV- ODER WP-Wert ODER Level muss übereinstimmen / (2) Entfernung ODER IV- ODER WP-Wert ODER Level muss übereinstimmen\n" +\
-        "/pkmmatchmode pokedexID 0/1/2 - Legt den Übereinstimmungs-Modus für ein bestimmtes Pokémon fest\n" +\
-        "/rempkmmatchmode pokedexID - Setzt den Übereinstimmungs-Modus für ein bestimmtes Pokémon zurück\n\n" +\
-        "*Raid-Filter*\n" + \
-        "/addraid pokedexID - Fügt Raid-Pokémon mit der gegebenen ID zum Scanner hinzu\n" + \
-        "/addraid pokedexID1 pokedexID2 ...\n" + \
-        "/addraidbylevel 1-5 - Fügt Raid-Pokémon it dem gegebenen Level zum Scanner hinzu (1-5)\n" + \
-        "/remraid pokedexID - Entfernt Raid-Pokémon mit der gegebenen ID vom Scanner\n" + \
-        "/remraid pokedexID1 pokedexID2 ...\n\n" + \
-        "*Entfernungs-Filter*\n" + \
-        "/location Addresse - Setzt die Suchposition gegeben als Text\n" +\
-        "/radius km - Setzt den Suchradius in km\n" +\
-        "/remloc - Setzt die Suchposition und den Radius zurück\n" +\
-        "/pkmradius pokedexID km - Setzt den Suchradius für ein bestimmtes Pokémon in km\n" +\
-        "/rempkmradius pokedexID - Setzt den Suchradius für ein bestimmtes Pokémon zurück\n" +\
-        "/raidradius pokedexID km - Setzt den Suchradius für ein bestimmtes Raid-Pokémon in km\n" +\
-        "/remraidradius pokedexID - Setzt den Suchradius für ein bestimmtes Raid-Pokémon zurück\n\n" +\
-        "*Benachrichtigungs-Einstellungen*\n" + \
-        "/sendwithout true/false - Legt fest, ob Pokémon ohne IV/WP-Werte gesendet werden sollen\n" +\
-        "/stickers true/false - Legt fest, ob Sticker gesendet werden sollen\n" +\
-        "/maponly true/false - Legt fest, ob nur eine Karte gesendet werden soll (ohne zusätzliche Nachricht/Sticker)\n\n" +\
-        "Hinweis: Du kannst ebenso die Suchposition festlegen, indem du einfach einen Positionsmarker sendest"
+    set_lang(pref.get('language'))
 
-    else:
-        text = "*The PoGo Chemnitz Bot knows the following commands:*\n\n" + \
-        "*General*\n" + \
-        "/start - Starts the bot (e.g. after pausing)\n" + \
-        "/stop - Pauses the bot (use /start to resume)\n" + \
-        "/lang de/en - Sets the language of the bot\n" + \
-        "/clear - Resets all your settings\n" + \
-        "/help - Shows a list of available commands\n\n" + \
-        "*Pokémon filter*\n" + \
-        "/add pokedexID - Adds Pokémon with the given ID to the scanner\n" + \
-        "/add pokedexID1 pokedexID2 ...\n" + \
-        "/addbyrarity 1-5 - Adds Pokémon with the given rarity to scanner (1 very common - 5 ultrarare)\n" + \
-        "/rem pokedexID - Removes Pokémon with the given ID from the scanner\n" + \
-        "/rem pokedexID1 pokedexID2 ...\n" + \
-        "/list - Lists the watched Pokémon and Raid Pokémon\n" + \
-        "/iv 0-100 - Sets the minimum IVs given as percent\n" +\
-        "/cp 0-4760 - Sets the minumum CP\n" +\
-        "/level 0-30 - Sets the minumum level\n" +\
-        "/pkmiv pokedexID 0-100 - Sets the minimum IVs for a specific Pokémon given as percent\n" +\
-        "/rempkmiv pokedexID - Resets the minimum IVs for a specific Pokémon\n" +\
-        "/pkmcp pokedexID 0-4760 - Sets the minumum CP for a specific Pokémon\n" +\
-        "/rempkmcp pokedexID - Resets the minumum CP for a specific Pokémon\n" +\
-        "/pkmlevel pokedexID 0-30 - Sets the minumum level for a specific Pokémon\n" +\
-        "/rempkmlevel pokedexID - Resets the minumum level for a specific Pokémon\n" +\
-        "/matchmode 0/1/2 - Sets the match mode (0) Distance AND IVs AND CP AND level / (1) Distance AND IVs OR CP OR level has to match / (2) Distance OR IVs OR CP OR level has to match\n" +\
-        "/pkmmatchmode pokedexID 0/1/2 - Set the match mode for a specific Pokémon\n" +\
-        "/rempkmmatchmode pokedexID - Reset the match mode for a specific Pokémon\n\n" +\
-        "*Raid filter*\n" + \
-        "/addraid pokedexID - Adds Raid Pokémon with the given ID to the scanner\n" + \
-        "/addraid pokedexID1 pokedexID2 ...\n" + \
-        "/addraidbylevel 1-5 - Adds Raid Pokémon with the given level to scanner (1-5)\n" + \
-        "/remraid pokedexID - Removes Raid Pokémon with the given ID from the scanner\n" + \
-        "/remraid pokedexID1 pokedexID2 ...\n\n" + \
-        "*Distance filter*\n" + \
-        "/location address - Sets the desired search location given as text\n" +\
-        "/radius km - Sets the search radius in km\n" +\
-        "/remloc - Clears the search location and radius\n" +\
-        "/pkmradius pokedexID km - Sets the search radius for a specific Pokémon in km\n" +\
-        "/rempkmradius pokedexID - Resets the search radius for a specific Pokémon\n" +\
-        "/raidradius pokedexID km - Sets the search radius for a specific Raid Pokémon in km\n" +\
-        "/remraidradius pokedexID - Resets the search radius for a specific Raid Pokémon\n\n" +\
-        "*Notification settings*\n" + \
-        "/sendwithout true/false - Defines if Pokémon without IV/CP should be sent\n" +\
-        "/stickers true/false - Defines if stickers should be sent\n" +\
-        "/maponly true/false - Defines if only a map should be sent (without an additional message/sticker)\n\n" +\
-        "Hint: You can also set the scanning location by just sending a location marker"
+    text = _("*The PoGo Chemnitz Bot knows the following commands:*") + "\n\n" + \
+    _("*General*") + "\n" + \
+    _("/start") + " - "  + _("Starts the bot (e.g. after pausing)") + "\n" + \
+    _("/stop") + " - "  + _("Pauses the bot (use /start to resume)") + "\n" + \
+    _("/lang de/en") + " - "  + _("Sets the language of the bot") + "\n" + \
+    _("/clear") + " - "  + _("Resets all your settings") + "\n" + \
+    _("/help") + " - "  + _("Shows a list of available commands") + "\n" + \
+    _("/where GymName") + " - "  + _("Searches for a gym by name and outputs its location") + "\n\n" + \
+    _("*Pokémon filter*") + "\n" + \
+    _("/add pokedexID") + " - "  + _("Adds Pokémon with the given ID to the scanner") + "\n" + \
+    _("/add pokedexID1 pokedexID2 ...") + "\n" + \
+    _("/addbyrarity 1-5") + " - "  + _("Adds Pokémon with the given rarity to scanner (1 very common - 5 ultrarare)") + "\n" + \
+    _("/rem pokedexID") + " - "  + _("Removes Pokémon with the given ID from the scanner") + "\n" + \
+    _("/rem pokedexID1 pokedexID2 ...") + "\n" + \
+    _("/list") + " - "  + _("Lists the watched Pokémon and Raid Pokémon") + "\n" + \
+    _("/iv 0-100") + " - "  + _("Sets the minimum IVs given as percent") + "\n" +\
+    _("/cp 0-4548") + " - "  + _("Sets the minimum CP") + "\n" +\
+    _("/level 0-30") + " - "  + _("Sets the minimum level") + "\n" +\
+    _("/pkmiv pokedexID 0-100") + " - "  + _("Sets the minimum IVs for a specific Pokémon given as percent") + "\n" +\
+    _("/rempkmiv pokedexID") + " - "  + _("Resets the minimum IVs for a specific Pokémon") + "\n" +\
+    _("/pkmcp pokedexID 0-4548") + " - "  + _("Sets the minimum CP for a specific Pokémon") + "\n" +\
+    _("/rempkmcp pokedexID") + " - "  + _("Resets the minimum CP for a specific Pokémon") + "\n" +\
+    _("/pkmlevel pokedexID 0-30") + " - "  + _("Sets the minimum level for a specific Pokémon") + "\n" +\
+    _("/rempkmlevel pokedexID") + " - "  + _("Resets the minimum level for a specific Pokémon") + "\n" +\
+    _("/matchmode 0/1/2") + " - "  + _("Sets the match mode (0) Distance AND IVs AND CP AND level / (1) Distance AND IVs OR CP OR level has to match / (2) Distance OR IVs OR CP OR level has to match") + "\n" +\
+    _("/pkmmatchmode pokedexID 0/1/2") + " - "  + _("Set the match mode for a specific Pokémon") + "n" +\
+    _("/rempkmmatchmode pokedexID") + " - "  + _("Reset the match mode for a specific Pokémon") + "\n\n" +\
+    _("*Raid filter*") + "\n" + \
+    _("/addraid pokedexID") + " - "  + _("Adds Raid Pokémon with the given ID to the scanner") + "\n" + \
+    _("/addraid pokedexID1 pokedexID2 ...") + "\n" + \
+    _("/addraidbylevel 1-5") + " - "  + _("Adds Raid Pokémon with the given level to scanner (1-5)") + "\n" + \
+    _("/remraid pokedexID") + " - "  + _("Removes Raid Pokémon with the given ID from the scanner") + "\n" + \
+    _("/remraid pokedexID1 pokedexID2 ...") + "\n\n" + \
+    _("*Distance filter*") + "\n" + \
+    _("/location address") + " - "  + _("Sets the desired search location given as text") + "\n" +\
+    _("/radius km") + " - "  + _("Sets the search radius in km") + "\n" +\
+    _("/remloc") + " - "  + _("Clears the search location and radius") + "\n" +\
+    _("/pkmradius pokedexID km") + " - "  + _("Sets the search radius for a specific Pokémon in km") + "\n" +\
+    _("/rempkmradius pokedexID") + " - "  + _("Resets the search radius for a specific Pokémon") + "\n" +\
+    _("/raidradius pokedexID km") + " - "  + _("Sets the search radius for a specific Raid Pokémon in km") + "\n" +\
+    _("/remraidradius pokedexID") + " - "  + _("Resets the search radius for a specific Raid Pokémon") + "\n\n" +\
+    _("*Notification settings*") + "\n" + \
+    _("/sendwithout true/false") + " - "  + _("Defines if Pokémon without IV/CP should be sent") + "\n" +\
+    _("/stickers true/false") + " - "  + _("Defines if stickers should be sent") + "\n" +\
+    _("/maponly true/false") + " - "  + _("Defines if only a map should be sent (without an additional message/sticker)") + "\n\n" +\
+    _("Hint: You can also set the scanning location by just sending a location marker")
 
     bot.sendMessage(chat_id, text, parse_mode='Markdown')
 
@@ -215,24 +179,13 @@ def cmd_start(bot, update, job_queue):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
     if pref.get('search_ids', []) or pref.get('raid_ids', []):
         add_job(update, job_queue)
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Bot wurde gestartet.')
-        else:
-            bot.sendMessage(chat_id, text='Bot was started.')
+        bot.sendMessage(chat_id, text=_('Bot was started.'))
     else:
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id,
-                text=
-                'Hallo! Du scheinst neu hier zu sein. Hier ist eine Liste von verfügbaren Befehlen:'
-            )
-        else:
-            bot.sendMessage(
-                chat_id,
-                text='Hello! You seem to be new here. Here is a list of available commands:')
+        bot.sendMessage(chat_id, text=_('Hello! You seem to be new here. Here is a list of available commands:'))
         cmd_help(bot, update)
 
     LOGGER.info('[%s@%s] Starting.' % (user_name, chat_id))
@@ -246,13 +199,11 @@ def cmd_stop(bot, update):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
     LOGGER.info('[%s@%s] Stopping.' % (user_name, chat_id))
 
-    if pref.get('language') == 'de':
-        bot.sendMessage(chat_id, text='Bot wurde pausiert. Nutze /start zum Fortsetzen.')
-    else:
-        bot.sendMessage(chat_id, text='Bot was paused. Use /start to resume.')
+    bot.sendMessage(chat_id, text=_('Bot was paused. Use /start to resume.'))
 
     if chat_id not in jobs:
         return
@@ -282,6 +233,7 @@ def cmd_find_gym(bot, update, args):
     user_name = update.message.from_user.username
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
     if len(args) < 1:
         bot.delete_message(chat_id=chat_id, message_id=update.message.message_id)
@@ -296,40 +248,29 @@ def cmd_find_gym(bot, update, args):
         if len(gyms) == 1:
             print_gym(bot, chat_id, gyms[0])
         elif len(gyms) > 1:
-            if pref.get('language') != 'en':
-                msg = 'Es wurden mehrere Arenen gefunden. Bitte wähle aus den folgenden:'
-            else:
-                msg = 'Multiple gyms were found. Please choose one of the following:'
-
             keyboard = []
             for gym in gyms:
-                keyboard.append([InlineKeyboardButton(gym.get_name(), callback_data=gym.get_name())])
+                keyboard.append(
+                    [InlineKeyboardButton(gym.get_name(), callback_data=gym.get_name())])
 
-            update.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(keyboard))
+            update.message.reply_text(_('Multiple gyms were found. Please choose one of the following:'), reply_markup=InlineKeyboardMarkup(keyboard))
         else:
-            if pref.get('language') != 'en':
-                bot.sendMessage(chat_id, text='Es wurde keine Arena mit diesem Namen gefunden.')
-            else:
-                bot.sendMessage(chat_id, text='No gym with this name could be found.')
+            bot.sendMessage(chat_id, text=_('No gym with this name could be found.'))
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
-        if pref.get('language') != 'en':
-            bot.sendMessage(chat_id, text='Verwendung:\n/wo Arena-Name')
-        else:
-            bot.sendMessage(chat_id, text='Usage:\n/where gym name')
+        bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/where gymName'))
 
 
 def print_gym(bot, chat_id, gym):
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
+
     user_location = pref.get('location')
     if chat_id < 0 or user_location[0] is None:
         dist = ''
     else:
-        if pref.get('language') != 'en':
-            dist = 'Entfernung: %.2fkm' % (gym.get_distance(user_location))
-        else:
-            dist = 'Distance: %.2fkm' % (gym.get_distance(user_location))
+        dist = _('Distance: %.2fkm') % (gym.get_distance(user_location))
     bot.sendVenue(chat_id, gym.get_latitude(), gym.get_longitude(), gym.get_name(), dist)
 
 
@@ -341,14 +282,10 @@ def cmd_stickers(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
     if len(args) < 1:
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id, text='Sticker sind aktuell auf %s gesetzt.' % (pref.get('stickers')))
-        else:
-            bot.sendMessage(
-                chat_id, text='Stickers are currently set to %s.' % (pref.get('stickers')))
+        bot.sendMessage(chat_id, text=_('%s are currently set to %s.') % (_('Stickers'), pref.get('stickers')))
         return
 
     try:
@@ -360,23 +297,13 @@ def cmd_stickers(bot, update, args):
             if args[0].lower() == 'true':
                 stick = True
             pref.set('stickers', stick)
-            if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text='Sticker wurden auf %s gesetzt.' % (stick))
-            else:
-                bot.sendMessage(chat_id, text='Stickers were set to %s.' % (stick))
+            bot.sendMessage(chat_id, text=_('%s were set to %s.') % (_('Stickers'), stick))
         else:
-            if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id, text='Bitte nur True (aktivieren) oder False (deaktivieren) angeben.')
-            else:
-                bot.sendMessage(chat_id, text='Please only use True (enable) or False (disable).')
+            bot.sendMessage(chat_id, text=_('Please only use True (enable) or False (disable).'))
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Verwendung:\n/stickers true/false')
-        else:
-            bot.sendMessage(chat_id, text='Usage:\n/stickers true/false')
+        bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/stickers true/false'))
 
 
 def cmd_map_only(bot, update, args):
@@ -387,15 +314,10 @@ def cmd_map_only(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
     if len(args) < 1:
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id,
-                text='"Nur Karte anzeigen" ist aktuell auf %s gesetzt.' % (pref.get('only_map')))
-        else:
-            bot.sendMessage(
-                chat_id, text='"Only show map" is currently set to %s.' % (pref.get('only_map')))
+        bot.sendMessage(chat_id, text=_('%s is currently set to %s.') % (_('"Only show map"'), pref.get('only_map')))
         return
 
     try:
@@ -407,23 +329,13 @@ def cmd_map_only(bot, update, args):
             if args[0].lower() == 'true':
                 omap = True
             pref.set('only_map', omap)
-            if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text='"Nur Karte anzeigen" wurde auf %s gesetzt.' % (omap))
-            else:
-                bot.sendMessage(chat_id, text='"Only show map" was set to %s.' % (omap))
+            bot.sendMessage(chat_id, text=_('%s was set to %s.') % (_('"Only show map"'), omap))
         else:
-            if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id, text='Bitte nur True (aktivieren) oder False (deaktivieren) angeben.')
-            else:
-                bot.sendMessage(chat_id, text='Please only use True (enable) or False (disable).')
+            bot.sendMessage(chat_id, text=_('Please only use True (enable) or False (disable).'))
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Verwendung:\n/maponly true/false')
-        else:
-            bot.sendMessage(chat_id, text='Usage:\n/maponly true/false')
+        bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/maponly true/false'))
 
 
 def cmd_send_without(bot, update, args):
@@ -434,18 +346,10 @@ def cmd_send_without(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
     if len(args) < 1:
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id,
-                text='"Pokémon ohne IV/WP-Werte senden" ist aktuell auf %s gesetzt.' %
-                (pref.get('send_without', True)))
-        else:
-            bot.sendMessage(
-                chat_id,
-                text='"Send Pokémon without IV/CP" is currently set to %s.' %
-                (pref.get('send_without', True)))
+        bot.sendMessage(chat_id, text=_('%s is currently set to %s.') % (_('"Send Pokémon without IV/CP"'), pref.get('send_without', True)))
         return
 
     try:
@@ -457,26 +361,13 @@ def cmd_send_without(bot, update, args):
             if args[0].lower() == 'true':
                 sendwithout = True
             pref.set('send_without', sendwithout)
-            if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id,
-                    text='"Pokémon ohne IV/WP-Werte senden" wurde auf %s gesetzt.' % (sendwithout))
-            else:
-                bot.sendMessage(
-                    chat_id, text='"Send Pokémon without IV/CP" was set to %s.' % (sendwithout))
+            bot.sendMessage(chat_id, text=_('%s was set to %s.') % (_('"Send Pokémon without IV/CP"'), sendwithout))
         else:
-            if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id, text='Bitte nur True (aktivieren) oder False (deaktivieren) angeben.')
-            else:
-                bot.sendMessage(chat_id, text='Please only use True (enable) or False (disable).')
+            bot.sendMessage(chat_id, text=_('Please only use True (enable) or False (disable).'))
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Verwendung:\n/sendwithout true/false')
-        else:
-            bot.sendMessage(chat_id, text='Usage:\n/sendwithout true/false')
+        bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/sendwithout true/false'))
 
 
 def cmd_walk_dist(bot, update, args):
@@ -487,18 +378,10 @@ def cmd_walk_dist(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
     if len(args) < 1:
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id,
-                text='"Zeige Laufdistanz und -zeit" ist aktuell gesetzt auf %s.' %
-                (pref.get('walk_dist')))
-        else:
-            bot.sendMessage(
-                chat_id,
-                text='"Show walking distance/time" is currently set to %s.' %
-                (pref.get('walk_dist')))
+        bot.sendMessage(chat_id, text=_('%s is currently set to %s.') % (_('"Show walking distance/time"'), pref.get('walk_dist')))
         return
 
     try:
@@ -510,25 +393,13 @@ def cmd_walk_dist(bot, update, args):
             if args[0].lower() == 'true':
                 wdist = True
             pref.set('walk_dist', wdist)
-            if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id, text='"Zeige Laufdistanz und -zeit" wurde auf %s gesetzt.' % (wdist))
-            else:
-                bot.sendMessage(
-                    chat_id, text='"Show walking distance/time" was set to %s.' % (wdist))
+            bot.sendMessage(chat_id, text=_('%s was set to %s.') % (_('"Show walking distance/time"'), wdist))
         else:
-            if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id, text='Bitte nur True (aktivieren) oder False (deaktivieren) angeben.')
-            else:
-                bot.sendMessage(chat_id, text='Please only use True (enable) or False (disable).')
+            bot.sendMessage(chat_id, text=_('Please only use True (enable) or False (disable).'))
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Verwendung:\n/walkdist true/false')
-        else:
-            bot.sendMessage(chat_id, text='Usage:\n/walkdist true/false')
+        bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/walkdist true/false'))
 
 
 def cmd_add(bot, update, args, job_queue):
@@ -539,11 +410,9 @@ def cmd_add(bot, update, args, job_queue):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        usage_message = 'Verwendung:\n/add pokedexID oder /add pokedexID1 pokedexID2 ...'
-    else:
-        usage_message = 'Usage:\n/add pokedexID or /add pokedexID1 pokedexID2 ...'
+    usage_message = _('Usage:') + '\n' + _('/add pokedexID') + _(' or ') + _('/add pokedexID1 pokedexID2 ...')
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -575,11 +444,9 @@ def cmd_add_by_rarity(bot, update, args, job_queue):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        usage_message = 'Verwendung:\n/addbyrarity 1-5 (mit 1 sehr häufig bis 5 ultra selten)'
-    else:
-        usage_message = 'Usage:\n/addbyrarity 1-5 (with 1 very common to 5 ultrarare)'
+    usage_message = _('Usage:') + '\n' + _('/addbyrarity 1-5')
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -616,11 +483,9 @@ def cmd_clear(bot, update):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        bot.sendMessage(chat_id, text='Deine Einstellungen wurden erfolgreich zurückgesetzt.')
-    else:
-        bot.sendMessage(chat_id, text='Your settings were successfully reset.')
+    bot.sendMessage(chat_id, text=_('Your settings were successfully reset.'))
 
     # Removes the job if the user changed their mind
     LOGGER.info('[%s@%s] Clear list.' % (user_name, chat_id))
@@ -649,6 +514,7 @@ def cmd_remove(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
     LOGGER.info('[%s@%s] Remove pokemon.' % (user_name, chat_id))
 
@@ -662,10 +528,7 @@ def cmd_remove(bot, update, args):
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Verwendung:\n/rem pokedexID')
-        else:
-            bot.sendMessage(chat_id, text='Usage:\n/rem pokedexID')
+        bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/rem pokedexID'))
 
 
 def cmd_add_raid_by_level(bot, update, args, job_queue):
@@ -676,11 +539,9 @@ def cmd_add_raid_by_level(bot, update, args, job_queue):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        usage_message = 'Verwendung:\n/addraidbylevel 1-5'
-    else:
-        usage_message = 'Usage:\n/addraidbylevel 1-5'
+    usage_message = _('Usage:')  + '\n' + _('/addraidbylevel 1-5')
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -717,11 +578,9 @@ def cmd_add_raid(bot, update, args, job_queue):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        usage_message = 'Verwendung:\n/addraid pokedexID oder /addraid pokedexID1 pokedexID2 ...'
-    else:
-        usage_message = 'Usage:\n/addraid pokedexID or /addraid pokedexID1 pokedexID2 ...'
+    usage_message = _('Usage:') + '\n' + _('/addraid pokedexID') + _(' or ') + _('/addraid pokedexID1 pokedexID2 ...')
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -752,6 +611,7 @@ def cmd_remove_raid(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
     LOGGER.info('[%s@%s] Remove raid.' % (user_name, chat_id))
 
@@ -765,10 +625,7 @@ def cmd_remove_raid(bot, update, args):
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Verwendung:\n/remraid pokedexID')
-        else:
-            bot.sendMessage(chat_id, text='Usage:\n/remraid pokedexID')
+        bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/remraid pokedexID'))
 
 
 def cmd_list(bot, update):
@@ -779,6 +636,7 @@ def cmd_list(bot, update):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
     LOGGER.info('[%s@%s] List.' % (user_name, chat_id))
 
@@ -790,16 +648,10 @@ def cmd_list(bot, update):
         minlevels = pref.get('search_minlevel', {})
         matchmodes = pref.get('search_matchmode', {})
         user_location = pref.get('location')
-        if lan == 'de':
-            if user_location[0] is None:
-                tmp = '*Liste der überwachten Pokémon:*\n'
-            else:
-                tmp = '*Liste der überwachten Pokémon im Radius von %.2fkm:*\n' % (user_location[2])
+        if user_location[0] is None:
+            tmp = _('*List of watched Pokémon:*') + '\n'
         else:
-            if user_location[0] is None:
-                tmp = '*List of watched Pokémon:*\n'
-            else:
-                tmp = '*List of watched Pokémon within a radius of %.2fkm:*\n' % (user_location[2])
+            tmp = _('*List of watched Pokémon within a radius of %.2fkm:*') % (user_location[2]) + '\n'
         for x in pref.get('search_ids', []):
             pkm_id = str(x)
             tmp += "%s %s" % (pkm_id, pokemon_name[lan][pkm_id])
@@ -821,18 +673,10 @@ def cmd_list(bot, update):
             tmp += "\n"
 
         tmp += "\n"
-        if lan == 'de':
-            if user_location[0] is None:
-                tmp += '*Liste der überwachten Raid-Pokémon:*\n'
-            else:
-                tmp += '*Liste der überwachten Raid-Pokémon im Radius von %.2fkm:*\n' % (
-                    user_location[2])
+        if user_location[0] is None:
+            tmp += _('*List of watched Raid Pokémon:*') + '\n'
         else:
-            if user_location[0] is None:
-                tmp += '*List of watched Raid Pokémon:*\n'
-            else:
-                tmp += '*List of watched Raid Pokémon within a radius of %.2fkm:*\n' % (
-                    user_location[2])
+            tmp += _('*List of watched Raid Pokémon within a radius of %.2fkm:*') % (user_location[2]) + '\n'
         raid_dists = pref.get('raid_dists', {})
         for x in pref.get('raid_ids', []):
             pkm_id = str(x)
@@ -855,14 +699,10 @@ def cmd_lang(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
     if len(args) < 1:
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id, text='Deine Sprache ist aktuell auf %s gesetzt.' % (pref.get('language')))
-        else:
-            bot.sendMessage(
-                chat_id, text='Your language is currently set to %s.' % (pref.get('language')))
+        bot.sendMessage(chat_id, text=_('%s is currently set to %s.') % (_('The language'), pref.get('language')))
         return
 
     try:
@@ -871,22 +711,13 @@ def cmd_lang(bot, update, args):
 
         if lan == 'de' or lan == 'en':
             pref.set('language', lan)
-            if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text='Sprache wurde auf %s gesetzt.' % (lan))
-            else:
-                bot.sendMessage(chat_id, text='Language was set to %s.' % (lan))
+            bot.sendMessage(chat_id, text=_('%s was set to %s.') % (_('The language'), lan))
         else:
-            if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text='Diese Sprache ist leider nicht verfügbar.')
-            else:
-                bot.sendMessage(chat_id, text='This language isn\'t available.')
+            bot.sendMessage(chat_id, text=_('This language isn\'t available.'))
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Verwendung:\n/lang de/en')
-        else:
-            bot.sendMessage(chat_id, text='Usage:\n/lang de/en')
+        bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/lang de/en'))
 
 
 def set_user_location(user_name, chat_id, latitude, longitude, radius):
@@ -900,30 +731,16 @@ def set_user_location(user_name, chat_id, latitude, longitude, radius):
 
 def send_current_location(bot, chat_id, set_new=False):
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
+
     user_location = pref.get('location')
     if user_location[0] is None:
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Du hast keine Suchposition angegeben.')
-        else:
-            bot.sendMessage(chat_id, text='You have not supplied a scan location.')
+        bot.sendMessage(chat_id, text=_('You have not supplied a scan location.'))
     else:
         if set_new:
-            if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id, text='Setze neue Suchposition mit Radius %skm' % (user_location[2]))
-            else:
-                bot.sendMessage(
-                    chat_id, text='Setting new scan location with radius %skm' % (user_location[2]))
+            bot.sendMessage(chat_id, text=_('Setting new scan location with radius %skm:') % (user_location[2]))
         else:
-            if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id,
-                    text='Dies ist deine aktuelle Suchposition mit Radius %skm' %
-                    (user_location[2]))
-            else:
-                bot.sendMessage(
-                    chat_id,
-                    text='This is your current scan location with radius %skm' % (user_location[2]))
+            bot.sendMessage(chat_id, text=_('This is your current scan location with radius %skm:') % (user_location[2]))
         bot.sendLocation(chat_id, user_location[0], user_location[1], disable_notification=True)
 
 
@@ -949,6 +766,7 @@ def cmd_location_str(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
     if len(args) < 1:
         send_current_location(bot, chat_id)
@@ -962,11 +780,7 @@ def cmd_location_str(bot, update, args):
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id, text='Die Position wurde nicht gefunden (oder OpenStreetMap ist offline).')
-        else:
-            bot.sendMessage(chat_id, text='The location was not found (or OpenStreetMap is down).')
+        bot.sendMessage(chat_id, text=_('The location was not found (or OpenStreetMap is down).'))
         return
 
 
@@ -997,10 +811,8 @@ def cmd_clear_location(bot, update):
     set_user_location(user_name, chat_id, None, None, 1)
 
     pref = prefs.get(chat_id)
-    if pref.get('language') == 'de':
-        bot.sendMessage(chat_id, text='Deine Suchposition wurde entfernt.')
-    else:
-        bot.sendMessage(chat_id, text='Your scan location has been removed.')
+    set_lang(pref.get('language'))
+    bot.sendMessage(chat_id, text=_('Your scan location has been removed.'))
 
 
 def cmd_pkm_radius(bot, update, args):
@@ -1010,11 +822,9 @@ def cmd_pkm_radius(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        usage_message = 'Verwendung:\n/pkmradius pokedexID km'
-    else:
-        usage_message = 'Usage:\n/pkmradius pokedexID km'
+    usage_message = _('Usage:') + '\n' + _('/pkmradius pokedexID km')
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -1029,16 +839,7 @@ def cmd_pkm_radius(bot, update, args):
         # Only get current value
         if len(args) < 2:
             pkm_dist = dists[pkm_id] if pkm_id in dists else pref.get('location')[2]
-            if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id,
-                    text='Der Suchradius für %s ist auf %skm gesetzt.' %
-                    (pokemon_name['de'][pkm_id], pkm_dist))
-            else:
-                bot.sendMessage(
-                    chat_id,
-                    text='The search radius for %s is set to %skm.' % (pokemon_name['en'][pkm_id],
-                                                                       pkm_dist))
+            bot.sendMessage(chat_id, text=_('%s for %s is currently set to %skm.') % (_('The search radius'), pokemon_name[pref.get('language')][pkm_id], pkm_dist))
             return
 
         # Change the radius for a specific pokemon
@@ -1048,16 +849,7 @@ def cmd_pkm_radius(bot, update, args):
 
         dists[pkm_id] = pkm_dist
         pref.set('search_dists', dists)
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id,
-                text='Der Suchradius für %s wurde auf %skm gesetzt.' % (pokemon_name['de'][pkm_id],
-                                                                        pkm_dist))
-        else:
-            bot.sendMessage(
-                chat_id,
-                text='The search radius for %s was set to %skm.' % (pokemon_name['en'][pkm_id],
-                                                                    pkm_dist))
+        bot.sendMessage(chat_id, text=_('%s for %s was set to %skm.') % (_('The search radius'), pokemon_name[pref.get('language')][pkm_id], pkm_dist))
 
 
 def cmd_rem_pkm_radius(bot, update, args):
@@ -1067,11 +859,9 @@ def cmd_rem_pkm_radius(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        usage_message = 'Verwendung:\n/rempkmradius pokedexID'
-    else:
-        usage_message = 'Usage:\n/rempkmradius pokedexID'
+    usage_message = _('Usage:') + '\n' + _('/rempkmradius pokedexID')
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -1083,13 +873,7 @@ def cmd_rem_pkm_radius(bot, update, args):
     if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and pkm_id in dists:
         del dists[pkm_id]
         pref.set('search_dists', dists)
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id,
-                text='Der Suchradius für %s wurde zurückgesetzt.' % (pokemon_name['de'][pkm_id]))
-        else:
-            bot.sendMessage(
-                chat_id, text='The search radius for %s was reset.' % (pokemon_name['en'][pkm_id]))
+        bot.sendMessage(chat_id, text=_('%s for %s was reset.') % (_('The search radius'), pokemon_name[pref.get('language')][pkm_id]))
 
 
 def cmd_raid_radius(bot, update, args):
@@ -1099,11 +883,9 @@ def cmd_raid_radius(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        usage_message = 'Verwendung:\n/raidradius pokedexID km'
-    else:
-        usage_message = 'Usage:\n/raidradius pokedexID km'
+    usage_message = _('Usage:') + '\n' + _('/raidradius pokedexID km')
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -1117,16 +899,7 @@ def cmd_raid_radius(bot, update, args):
         # Only get current value
         if len(args) < 2:
             pkm_dist = dists[pkm_id] if pkm_id in dists else pref.get('location')[2]
-            if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id,
-                    text='Der Suchradius für %s ist auf %skm gesetzt.' %
-                    (pokemon_name['de'][pkm_id], pkm_dist))
-            else:
-                bot.sendMessage(
-                    chat_id,
-                    text='The search radius for %s is set to %skm.' % (pokemon_name['en'][pkm_id],
-                                                                       pkm_dist))
+            bot.sendMessage(chat_id, text=_('%s for %s is currently set to %skm.') % (_('The search radius'), pokemon_name[pref.get('language')][pkm_id], pkm_dist))
             return
 
         # Change the radius for a specific raid pokemon
@@ -1136,16 +909,7 @@ def cmd_raid_radius(bot, update, args):
 
         dists[pkm_id] = pkm_dist
         pref.set('raid_dists', dists)
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id,
-                text='Der Suchradius für %s wurde auf %skm gesetzt.' % (pokemon_name['de'][pkm_id],
-                                                                        pkm_dist))
-        else:
-            bot.sendMessage(
-                chat_id,
-                text='The search radius for %s was set to %skm.' % (pokemon_name['en'][pkm_id],
-                                                                    pkm_dist))
+        bot.sendMessage(chat_id, text=_('%s for %s was set to %skm.') % (_('The search radius'), pokemon_name[pref.get('language')][pkm_id], pkm_dist))
 
 
 def cmd_remraidradius(bot, update, args):
@@ -1155,11 +919,9 @@ def cmd_remraidradius(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        usage_message = 'Verwendung:\n/remraidradius pokedexID'
-    else:
-        usage_message = 'Usage:\n/remraidradius pokedexID'
+    usage_message = _('Usage:') + '\n' + _('/remraidradius pokedexID')
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -1171,13 +933,7 @@ def cmd_remraidradius(bot, update, args):
     if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and pkm_id in dists:
         del dists[pkm_id]
         pref.set('raid_dists', dists)
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id,
-                text='Der Suchradius für %s wurde zurückgesetzt.' % (pokemon_name['de'][pkm_id]))
-        else:
-            bot.sendMessage(
-                chat_id, text='The search radius for %s was reset.' % (pokemon_name['en'][pkm_id]))
+        bot.sendMessage(chat_id, text=_('%s for %s was reset.') % (_('The search radius'), pokemon_name[pref.get('language')][pkm_id]))
 
 
 def cmd_iv(bot, update, args):
@@ -1187,14 +943,10 @@ def cmd_iv(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
     if len(args) < 1:
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id, text='Der Minimal-IV-Wert ist auf %d%% gesetzt.' % (pref.get('miniv', 0)))
-        else:
-            bot.sendMessage(
-                chat_id, text='The minimum IVs are set to %d%%.' % (pref.get('miniv', 0)))
+        bot.sendMessage(chat_id, text=_('%s are currently set to %s.') % (_('The minimum IVs'), pref.get('miniv', 0)))
         return
 
     miniv = int(args[0])
@@ -1204,10 +956,7 @@ def cmd_iv(bot, update, args):
         miniv = 100
 
     pref.set('miniv', miniv)
-    if pref.get('language') == 'de':
-        bot.sendMessage(chat_id, text='Der Minimal-IV-Wert wurde auf %d%% gesetzt.' % (miniv))
-    else:
-        bot.sendMessage(chat_id, text='The minimum IVs were set to %d%%.' % (miniv))
+    bot.sendMessage(chat_id, text=_('%s were set to %d%%.') % (_('The minimum IVs'), pref.get('miniv', 0)))
 
 
 def cmd_pkm_iv(bot, update, args):
@@ -1217,11 +966,9 @@ def cmd_pkm_iv(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        usage_message = 'Verwendung:\n/pkmiv pokedexID 0-100'
-    else:
-        usage_message = 'Usage:\n/pkmiv pokedexID 0-100'
+    usage_message = _('Usage:') + '\n' + _('/pkmiv pokedexID 0-100')
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -1236,16 +983,7 @@ def cmd_pkm_iv(bot, update, args):
         # Only get current value
         if len(args) < 2:
             pkm_miniv = minivs[pkm_id] if pkm_id in minivs else pref.get('miniv', 0)
-            if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id,
-                    text='Der Minimal-IV-Wert für %s ist auf %d%% gesetzt.' %
-                    (pokemon_name['de'][pkm_id], pkm_miniv))
-            else:
-                bot.sendMessage(
-                    chat_id,
-                    text='The minimum IVs for %s are set to %d%%.' % (pokemon_name['en'][pkm_id],
-                                                                      pkm_miniv))
+            bot.sendMessage(chat_id, text=_('%s for %s are currently set to %d%%.') % (_('The minimum IVs'), pokemon_name[pref.get('language')][pkm_id], pref.get('miniv', 0)))
             return
 
         # Change the radius for a specific pokemon
@@ -1257,16 +995,7 @@ def cmd_pkm_iv(bot, update, args):
 
         minivs[pkm_id] = pkm_miniv
         pref.set('search_miniv', minivs)
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id,
-                text='Der Minimal-IV-Wert für %s wurde auf %d%% gesetzt.' %
-                (pokemon_name['de'][pkm_id], pkm_miniv))
-        else:
-            bot.sendMessage(
-                chat_id,
-                text='The minimum IVs for %s were set to %d%%.' % (pokemon_name['en'][pkm_id],
-                                                                   pkm_miniv))
+        bot.sendMessage(chat_id, text=_('%s for %s were set to %d%%.') % (_('The minimum IVs'), pokemon_name[pref.get('language')][pkm_id], pkm_miniv))
 
 
 def cmd_rem_pkm_iv(bot, update, args):
@@ -1276,11 +1005,9 @@ def cmd_rem_pkm_iv(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        usage_message = 'Verwendung:\n/rempkmiv pokedexID'
-    else:
-        usage_message = 'Usage:\n/rempkmiv pokedexID'
+    usage_message = _('Usage:') + '\n' + _('/rempkmiv pokedexID')
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -1291,14 +1018,7 @@ def cmd_rem_pkm_iv(bot, update, args):
     if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and pkm_id in minivs:
         del minivs[pkm_id]
         pref.set('search_miniv', minivs)
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id,
-                text='Der Minimal-IV-Wert für %s wurde zurückgesetzt.' %
-                (pokemon_name['de'][pkm_id]))
-        else:
-            bot.sendMessage(
-                chat_id, text='The minimum IVs for %s were reset.' % (pokemon_name['en'][pkm_id]))
+        bot.sendMessage(chat_id, text=_('%s for %s were reset.') % (_('The minimum IVs'), pokemon_name[pref.get('language')][pkm_id]))
 
 
 def cmd_cp(bot, update, args):
@@ -1308,13 +1028,10 @@ def cmd_cp(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
     if len(args) < 1:
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id, text='Der Minimal-WP-Wert ist auf %dWP gesetzt.' % (pref.get('mincp', 0)))
-        else:
-            bot.sendMessage(chat_id, text='The minimum CP is set to %dCP.' % (pref.get('mincp', 0)))
+        bot.sendMessage(chat_id, text=_('%s is currently set to %dCP.') % (_('The minimum CP'), pref.get('mincp', 0)))
         return
 
     mincp = int(args[0])
@@ -1324,10 +1041,7 @@ def cmd_cp(bot, update, args):
         mincp = 4760
 
     pref.set('mincp', mincp)
-    if pref.get('language') == 'de':
-        bot.sendMessage(chat_id, text='Der Minimal-WP-Wert wurde auf %dWP gesetzt.' % (mincp))
-    else:
-        bot.sendMessage(chat_id, text='The minimum CP was set to %dCP.' % (mincp))
+    bot.sendMessage(chat_id, text=_('%s was set to %dCP.') % (_('The minimum CP'), mincp))
 
 
 def cmd_pkm_cp(bot, update, args):
@@ -1337,11 +1051,9 @@ def cmd_pkm_cp(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        usage_message = 'Verwendung:\n/pkmwp pokedexID 0-4670'
-    else:
-        usage_message = 'Usage:\n/pkmcp pokedexID 0-4670'
+    usage_message = _('Usage:') + '\n' + _('/pkmcp pokedexID 0-4548')
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -1356,16 +1068,7 @@ def cmd_pkm_cp(bot, update, args):
         # Only get current value
         if len(args) < 2:
             pkm_mincp = mincps[pkm_id] if pkm_id in mincps else pref.get('mincp', 0)
-            if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id,
-                    text='Der Minimal-WP-Wert für %s ist auf %dWP gesetzt.' %
-                    (pokemon_name['de'][pkm_id], pkm_mincp))
-            else:
-                bot.sendMessage(
-                    chat_id,
-                    text='The minimum CP for %s is set to %dCP.' % (pokemon_name['en'][pkm_id],
-                                                                    pkm_mincp))
+            bot.sendMessage(chat_id, text=_('%s for %s is currently set to %dCP.') % (_('The minimum CP'), pokemon_name[pref.get('language')][pkm_id], pkm_mincp))
             return
 
         pkm_mincp = int(args[1])
@@ -1376,16 +1079,7 @@ def cmd_pkm_cp(bot, update, args):
 
         mincps[pkm_id] = pkm_mincp
         pref.set('search_mincp', mincps)
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id,
-                text='Der Minimal-WP-Wert für %s wurde auf %dWP gesetzt.' %
-                (pokemon_name['de'][pkm_id], pkm_mincp))
-        else:
-            bot.sendMessage(
-                chat_id,
-                text='The minimum CP for %s was set to %dCP.' % (pokemon_name['en'][pkm_id],
-                                                                 pkm_mincp))
+        bot.sendMessage(chat_id, text=_('%s for %s was set to %dCP.') % (_('The minimum CP'), pokemon_name[pref.get('language')][pkm_id], pkm_mincp))
 
 
 def cmd_rem_pkm_cp(bot, update, args):
@@ -1395,11 +1089,9 @@ def cmd_rem_pkm_cp(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        usage_message = 'Verwendung:\n/rempkmwp pokedexID'
-    else:
-        usage_message = 'Usage:\n/rempkmcp pokedexID'
+    usage_message = _('Usage:') + '\n' + _('/rempkmcp pokedexID')
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -1410,14 +1102,7 @@ def cmd_rem_pkm_cp(bot, update, args):
     if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and pkm_id in mincps:
         del mincps[pkm_id]
         pref.set('search_mincp', mincps)
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id,
-                text='Der Minimal-WP-Wert für %s wurde zurückgesetzt.' %
-                (pokemon_name['de'][pkm_id]))
-        else:
-            bot.sendMessage(
-                chat_id, text='The minimum CP for %s was reset.' % (pokemon_name['en'][pkm_id]))
+        bot.sendMessage(chat_id, text=_('%s for %s was reset.') % (_('The minimum CP'), pokemon_name[pref.get('language')][pkm_id]))
 
 
 def cmd_level(bot, update, args):
@@ -1427,14 +1112,10 @@ def cmd_level(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
     if len(args) < 1:
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id, text='Das Minimal-Level ist auf %d gesetzt.' % (pref.get('minlevel', 0)))
-        else:
-            bot.sendMessage(
-                chat_id, text='The minimum level is set to %d.' % (pref.get('minlevel', 0)))
+        bot.sendMessage(chat_id, text=_('%s is currently set to %d.') % (_('The minimum level'), pref.get('minlevel', 0)))
         return
 
     minlevel = int(args[0])
@@ -1444,10 +1125,7 @@ def cmd_level(bot, update, args):
         minlevel = 30
 
     pref.set('minlevel', minlevel)
-    if pref.get('language') == 'de':
-        bot.sendMessage(chat_id, text='Das Minimal-Level wurde auf %d gesetzt.' % (minlevel))
-    else:
-        bot.sendMessage(chat_id, text='The minimum level was set to %d.' % (minlevel))
+    bot.sendMessage(chat_id, text=_('%s was set to %d.') % (_('The minimum level'), minlevel))
 
 
 def cmd_pkm_level(bot, update, args):
@@ -1457,11 +1135,9 @@ def cmd_pkm_level(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        usage_message = 'Verwendung:\n/pkmlevel pokedexID 0-30'
-    else:
-        usage_message = 'Usage:\n/pkmlevel pokedexID 0-30'
+    usage_message = _('Usage:') + '\n' + _('/pkmlevel pokedexID 0-30')
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -1476,16 +1152,7 @@ def cmd_pkm_level(bot, update, args):
         # Only get current value
         if len(args) < 2:
             pkm_minlevel = minlevels[pkm_id] if pkm_id in minlevels else pref.get('minlevel', 0)
-            if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id,
-                    text='Das Minimal-Level für %s ist auf %d gesetzt.' %
-                    (pokemon_name['de'][pkm_id], pkm_minlevel))
-            else:
-                bot.sendMessage(
-                    chat_id,
-                    text='The minimum level for %s is set to %d.' % (pokemon_name['en'][pkm_id],
-                                                                     pkm_minlevel))
+            bot.sendMessage(chat_id, text=_('%s for %s is currently set to %d.') % (_('The minimum level'), pokemon_name[pref.get('language')][pkm_id], pkm_minlevel))
             return
 
         pkm_minlevel = int(args[1])
@@ -1496,16 +1163,7 @@ def cmd_pkm_level(bot, update, args):
 
         minlevels[pkm_id] = pkm_minlevel
         pref.set('search_minlevel', minlevels)
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id,
-                text='Das Minimal-Level für %s wurde auf %d gesetzt.' % (pokemon_name['de'][pkm_id],
-                                                                         pkm_minlevel))
-        else:
-            bot.sendMessage(
-                chat_id,
-                text='The minimum level for %s was set to %d.' % (pokemon_name['en'][pkm_id],
-                                                                  pkm_minlevel))
+        bot.sendMessage(chat_id, text=_('%s for %s was set to %d.') % (_('The minimum level'), pokemon_name[pref.get('language')][pkm_id], pkm_minlevel))
 
 
 def cmd_rem_pkm_level(bot, update, args):
@@ -1515,11 +1173,9 @@ def cmd_rem_pkm_level(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        usage_message = 'Verwendung:\n/rempkmlevel pokedexID'
-    else:
-        usage_message = 'Usage:\n/rempkmlevel pokedexID'
+    usage_message = _('Usage:') + '\n' + _('/rempkmlevel pokedexID')
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -1530,13 +1186,7 @@ def cmd_rem_pkm_level(bot, update, args):
     if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and pkm_id in minlevels:
         del minlevels[pkm_id]
         pref.set('search_minlevel', minlevels)
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id,
-                text='Das Minimal-Level für %s wurde zurückgesetzt.' % (pokemon_name['de'][pkm_id]))
-        else:
-            bot.sendMessage(
-                chat_id, text='The minimum level for %s was reset.' % (pokemon_name['en'][pkm_id]))
+        bot.sendMessage(chat_id, text=_('%s for %s was reset.') % (_('The minimum level'), pokemon_name[pref.get('language')][pkm_id]))
 
 
 def cmd_matchmode(bot, update, args):
@@ -1547,18 +1197,10 @@ def cmd_matchmode(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
     if len(args) < 1:
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id,
-                text='Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus ist aktuell auf %s gesetzt.'
-                % (pref.get('match_mode', 0)))
-        else:
-            bot.sendMessage(
-                chat_id,
-                text='The Distance/IVs/CP/Level matching mode is currently set to %s.' %
-                (pref.get('match_mode', 0)))
+        bot.sendMessage(chat_id, text=_('%s is currently set to %s.') % (_('The Distance/IVs/CP/Level matching mode'), pref.get('match_mode', 0)))
         return
 
     try:
@@ -1567,27 +1209,13 @@ def cmd_matchmode(bot, update, args):
 
         if matchmode == 0 or matchmode == 1 or matchmode == 2:
             pref.set('match_mode', matchmode)
-            if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id,
-                    text='Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus wurde auf %s gesetzt.'
-                    % (matchmode))
-            else:
-                bot.sendMessage(
-                    chat_id,
-                    text='The Distance/IVs/CP/Level matching mode was set to %s.' % (matchmode))
+            bot.sendMessage(chat_id, text=_('%s was set to %s.') % (_('The Distance/IVs/CP/Level matching mode'), matchmode))
         else:
-            if pref.get('language') == 'de':
-                bot.sendMessage(chat_id, text='Bitte nur 0, 1 oder 2 angeben.')
-            else:
-                bot.sendMessage(chat_id, text='Please only use 0, 1 or 2.')
+            bot.sendMessage(chat_id, text=_('Please only use 0, 1 or 2.'))
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
-        if pref.get('language') == 'de':
-            bot.sendMessage(chat_id, text='Verwendung:\n/matchmode 0/1')
-        else:
-            bot.sendMessage(chat_id, text='Usage:\n/matchmode 0/1')
+        bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/matchmode 0/1/2'))
 
 
 def cmd_pkmmatchmode(bot, update, args):
@@ -1597,11 +1225,9 @@ def cmd_pkmmatchmode(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        usage_message = 'Verwendung:\n/pkmmatchmode pokedexID 0/1'
-    else:
-        usage_message = 'Usage:\n/pkmmatchmode pokedexID 0/1'
+    usage_message = _('Usage:') + '\n' + _('/pkmmatchmode pokedexID 0/1/2')
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -1616,17 +1242,7 @@ def cmd_pkmmatchmode(bot, update, args):
         # Only get current value
         if len(args) < 2:
             pkm_matchmode = matchmodes[pkm_id] if pkm_id in matchmodes else pref.get('matchmode', 0)
-            if pref.get('language') == 'de':
-                bot.sendMessage(
-                    chat_id,
-                    text=
-                    'Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus für %s ist auf %d gesetzt.'
-                    % (pokemon_name['de'][pkm_id], pkm_matchmode))
-            else:
-                bot.sendMessage(
-                    chat_id,
-                    text='The Distance/IVs/CP/Level matching mode for %s is set to %d.' %
-                    (pokemon_name['en'][pkm_id], pkm_matchmode))
+            bot.sendMessage(chat_id, text=_('%s for %s is currently set to %d.') % (_('The Distance/IVs/CP/Level matching mode'), pokemon_name[pref.get('language')][pkm_id], pkm_matchmode))
             return
 
         pkm_matchmode = int(args[1])
@@ -1637,16 +1253,7 @@ def cmd_pkmmatchmode(bot, update, args):
 
         matchmodes[pkm_id] = pkm_matchmode
         pref.set('search_matchmode', matchmodes)
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id,
-                text='Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus für %s wurde auf %d gesetzt.'
-                % (pokemon_name['de'][pkm_id], pkm_matchmode))
-        else:
-            bot.sendMessage(
-                chat_id,
-                text='The Distance/IVs/CP/Level matching mode for %s was set to %d.' %
-                (pokemon_name['en'][pkm_id], pkm_matchmode))
+        bot.sendMessage(chat_id, text=_('%s for %s was set to %d.') % (_('The Distance/IVs/CP/Level matching mode'), pokemon_name[pref.get('language')][pkm_id], pkm_matchmode))
 
 
 def cmd_rempkmmatchmode(bot, update, args):
@@ -1656,11 +1263,9 @@ def cmd_rempkmmatchmode(bot, update, args):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        usage_message = 'Verwendung:\n/rempkmmatchmode pokedexID'
-    else:
-        usage_message = 'Usage:\n/rempkmmatchmode pokedexID'
+    usage_message = _('Usage:') + '\n' + _('/rempkmmatchmode pokedexID')
 
     if len(args) < 1:
         bot.sendMessage(chat_id, text=usage_message)
@@ -1671,16 +1276,7 @@ def cmd_rempkmmatchmode(bot, update, args):
     if int(pkm_id) >= min_pokemon_id and int(pkm_id) <= max_pokemon_id and pkm_id in matchmodes:
         del matchmodes[pkm_id]
         pref.set('search_matchmode', matchmodes)
-        if pref.get('language') == 'de':
-            bot.sendMessage(
-                chat_id,
-                text='Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus für %s wurde zurückgesetzt.'
-                % (pokemon_name['de'][pkm_id]))
-        else:
-            bot.sendMessage(
-                chat_id,
-                text='The Distance/IVs/CP/Level matching mode for %s was reset.' %
-                (pokemon_name['en'][pkm_id]))
+        bot.sendMessage(chat_id, text=_('%s for %s was reset.') % (_('The Distance/IVs/CP/Level matching mode'), pokemon_name[pref.get('language')][pkm_id]))
 
 
 def is_not_whitelisted(bot, update, command):
@@ -1700,16 +1296,19 @@ def is_not_whitelisted(bot, update, command):
 def cmd_add_to_whitelist(bot, update, args):
     chat_id = update.message.chat_id
     user_name = update.message.from_user.username
+
+    pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
+
     if not whitelist.is_whitelist_enabled():
-        bot.sendMessage(chat_id, text='Whitelist is disabled.')
+        bot.sendMessage(chat_id, text=_('Whitelist is disabled.'))
         return
     if not whitelist.is_admin(user_name):
         LOGGER.info('[%s@%s] User blocked (addToWhitelist).' % (user_name, chat_id))
         return
 
     if len(args) < 1:
-        bot.sendMessage(
-            chat_id, text='Usage: /wladd <username> or /wladd <username_1> <username_2>')
+        bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wladd <username>') + _(' or ') + _('/wladd <username_1> <username_2>'))
         return
 
     try:
@@ -1718,34 +1317,35 @@ def cmd_add_to_whitelist(bot, update, args):
         bot.sendMessage(chat_id, "Added to whitelist.")
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
-        bot.sendMessage(
-            chat_id, text='Usage: /wladd <username> or /wladd <username_1> <username_2>')
+        bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wladd <username>') + _(' or ') + _('/wladd <username_1> <username_2>'))
 
 
 def cmd_rem_from_whitelist(bot, update, args):
     chat_id = update.message.chat_id
     user_name = update.message.from_user.username
+
+    pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
+
     if not whitelist.is_whitelist_enabled():
-        bot.sendMessage(chat_id, text='Whitelist is disabled.')
+        bot.sendMessage(chat_id, text=_('Whitelist is disabled.'))
         return
     if not whitelist.is_admin(user_name):
         LOGGER.info('[%s@%s] User blocked (remFromWhitelist).' % (user_name, chat_id))
         return
 
     if len(args) < 1:
-        bot.sendMessage(
-            chat_id, text='Usage: /wlrem <username> or /wlrem <username_1> <username_2>')
+        bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wlrem <username>') + _(' or ') + _('/wlrem <username_1> <username_2>'))
         return
 
     try:
         for x in args:
             whitelist.rem_user(x)
-        bot.sendMessage(chat_id, "Removed from whitelist.")
+        bot.sendMessage(chat_id, text=_('Removed from whitelist.'))
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
-        bot.sendMessage(
-            chat_id, text='Usage: /wlrem <username> or /wlrem <username_1> <username_2>')
+        bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wlrem <username>') + _(' or ') + _('/wlrem <username_1> <username_2>'))
 
 
 def cmd_unknown(bot, update):
@@ -1755,11 +1355,9 @@ def cmd_unknown(bot, update):
         return
 
     pref = prefs.get(chat_id)
+    set_lang(pref.get('language'))
 
-    if pref.get('language') == 'de':
-        bot.sendMessage(chat_id, text='Diesen Befehl verstehe ich leider nicht.')
-    else:
-        bot.sendMessage(chat_id, text='Unfortunately, I do not understand this command.')
+    bot.sendMessage(chat_id, text=_('Unfortunately, I do not understand this command.'))
 
 
 ## Functions
@@ -1864,6 +1462,7 @@ def check_and_send(bot, chat_id):
     LOGGER.info('[%s] Checking pokemons and raids.' % (chat_id))
     try:
         pref = prefs.get(chat_id)
+        set_lang(pref.get('language'))
         pokemons = pref.get('search_ids', [])
         raids = pref.get('raid_ids', [])
 
@@ -1874,18 +1473,7 @@ def check_and_send(bot, chat_id):
                 build_detailed_pokemon_list(chat_id), send_without)
 
             if len(allpokes) > 50:
-                if pref.get('language') == 'de':
-                    bot.sendMessage(
-                        chat_id,
-                        text=
-                        "Deine Filterregeln treffen auf zu viele Pokémon zu.\nBitte überprüfe deine Einstellungen!"
-                    )
-                else:
-                    bot.sendMessage(
-                        chat_id,
-                        text=
-                        "Your filter rules are matching too many Pokémon.\nPlease check your settings!"
-                    )
+                bot.sendMessage(chat_id, text=_('Your filter rules are matching too many Pokémon.') + '\n' + _('Please check your settings!'))
             else:
                 for pokemon in allpokes:
                     send_one_poke(chat_id, pokemon)

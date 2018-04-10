@@ -1,0 +1,589 @@
+# PogomBOT
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0\n"
+"POT-Creation-Date: 2018-04-10 14:46+0200\n"
+"Language-Team: DE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: pogobot.py:164
+msgid "*The PoGo Chemnitz Bot knows the following commands:*"
+msgstr "*Der PoGo Chemnitz Bot beherrscht die folgenden Befehle:*"
+
+#: pogobot.py:165
+msgid "*General*"
+msgstr "*Allgemein*"
+
+#: pogobot.py:166
+msgid "/start"
+msgstr ""
+
+#: pogobot.py:166
+msgid "Starts the bot (e.g. after pausing)"
+msgstr "Startet den Bot (z.B. nach dem Pausieren)"
+
+#: pogobot.py:167
+msgid "/stop"
+msgstr ""
+
+#: pogobot.py:167
+msgid "Pauses the bot (use /start to resume)"
+msgstr "Pausiert den Bot (nutze /start zum Fortsetzen)"
+
+#: pogobot.py:168
+msgid "Sets the language of the bot"
+msgstr "Setzt die Sprache des Bots"
+
+#: pogobot.py:168 pogobot.py:881
+msgid "/lang de/en"
+msgstr ""
+
+#: pogobot.py:169
+msgid "/clear"
+msgstr ""
+
+#: pogobot.py:169
+msgid "Resets all your settings"
+msgstr "Setzt alle deine Einstellungen zurück"
+
+#: pogobot.py:170
+msgid "/help"
+msgstr ""
+
+#: pogobot.py:170
+msgid "Shows a list of available commands"
+msgstr "Zeigt eine Liste mit verfügbaren Befehlen"
+
+#: pogobot.py:171
+msgid "Searches for a gym by name and outputs its location"
+msgstr "Sucht nach einer Arena mit dem Name und gibt deren Standort zurück"
+
+#: pogobot.py:171 pogobot.py:322
+msgid "/where GymName"
+msgstr "/wo Arena-Name"
+
+#: pogobot.py:172
+msgid "*Pokémon filter*"
+msgstr "*Pokémon-Filter*"
+
+#: pogobot.py:173
+msgid "Adds Pokémon with the given ID to the scanner"
+msgstr "Fügt Pokémon mit der gegebenen ID zum Scanner hinzu"
+
+#: pogobot.py:173 pogobot.py:538
+msgid "/add pokedexID"
+msgstr ""
+
+#: pogobot.py:174 pogobot.py:538
+msgid "/add pokedexID1 pokedexID2 ..."
+msgstr ""
+
+#: pogobot.py:175
+msgid "Adds Pokémon with the given rarity to scanner (1 very common - 5 ultrarare)"
+msgstr "Fügt Pokémon it der gegebenen Seltenheit zum Scanner hinzu (1 sehr häufig - 5 ultra selten)"
+
+#: pogobot.py:175 pogobot.py:574
+msgid "/addbyrarity 1-5"
+msgstr ""
+
+#: pogobot.py:176
+msgid "Removes Pokémon with the given ID from the scanner"
+msgstr "Entfernt Pokémon mit der gegebenen ID vom Scanner"
+
+#: pogobot.py:176 pogobot.py:660
+msgid "/rem pokedexID"
+msgstr ""
+
+#: pogobot.py:177
+msgid "/rem pokedexID1 pokedexID2 ..."
+msgstr ""
+
+#: pogobot.py:178
+msgid "/list"
+msgstr ""
+
+#: pogobot.py:178
+msgid "Lists the watched Pokémon and Raid Pokémon"
+msgstr "Zeigt eine Liste mit den überwachten Pokémon und Raid-Pokémon"
+
+#: pogobot.py:179
+msgid "/iv 0-100"
+msgstr ""
+
+#: pogobot.py:179
+msgid "Sets the minimum IVs given as percent"
+msgstr "Setzt den Minimal-IV-Wert in Prozent"
+
+#: pogobot.py:180
+msgid "/cp 0-4548"
+msgstr "/wp 0-4548"
+
+#: pogobot.py:180
+msgid "Sets the minimum CP"
+msgstr "Setzt den Minimal-WP-Wert"
+
+#: pogobot.py:181
+msgid "/level 0-30"
+msgstr ""
+
+#: pogobot.py:181
+msgid "Sets the minimum level"
+msgstr "Setzt das Minimal-Level"
+
+#: pogobot.py:182
+msgid "Sets the minimum IVs for a specific Pokémon given as percent"
+msgstr "Setzt den Minimal-IV-Wert für ein bestimmtes Pokémon in Prozent"
+
+#: pogobot.py:182 pogobot.py:1215
+msgid "/pkmiv pokedexID 0-100"
+msgstr ""
+
+#: pogobot.py:183
+msgid "Resets the minimum IVs for a specific Pokémon"
+msgstr ""
+
+#: pogobot.py:183 pogobot.py:1267
+msgid "/rempkmiv pokedexID"
+msgstr ""
+
+#: pogobot.py:184
+msgid "Sets the minimum CP for a specific Pokémon"
+msgstr "Setzt den Minimal-WP-Wert für ein bestimmtes Pokémon"
+
+#: pogobot.py:184 pogobot.py:1327
+msgid "/pkmcp pokedexID 0-4548"
+msgstr "/pkmwp pokedexID 0-4548"
+
+#: pogobot.py:185
+msgid "Resets the minimum CP for a specific Pokémon"
+msgstr "etzt den Minimal-WP-Wert für ein bestimmtes Pokémon zurück"
+
+#: pogobot.py:185 pogobot.py:1378
+msgid "/rempkmcp pokedexID"
+msgstr "/rempkmwp pokedexID"
+
+#: pogobot.py:186
+msgid "Sets the minimum level for a specific Pokémon"
+msgstr "Setzt das Minimal-Level für ein bestimmtes Pokémon"
+
+#: pogobot.py:186 pogobot.py:1439
+msgid "/pkmlevel pokedexID 0-30"
+msgstr ""
+
+#: pogobot.py:187
+msgid "Resets the minimum level for a specific Pokémon"
+msgstr "Setzt das Minimal-Level für ein bestimmtes Pokémon zurück"
+
+#: pogobot.py:187 pogobot.py:1491
+msgid "/rempkmlevel pokedexID"
+msgstr ""
+
+#: pogobot.py:188
+msgid "Sets the match mode (0) Distance AND IVs AND CP AND level / (1) Distance AND IVs OR CP OR level has to match / (2) Distance OR IVs OR CP OR level has to match"
+msgstr "Legt den Übereinstimmungs-Modus fest (0) Entfernung UND IV- UND WP-Wert UND Level / (1) Entfernung UND IV- ODER WP-Wert ODER Level muss übereinstimmen / (2) Entfernung ODER IV- ODER WP-Wert ODER Level muss übereinstimmen"
+
+#: pogobot.py:188 pogobot.py:1553
+msgid "/matchmode 0/1/2"
+msgstr ""
+
+#: pogobot.py:189
+msgid "Set the match mode for a specific Pokémon"
+msgstr "Legt den Übereinstimmungs-Modus für ein bestimmtes Pokémon fest"
+
+#: pogobot.py:189 pogobot.py:1567
+msgid "/pkmmatchmode pokedexID 0/1/2"
+msgstr ""
+
+#: pogobot.py:190
+msgid "Reset the match mode for a specific Pokémon"
+msgstr "Setzt den Übereinstimmungs-Modus für ein bestimmtes Pokémon zurück"
+
+#: pogobot.py:190 pogobot.py:1619
+msgid "/rempkmmatchmode pokedexID"
+msgstr ""
+
+#: pogobot.py:191
+msgid "*Raid-Filter*"
+msgstr ""
+
+#: pogobot.py:192
+msgid "Adds Raid Pokémon with the given ID to the scanner"
+msgstr "Fügt Raid-Pokémon mit der gegebenen ID zum Scanner hinzu"
+
+#: pogobot.py:192 pogobot.py:716
+msgid "/addraid pokedexID"
+msgstr ""
+
+#: pogobot.py:193 pogobot.py:716
+msgid "/addraid pokedexID1 pokedexID2 ..."
+msgstr ""
+
+#: pogobot.py:194
+msgid "Adds Raid Pokémon with the given level to scanner (1-5)"
+msgstr "Fügt Raid-Pokémon it dem gegebenen Level zum Scanner hinzu (1-5)"
+
+#: pogobot.py:194 pogobot.py:675
+msgid "/addraidbylevel 1-5"
+msgstr ""
+
+#: pogobot.py:195
+msgid "Removes Raid Pokémon with the given ID from the scanner"
+msgstr "Entfernt Raid-Pokémon mit der gegebenen ID vom Scanner"
+
+#: pogobot.py:195 pogobot.py:763
+msgid "/remraid pokedexID"
+msgstr ""
+
+#: pogobot.py:196
+msgid "/remraid pokedexID1 pokedexID2 ..."
+msgstr ""
+
+#: pogobot.py:197
+msgid "*Distance filter*"
+msgstr "*Entfernungs-Filter*"
+
+#: pogobot.py:198
+msgid "/location address"
+msgstr ""
+
+#: pogobot.py:198
+msgid "Sets the desired search location given as text"
+msgstr "Setzt die Suchposition gegeben als Text"
+
+#: pogobot.py:199
+msgid "/radius km"
+msgstr ""
+
+#: pogobot.py:199
+msgid "Sets the search radius in km"
+msgstr "Setzt den Suchradius in km"
+
+#: pogobot.py:200
+msgid "/remloc"
+msgstr ""
+
+#: pogobot.py:200
+msgid "Clears the search location and radius"
+msgstr "Setzt die Suchposition und den Radius zurück"
+
+#: pogobot.py:201
+msgid "Sets the search radius for a specific Pokémon in km"
+msgstr "Setzt den Suchradius für ein bestimmtes Pokémon in km"
+
+#: pogobot.py:201 pogobot.py:1009
+msgid "/pkmradius pokedexID km"
+msgstr ""
+
+#: pogobot.py:202
+msgid "Resets the search radius for a specific Pokémon"
+msgstr "Setzt den Suchradius für ein bestimmtes Pokémon zurück"
+
+#: pogobot.py:202 pogobot.py:1066
+msgid "/rempkmradius pokedexID"
+msgstr ""
+
+#: pogobot.py:203
+msgid "Sets the search radius for a specific Raid Pokémon in km"
+msgstr "Setzt den Suchradius für ein bestimmtes Raid-Pokémon in km"
+
+#: pogobot.py:203 pogobot.py:1098
+msgid "/raidradius pokedexID km"
+msgstr ""
+
+#: pogobot.py:204
+msgid "Resets the search radius for a specific Raid Pokémon"
+msgstr "Setzt den Suchradius für ein bestimmtes Raid-Pokémon zurück"
+
+#: pogobot.py:204 pogobot.py:1154
+msgid "/remraidradius pokedexID"
+msgstr ""
+
+#: pogobot.py:205
+msgid "*Notification settings*"
+msgstr "*Benachrichtigungs-Einstellungen*"
+
+#: pogobot.py:206
+msgid "Defines if Pokémon without IV/CP should be sent"
+msgstr "Legt fest, ob Pokémon ohne IV/WP-Werte gesendet werden sollen"
+
+#: pogobot.py:206 pogobot.py:475
+msgid "/sendwithout true/false"
+msgstr ""
+
+#: pogobot.py:207
+msgid "Defines if stickers should be sent"
+msgstr "Legt fest, ob Sticker gesendet werden sollen"
+
+#: pogobot.py:207 pogobot.py:379
+msgid "/stickers true/false"
+msgstr ""
+
+#: pogobot.py:208
+msgid "Defines if only a map should be sent (without an additional message/sticker)"
+msgstr "Legt fest, ob nur eine Karte gesendet werden soll (ohne zusätzliche Nachricht/Sticker)"
+
+#: pogobot.py:208 pogobot.py:425
+msgid "/maponly true/false"
+msgstr ""
+
+#: pogobot.py:209
+msgid "Hint: You can also set the scanning location by just sending a location marker"
+msgstr "Hinweis: Du kannst ebenso die Suchposition festlegen, indem du einfach einen Positionsmarker sendest"
+
+#: pogobot.py:228
+msgid "Bot was started."
+msgstr "Bot wurde gestartet."
+
+#: pogobot.py:237
+msgid "Hello! You seem to be new here. Here is a list of available commands:"
+msgstr "Hallo! Du scheinst neu hier zu sein. Hier ist eine Liste von verfügbaren Befehlen:"
+
+#: pogobot.py:257
+msgid "Bot was paused. Use /start to resume."
+msgstr "Bot wurde pausiert. Nutze /start zum Fortsetzen."
+
+#: pogobot.py:304
+msgid "Multiple gyms were found. Please choose one of the following:"
+msgstr "Es wurden mehrere Arenen gefunden. Bitte wähle aus den folgenden:"
+
+#: pogobot.py:315
+msgid "No gym with this name could be found."
+msgstr "Es wurde keine Arena mit diesem Namen gefunden."
+
+#: pogobot.py:322 pogobot.py:379 pogobot.py:425 pogobot.py:475 pogobot.py:523
+#: pogobot.py:538 pogobot.py:574 pogobot.py:660 pogobot.py:675 pogobot.py:716
+#: pogobot.py:763 pogobot.py:881 pogobot.py:1009 pogobot.py:1066
+#: pogobot.py:1098 pogobot.py:1154 pogobot.py:1215 pogobot.py:1267
+#: pogobot.py:1327 pogobot.py:1378 pogobot.py:1439 pogobot.py:1491
+#: pogobot.py:1553 pogobot.py:1567 pogobot.py:1619 pogobot.py:1665
+#: pogobot.py:1675 pogobot.py:1690 pogobot.py:1701
+msgid "Usage:"
+msgstr "Verwendung:"
+
+#: pogobot.py:334
+msgid "Distance: %.2fkm"
+msgstr "Entfernung: %.2fkm"
+
+#: pogobot.py:351 pogobot.py:366
+msgid "Stickers"
+msgstr "Sticker"
+
+#: pogobot.py:351 pogobot.py:1188
+msgid "%s are currently set to %s."
+msgstr "%s sind aktuell auf %s gesetzt."
+
+#: pogobot.py:366
+msgid "%s were set to %s."
+msgstr "%s wurden auf %s gesetzt."
+
+#: pogobot.py:372 pogobot.py:418 pogobot.py:468 pogobot.py:516
+msgid "Please only use True (enable) or False (disable)."
+msgstr "Bitte nur True (aktivieren) oder False (deaktivieren) angeben."
+
+#: pogobot.py:397 pogobot.py:412
+msgid "\"Only show map\""
+msgstr "\"Nur Karte anzeigen\""
+
+#: pogobot.py:397 pogobot.py:444 pogobot.py:494 pogobot.py:857 pogobot.py:1526
+msgid "%s is currently set to %s."
+msgstr "%s ist aktuell auf %s gesetzt."
+
+#: pogobot.py:412 pogobot.py:462 pogobot.py:510 pogobot.py:869 pogobot.py:1541
+msgid "%s was set to %s."
+msgstr "%s wurde auf %s gesetzt."
+
+#: pogobot.py:444 pogobot.py:462
+msgid "\"Send Pokémon without IV/CP\""
+msgstr "\"Pokémon ohne IV/WP-Werte senden\""
+
+#: pogobot.py:494 pogobot.py:510
+msgid "\"Show walking distance/time\""
+msgstr "\"Zeige Laufdistanz und -zeit\""
+
+#: pogobot.py:523
+msgid "/walkdist true/false"
+msgstr ""
+
+#: pogobot.py:538 pogobot.py:716 pogobot.py:1665 pogobot.py:1675
+#: pogobot.py:1690 pogobot.py:1701
+msgid " or "
+msgstr " oder "
+
+#: pogobot.py:615
+msgid "Your settings were successfully reset."
+msgstr "Deine Einstellungen wurden erfolgreich zurückgesetzt."
+
+#: pogobot.py:792
+msgid "*List of watched Pokémon:*"
+msgstr "*Liste der überwachten Pokémon:*"
+
+#: pogobot.py:794
+msgid "*List of watched Pokémon within a radius of %.2fkm:*"
+msgstr "*Liste der überwachten Pokémon im Radius von %.2fkm:*"
+
+#: pogobot.py:824
+msgid "*List of watched Raid Pokémon:*"
+msgstr "*Liste der überwachten Raid-Pokémon:*"
+
+#: pogobot.py:826
+msgid "*List of watched Raid Pokémon within a radius of %.2fkm:*"
+msgstr "*Liste der überwachten Raid-Pokémon im Radius von %.2fkm:*"
+
+#: pogobot.py:857 pogobot.py:869
+msgid "The language"
+msgstr "Die Sprache"
+
+#: pogobot.py:874
+msgid "This language isn't available."
+msgstr "Diese Sprache ist leider nicht verfügbar."
+
+#: pogobot.py:900
+msgid "You have not supplied a scan location."
+msgstr "Du hast keine Suchposition angegeben."
+
+#: pogobot.py:908
+msgid "Setting new scan location with radius %skm:"
+msgstr "Setze neue Suchposition mit Radius %skm:"
+
+#: pogobot.py:918
+msgid "This is your current scan location with radius %skm:"
+msgstr "Dies ist deine aktuelle Suchposition mit Radius %skm:"
+
+#: pogobot.py:961
+msgid "The location was not found (or OpenStreetMap is down)."
+msgstr "Die Position wurde nicht gefunden (oder OpenStreetMap ist offline)."
+
+#: pogobot.py:995
+msgid "Your scan location has been removed."
+msgstr "Deine Suchposition wurde entfernt."
+
+#: pogobot.py:1031 pogobot.py:1050 pogobot.py:1084 pogobot.py:1120
+#: pogobot.py:1139 pogobot.py:1172
+msgid "The search radius"
+msgstr "Der Suchradius"
+
+#: pogobot.py:1031 pogobot.py:1120
+msgid "%s for %s is currently set to %skm."
+msgstr "%s für %s ist aktuell auf %skm gesetzt."
+
+#: pogobot.py:1050 pogobot.py:1139
+msgid "%s for %s was set to %skm."
+msgstr "%s für %s wurde auf %skm gesetzt."
+
+#: pogobot.py:1084 pogobot.py:1172 pogobot.py:1396 pogobot.py:1507
+#: pogobot.py:1636
+msgid "%s for %s was reset."
+msgstr "%s für %s wurde zurückgesetzt."
+
+#: pogobot.py:1188 pogobot.py:1201 pogobot.py:1235 pogobot.py:1253
+#: pogobot.py:1284
+msgid "The minimum IVs"
+msgstr "Der Minimal-IV-Wert"
+
+#: pogobot.py:1201
+msgid "%s were set to %d%%."
+msgstr "%s wurde auf %d%% gesetzt."
+
+#: pogobot.py:1235
+msgid "%s for %s are currently set to %d%%."
+msgstr "%s für %s ist aktuell auf %d%% gesetzt."
+
+#: pogobot.py:1253
+msgid "%s for %s were set to %d%%."
+msgstr "%s für %s wurde auf %d%% gesetzt."
+
+#: pogobot.py:1284
+msgid "%s for %s were reset."
+msgstr "%s für %s wurde zurückgesetzt."
+
+#: pogobot.py:1300
+msgid "%s is currently set to %dCP."
+msgstr "%s ist aktuell auf %dWP gesetzt."
+
+#: pogobot.py:1300 pogobot.py:1313 pogobot.py:1347 pogobot.py:1364
+#: pogobot.py:1396
+msgid "The minimum CP"
+msgstr "Der Minimal-WP-Wert"
+
+#: pogobot.py:1313
+msgid "%s was set to %dCP."
+msgstr "%s wurde auf %dWP gesetzt."
+
+#: pogobot.py:1347
+msgid "%s for %s is currently set to %dCP."
+msgstr "%s für %s ist aktuell auf %dWP gesetzt."
+
+#: pogobot.py:1364
+msgid "%s for %s was set to %dCP."
+msgstr "%s für %s wurde auf %dWP gesetzt."
+
+#: pogobot.py:1412
+msgid "%s is currently set to %d."
+msgstr "%s ist aktuell auf %d gesetzt."
+
+#: pogobot.py:1412 pogobot.py:1425 pogobot.py:1459 pogobot.py:1476
+#: pogobot.py:1507
+msgid "The minimum level"
+msgstr "Das Minimal-Level"
+
+#: pogobot.py:1425
+msgid "%s was set to %d."
+msgstr "%s wurde auf %d gesetzt."
+
+#: pogobot.py:1459 pogobot.py:1588
+msgid "%s for %s is currently set to %d."
+msgstr "%s für %s ist aktuell auf %d gesetzt."
+
+#: pogobot.py:1476 pogobot.py:1605
+msgid "%s for %s was set to %d."
+msgstr "%s für %s wurde auf %d gesetzt."
+
+#: pogobot.py:1526 pogobot.py:1541 pogobot.py:1588 pogobot.py:1605
+#: pogobot.py:1636
+msgid "The Distance/IVs/CP/Level matching mode"
+msgstr "Der Entfernungs/IVs/WP/Level Übereinstimmungsmodus"
+
+#: pogobot.py:1546
+msgid "Please only use 0, 1 or 2."
+msgstr "Bitte nur 0, 1 oder 2 angeben."
+
+#: pogobot.py:1657 pogobot.py:1682
+msgid "Whitelist is disabled."
+msgstr "Whitelist ist deaktiviert."
+
+#: pogobot.py:1665 pogobot.py:1675
+msgid "/wladd <username>"
+msgstr ""
+
+#: pogobot.py:1665 pogobot.py:1675
+msgid "/wladd <username_1> <username_2>"
+msgstr ""
+
+#: pogobot.py:1690 pogobot.py:1701
+msgid "/wlrem <username>"
+msgstr ""
+
+#: pogobot.py:1690 pogobot.py:1701
+msgid "/wlrem <username_1> <username_2>"
+msgstr ""
+
+#: pogobot.py:1696
+msgid "Removed from whitelist."
+msgstr "Von Whitelist entfernt."
+
+#: pogobot.py:1715
+msgid "Unfortunately, I do not understand this command."
+msgstr "Diesen Befehl verstehe ich leider nicht."
+
+#: pogobot.py:1840
+msgid "Your filter rules are matching too many Pokémon."
+msgstr "Deine Filterregeln treffen auf zu viele Pokémon zu."
+
+#: pogobot.py:1840
+msgid "Please check your settings!"
+msgstr "Bitte überprüfe deine Einstellungen!"
