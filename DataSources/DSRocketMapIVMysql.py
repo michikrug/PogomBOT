@@ -52,9 +52,9 @@ class DSRocketMapIVMysql():
             values_query_parts.append('cp >= %s' % pkm['cp'])
         if pkm['level'] > 0:
             values_query_parts.append('cp_multiplier >= %s' % __get_pokemon_cpm(pkm['level']))
-        if pkm['match_mode'] == 0:
+        if pkm['matchmode'] == 0:
             values_query = ' AND '.join(values_query_parts)
-        elif pkm['match_mode'] == 1:
+        elif pkm['matchmode'] == 1:
             values_query = ' OR '.join(values_query_parts)
         if values_query:
             sub_query_parts.append('(' + values_query + ')')
@@ -66,7 +66,7 @@ class DSRocketMapIVMysql():
             sub_query_parts.append('(' + location_query + ')')
 
         if sub_query_parts:
-            if pkm['match_mode'] == 2:
+            if pkm['matchmode'] == 2:
                 query_parts.append('(' + ' OR '.join(sub_query_parts) + ')')
             else:
                 query_parts.append('(' + ' AND '.join(sub_query_parts) + ')')

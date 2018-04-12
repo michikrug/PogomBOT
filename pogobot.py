@@ -720,25 +720,25 @@ def cmd_list(bot, update):
             tmp = _('*List of watched Pokémon within a radius of %.2fkm:*') % (user_location[2]) + '\n'
         for x in pref.get('pkmids', []):
             pkm_id = str(x)
-            tmp += "%s %s" % (pkm_id, pokemon_name[lan][pkm_id])
+            tmp += '%s %s' % (pkm_id, pokemon_name[lan][pkm_id])
             if pkm_id in dists:
-                tmp += " %.2fkm" % (dists[pkm_id])
+                tmp += ' %.2fkm' % (dists[pkm_id])
             if pkm_id in minivs:
-                tmp += " %d%%" % (minivs[pkm_id])
+                tmp += ' %d%%' % (minivs[pkm_id])
             if pkm_id in mincps:
-                tmp += " " + _('%dCP') % (mincps[pkm_id])
+                tmp += ' ' + _('%dCP') % (mincps[pkm_id])
             if pkm_id in minlevels:
-                tmp += " L%d" % (minlevels[pkm_id])
+                tmp += ' L%d' % (minlevels[pkm_id])
             if pkm_id in matchmodes:
                 if matchmodes[pkm_id] == 0:
-                    tmp += " " + _('AND')
+                    tmp += ' ' + _('AND')
                 if matchmodes[pkm_id] == 1:
-                    tmp += " " + _('OR1')
+                    tmp += ' ' + _('OR1')
                 if matchmodes[pkm_id] == 2:
-                    tmp += " " + _('OR2')
-            tmp += "\n"
+                    tmp += ' ' + _('OR2')
+            tmp += '\n'
 
-        tmp += "\n"
+        tmp += '\n'
         if user_location[0] is None:
             tmp += _('*List of watched Raid Pokémon:*') + '\n'
         else:
@@ -746,10 +746,10 @@ def cmd_list(bot, update):
         raid_dists = pref.get('raidradius', {})
         for x in pref.get('raidids', []):
             pkm_id = str(x)
-            tmp += "%s %s" % (pkm_id, pokemon_name[lan][pkm_id])
+            tmp += '%s %s' % (pkm_id, pokemon_name[lan][pkm_id])
             if pkm_id in raid_dists:
-                tmp += " %.2fkm" % (raid_dists[pkm_id])
-            tmp += "\n"
+                tmp += ' %.2fkm' % (raid_dists[pkm_id])
+            tmp += '\n'
 
         bot.sendMessage(chat_id, text=tmp, parse_mode='Markdown')
 
@@ -856,7 +856,7 @@ def cmd_add_to_whitelist(bot, update, args):
     try:
         for x in args:
             whitelist.add_user(x)
-        bot.sendMessage(chat_id, "Added to whitelist.")
+        bot.sendMessage(chat_id, 'Added to whitelist.')
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wladd <username>') + _(' or ') + _('/wladd <username_1> <username_2>'))
@@ -959,14 +959,14 @@ def build_detailed_pokemon_list(chat_id):
     if not pokemons:
         return []
     location = pref.get('location')
-    miniv = pref.get('miniv', 0)
-    mincp = pref.get('mincp', 0)
-    minlevel = pref.get('minlevel', 0)
-    matchmode = pref.get('match_mode', 0)
-    dists = pref.get('pkmdists', {})
-    minivs = pref.get('pkmminiv', {})
-    mincps = pref.get('pkmmincp', {})
-    minlevels = pref.get('pkmminlevel', {})
+    miniv = pref.get('iv', 0)
+    mincp = pref.get('cp', 0)
+    minlevel = pref.get('level', 0)
+    matchmode = pref.get('matchmode', 0)
+    dists = pref.get('pkmradius', {})
+    minivs = pref.get('pkmiv', {})
+    mincps = pref.get('pkmcp', {})
+    minlevels = pref.get('pkmlevel', {})
     matchmodes = pref.get('pkmmatchmode', {})
     pokemon_list = []
     for pkm in pokemons:
@@ -976,7 +976,7 @@ def build_detailed_pokemon_list(chat_id):
         entry['iv'] = minivs[pkm_id] if pkm_id in minivs else miniv
         entry['cp'] = mincps[pkm_id] if pkm_id in mincps else mincp
         entry['level'] = minlevels[pkm_id] if pkm_id in minlevels else minlevel
-        entry['match_mode'] = matchmodes[pkm_id] if pkm_id in matchmodes else matchmode
+        entry['matchmode'] = matchmodes[pkm_id] if pkm_id in matchmodes else matchmode
         if location[0] is not None:
             radius = dists[pkm_id] if pkm_id in dists else location[2]
             origin = Point(location[0], location[1])
@@ -1084,7 +1084,7 @@ def send_one_poke(chat_id, pokemon):
         delta = disappear_time - datetime.utcnow()
         deltaStr = '%02dm %02ds' % (int(delta.seconds / 60), int(delta.seconds % 60))
         disappear_time_str = disappear_time.replace(tzinfo=timezone.utc).astimezone(
-            tz=None).strftime("%H:%M:%S")
+            tz=None).strftime('%H:%M:%S')
 
         if encounter_id in mySent:
             LOGGER.info('[%s] Not sending pokemon notification. Already sent. %s' % (chat_id,
@@ -1124,9 +1124,9 @@ def send_one_poke(chat_id, pokemon):
 
         if webhook_enabled:
 
-            miniv = pref.preferences.get('miniv', 0)
-            mincp = pref.preferences.get('mincp', 0)
-            minlevel = pref.preferences.get('minlevel', 0)
+            miniv = pref.preferences.get('iv', 0)
+            mincp = pref.preferences.get('cp', 0)
+            minlevel = pref.preferences.get('level', 0)
 
             minivs = pref.get('pkmiv', {})
             if pok_id in minivs:
@@ -1172,33 +1172,30 @@ def send_one_poke(chat_id, pokemon):
         title = pokemon_name[lan][pok_id]
 
         if iv is not None:
-            title += " %s%%" % iv
+            title += ' %s%%' % iv
 
         if cp is not None:
-            if lan == 'de':
-                title += " %dWP" % cp
-            else:
-                title += " %dCP" % cp
+            title += ' ' + (_('%dCP') % cp)
 
         if level is not None:
-            title += " L%d" % level
+            title += ' L%d' % level
 
-        address = "💨 %s ⏱ %s" % (disappear_time_str, deltaStr)
+        address = '💨 %s ⏱ %s' % (disappear_time_str, deltaStr)
 
         if location_data[0] is not None:
             if pref.get('walkdist'):
                 walkin_data = get_walking_data(location_data, latitude, longitude)
                 if walkin_data['walk_dist'] < 1:
-                    title += " 📍%dm" % int(1000 * walkin_data['walk_dist'])
+                    title += ' 📍%dm' % int(1000 * walkin_data['walk_dist'])
                 else:
-                    title += " 📍%.2fkm" % walkin_data['walk_dist']
-                address += " 🚶%s" % walkin_data['walk_time']
+                    title += ' 📍%.2fkm' % walkin_data['walk_dist']
+                address += ' 🚶%s' % walkin_data['walk_time']
             else:
                 dist = round(pokemon.get_distance(location_data), 2)
                 if dist < 1:
-                    title += " 📍%dm" % int(1000 * dist)
+                    title += ' 📍%dm' % int(1000 * dist)
                 else:
-                    title += " 📍%.2fkm" % dist
+                    title += ' 📍%.2fkm' % dist
 
         if move1 is not None and move2 is not None:
             moveNames = move_name['en']
@@ -1207,7 +1204,7 @@ def send_one_poke(chat_id, pokemon):
             # Use language if other move languages are available.
             move1Name = moveNames[str(move1)] if str(move1) in moveNames else '?'
             move2Name = moveNames[str(move2)] if str(move2) in moveNames else '?'
-            address += "\n⚔ %s / %s" % (move1Name, move2Name)
+            address += '\n⚔ %s / %s' % (move1Name, move2Name)
 
         mySent[encounter_id] = disappear_time
 
@@ -1216,7 +1213,7 @@ def send_one_poke(chat_id, pokemon):
         else:
             if pref.get('stickers'):
                 telegram_bot.sendSticker(
-                    chat_id, sticker_list.get(str(pok_id)), disable_notification=True)
+                    chat_id, sticker_list.get(pok_id), disable_notification=True)
             telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
             telegram_bot.sendMessage(
                 chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
@@ -1274,7 +1271,7 @@ def send_one_raid(chat_id, raid):
         delta = end - datetime.utcnow()
         deltaStr = '%02dh %02dm' % (int(delta.seconds / 3600), int((delta.seconds / 60) % 60))
         disappear_time_str = end.replace(tzinfo=timezone.utc).astimezone(
-            tz=None).strftime("%H:%M:%S")
+            tz=None).strftime('%H:%M:%S')
 
         if raid_id in mySent:
             LOGGER.info('[%s] Not sending raid notification. Already sent. %s' % (chat_id, pok_id))
@@ -1299,30 +1296,27 @@ def send_one_raid(chat_id, raid):
 
         LOGGER.info('[%s] Sending one notification. %s' % (chat_id, pok_id))
 
-        title = "👹 " + pokemon_name[lan][pok_id]
+        title = '👹 ' + pokemon_name[lan][pok_id]
 
         if cp is not None:
-            if lan == 'de':
-                title += " %dWP" % cp
-            else:
-                title += " %dCP" % cp
+            title += ' ' + (_('%dCP') % cp)
 
-        address = "📍 %s\n💨 %s ⏱ %s" % (name, disappear_time_str, deltaStr)
+        address = '📍 %s\n💨 %s ⏱ %s' % (name, disappear_time_str, deltaStr)
 
         if location_data[0] is not None:
             if pref.get('walkdist'):
                 walkin_data = get_walking_data(location_data, latitude, longitude)
                 if walkin_data['walk_dist'] < 1:
-                    title += " 📍%dm" % int(1000 * walkin_data['walk_dist'])
+                    title += ' 📍%dm' % int(1000 * walkin_data['walk_dist'])
                 else:
-                    title += " 📍%.2fkm" % walkin_data['walk_dist']
-                address += " 🚶%s" % walkin_data['walk_time']
+                    title += ' 📍%.2fkm' % walkin_data['walk_dist']
+                address += ' 🚶%s' % walkin_data['walk_time']
             else:
                 dist = round(raid.get_distance(location_data), 2)
                 if dist < 1:
-                    title += " 📍%dm" % int(1000 * dist)
+                    title += ' 📍%dm' % int(1000 * dist)
                 else:
-                    title += " 📍%.2fkm" % dist
+                    title += ' 📍%.2fkm' % dist
 
         if move1 is not None and move2 is not None:
             moveNames = move_name['en']
@@ -1331,7 +1325,7 @@ def send_one_raid(chat_id, raid):
             # Use language if other move languages are available.
             move1Name = moveNames[str(move1)] if str(move1) in moveNames else '?'
             move2Name = moveNames[str(move2)] if str(move2) in moveNames else '?'
-            address += "\n⚔ %s / %s" % (move1Name, move2Name)
+            address += '\n⚔ %s / %s' % (move1Name, move2Name)
 
         mySent[raid_id] = end
 
@@ -1340,7 +1334,7 @@ def send_one_raid(chat_id, raid):
         else:
             if pref.get('stickers'):
                 telegram_bot.sendSticker(
-                    chat_id, sticker_list.get(str(pok_id)), disable_notification=True)
+                    chat_id, sticker_list.get(pok_id), disable_notification=True)
             telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
             telegram_bot.sendMessage(
                 chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
@@ -1373,12 +1367,12 @@ def send_one_raid(chat_id, raid):
 
 
 def read_config():
-    config_path = os.path.join(os.path.dirname(sys.argv[0]), "config-bot.json")
+    config_path = os.path.join(os.path.dirname(sys.argv[0]), 'config-bot.json')
     LOGGER.info('Reading config: <%s>' % config_path)
     global config
 
     try:
-        with open(config_path, "r", encoding='utf-8') as f:
+        with open(config_path, 'r', encoding='utf-8') as f:
             config = json.loads(f.read())
 
     except Exception as e:
@@ -1408,7 +1402,7 @@ def report_config():
 
 def read_pokemon_names(loc):
     LOGGER.info('Reading pokemon names. <%s>' % loc)
-    config_path = "locales/pokemon." + loc + ".json"
+    config_path = 'locales/pokemon.' + loc + '.json'
 
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
@@ -1420,7 +1414,7 @@ def read_pokemon_names(loc):
 
 def read_move_names(loc):
     LOGGER.info('Reading move names. <%s>' % loc)
-    config_path = "locales/moves." + loc + ".json"
+    config_path = 'locales/moves.' + loc + '.json'
 
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
@@ -1439,8 +1433,8 @@ def get_walking_data(user_location, lat, lng):
     if user_location[0] is None:
         LOGGER.error('No location has been set. Unable to get walking data')
         return data
-    origin = "{},{}".format(user_location[0], user_location[1])
-    dest = "{},{}".format(lat, lng)
+    origin = '{},{}'.format(user_location[0], user_location[1])
+    dest = '{},{}'.format(lat, lng)
     try:
         result = gmaps_client.distance_matrix(origin, dest, mode='walking', units='metric')
         result = result.get('rows')[0].get('elements')[0]
@@ -1483,7 +1477,7 @@ def main():
             data_source = DataSources.DSRocketMapIVWebhook(
                 config.get('DB_CONNECT', None), find_users_by_poke_id, find_users_by_raid_id)
     if not data_source:
-        raise Exception("The combination SCANNER_NAME, DB_TYPE is not available: %s,%s" %
+        raise Exception('The combination SCANNER_NAME, DB_TYPE is not available: %s,%s' %
                         (scanner_name, db_type))
 
     global whitelist
@@ -1495,7 +1489,7 @@ def main():
 
     global telegram_bot
     telegram_bot = Bot(token)
-    LOGGER.info("BotName: <%s>" % (telegram_bot.name))
+    LOGGER.info('BotName: <%s>' % (telegram_bot.name))
 
     # Get the Google Maps API
     global gmaps_client
@@ -1509,48 +1503,48 @@ def main():
     dp = updater.dispatcher
 
     # on different commands - answer in Telegram
-    dp.add_handler(CommandHandler("start", cmd_start, pass_job_queue=True))
-    dp.add_handler(CommandHandler("stop", cmd_stop))
-    dp.add_handler(CommandHandler("help", cmd_help))
-    dp.add_handler(CommandHandler("clear", cmd_clear))
-    dp.add_handler(CommandHandler("add", cmd_add, pass_args=True, pass_job_queue=True))
+    dp.add_handler(CommandHandler('start', cmd_start, pass_job_queue=True))
+    dp.add_handler(CommandHandler('stop', cmd_stop))
+    dp.add_handler(CommandHandler('help', cmd_help))
+    dp.add_handler(CommandHandler('clear', cmd_clear))
+    dp.add_handler(CommandHandler('add', cmd_add, pass_args=True, pass_job_queue=True))
     dp.add_handler(
-        CommandHandler("addbyrarity", cmd_add_by_rarity, pass_args=True, pass_job_queue=True))
-    dp.add_handler(CommandHandler("remove", cmd_remove, pass_args=True))
-    dp.add_handler(CommandHandler("addraid", cmd_add_raid, pass_args=True, pass_job_queue=True))
+        CommandHandler('addbyrarity', cmd_add_by_rarity, pass_args=True, pass_job_queue=True))
+    dp.add_handler(CommandHandler('remove', cmd_remove, pass_args=True))
+    dp.add_handler(CommandHandler('addraid', cmd_add_raid, pass_args=True, pass_job_queue=True))
     dp.add_handler(
         CommandHandler(
-            "addraidbylevel", cmd_add_raid_by_level, pass_args=True, pass_job_queue=True))
-    dp.add_handler(CommandHandler("removeraid", cmd_remove_raid, pass_args=True))
-    dp.add_handler(CommandHandler("list", cmd_list))
-    dp.add_handler(CommandHandler(["language", "lang"], cmd_lang, pass_args=True))
-    dp.add_handler(CommandHandler("radius", cmd_radius, pass_args=True))
-    dp.add_handler(CommandHandler("location", cmd_location_str, pass_args=True))
-    dp.add_handler(CommandHandler("removelocation", cmd_remove_location))
+            'addraidbylevel', cmd_add_raid_by_level, pass_args=True, pass_job_queue=True))
+    dp.add_handler(CommandHandler('removeraid', cmd_remove_raid, pass_args=True))
+    dp.add_handler(CommandHandler('list', cmd_list))
+    dp.add_handler(CommandHandler(['language', 'lang'], cmd_lang, pass_args=True))
+    dp.add_handler(CommandHandler('radius', cmd_radius, pass_args=True))
+    dp.add_handler(CommandHandler('location', cmd_location_str, pass_args=True))
+    dp.add_handler(CommandHandler('removelocation', cmd_remove_location))
     dp.add_handler(MessageHandler(Filters.location, cmd_location))
-    dp.add_handler(CommandHandler("wladd", cmd_add_to_whitelist, pass_args=True))
-    dp.add_handler(CommandHandler("wlrem", cmd_rem_from_whitelist, pass_args=True))
-    dp.add_handler(CommandHandler("stickers", cmd_stickers, pass_args=True))
-    dp.add_handler(CommandHandler("maponly", cmd_map_only, pass_args=True))
-    dp.add_handler(CommandHandler("walkdist", cmd_walk_dist, pass_args=True))
-    dp.add_handler(CommandHandler("pkmradius", cmd_pkm_radius, pass_args=True))
-    dp.add_handler(CommandHandler("resetpkmradius", cmd_pkm_radius_reset, pass_args=True))
-    dp.add_handler(CommandHandler("raidradius", cmd_raid_radius, pass_args=True))
-    dp.add_handler(CommandHandler("resetraidradius", cmd_raid_radius_reset, pass_args=True))
-    dp.add_handler(CommandHandler("iv", cmd_iv, pass_args=True))
-    dp.add_handler(CommandHandler(["cp", "wp"], cmd_cp, pass_args=True))
-    dp.add_handler(CommandHandler("level", cmd_level, pass_args=True))
-    dp.add_handler(CommandHandler("matchmode", cmd_matchmode, pass_args=True))
-    dp.add_handler(CommandHandler("pkmiv", cmd_pkm_iv, pass_args=True))
-    dp.add_handler(CommandHandler(["pkmcp", "pkmwp"], cmd_pkm_cp, pass_args=True))
-    dp.add_handler(CommandHandler("pkmlevel", cmd_pkm_level, pass_args=True))
-    dp.add_handler(CommandHandler("pkmmatchmode", cmd_pkm_matchmode, pass_args=True))
-    dp.add_handler(CommandHandler("resetpkmiv", cmd_pkm_iv_reset, pass_args=True))
-    dp.add_handler(CommandHandler(["resetpkmcp", "resetpkmwp"], cmd_pkm_cp_reset, pass_args=True))
-    dp.add_handler(CommandHandler("resetpkmlevel", cmd_pkm_level_reset, pass_args=True))
-    dp.add_handler(CommandHandler("resetpkmmatchmode", cmd_pkm_matchmode_reset, pass_args=True))
-    dp.add_handler(CommandHandler("sendwithout", cmd_send_without, pass_args=True))
-    dp.add_handler(CommandHandler(["wo", "where"], cmd_find_gym, pass_args=True))
+    dp.add_handler(CommandHandler('wladd', cmd_add_to_whitelist, pass_args=True))
+    dp.add_handler(CommandHandler('wlrem', cmd_rem_from_whitelist, pass_args=True))
+    dp.add_handler(CommandHandler('stickers', cmd_stickers, pass_args=True))
+    dp.add_handler(CommandHandler('maponly', cmd_map_only, pass_args=True))
+    dp.add_handler(CommandHandler('walkdist', cmd_walk_dist, pass_args=True))
+    dp.add_handler(CommandHandler('pkmradius', cmd_pkm_radius, pass_args=True))
+    dp.add_handler(CommandHandler('resetpkmradius', cmd_pkm_radius_reset, pass_args=True))
+    dp.add_handler(CommandHandler('raidradius', cmd_raid_radius, pass_args=True))
+    dp.add_handler(CommandHandler('resetraidradius', cmd_raid_radius_reset, pass_args=True))
+    dp.add_handler(CommandHandler('iv', cmd_iv, pass_args=True))
+    dp.add_handler(CommandHandler(['cp', 'wp'], cmd_cp, pass_args=True))
+    dp.add_handler(CommandHandler('level', cmd_level, pass_args=True))
+    dp.add_handler(CommandHandler('matchmode', cmd_matchmode, pass_args=True))
+    dp.add_handler(CommandHandler('pkmiv', cmd_pkm_iv, pass_args=True))
+    dp.add_handler(CommandHandler(['pkmcp', 'pkmwp'], cmd_pkm_cp, pass_args=True))
+    dp.add_handler(CommandHandler('pkmlevel', cmd_pkm_level, pass_args=True))
+    dp.add_handler(CommandHandler('pkmmatchmode', cmd_pkm_matchmode, pass_args=True))
+    dp.add_handler(CommandHandler('resetpkmiv', cmd_pkm_iv_reset, pass_args=True))
+    dp.add_handler(CommandHandler(['resetpkmcp', 'resetpkmwp'], cmd_pkm_cp_reset, pass_args=True))
+    dp.add_handler(CommandHandler('resetpkmlevel', cmd_pkm_level_reset, pass_args=True))
+    dp.add_handler(CommandHandler('resetpkmmatchmode', cmd_pkm_matchmode_reset, pass_args=True))
+    dp.add_handler(CommandHandler('sendwithout', cmd_send_without, pass_args=True))
+    dp.add_handler(CommandHandler(['wo', 'where'], cmd_find_gym, pass_args=True))
     dp.add_handler(MessageHandler(Filters.command, cmd_unknown))
     dp.add_handler(CallbackQueryHandler(cb_button))
 
