@@ -69,7 +69,8 @@ class UserPreferencesModel(object):
         return '%s.json' % (chat_id)
 
     def __getitem__(self, key):
-        return dict.__getitem__(self.__preferences, key)
+        val = dict.__getitem__(self.__preferences, key)
+        return self.default_dict[key] if val is None else val
 
     def __set_directory(self, directory):
         if directory is None:
