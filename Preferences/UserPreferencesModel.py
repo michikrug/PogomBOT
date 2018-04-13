@@ -30,7 +30,7 @@ class UserPreferencesModel(object):
         self.loadedconfig = config
         self.default_dict = dict(
             location=[None, None, 1],
-            language=self.loadedconfig.get('DEFAULT_LANG', 'de'),
+            language=self.loadedconfig.get('DEFAULT_LANG', 'en'),
             stickers=self.loadedconfig.get('STICKERS', True),
             maponly=self.loadedconfig.get('SEND_MAP_ONLY', False),
             walkdist=self.loadedconfig.get('WALK_DIST', False),

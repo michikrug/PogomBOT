@@ -1394,10 +1394,10 @@ def report_config():
     LOGGER.info('SCANNER_NAME: <%s>' % (config.get('SCANNER_NAME', None)))
     LOGGER.info('DB_TYPE: <%s>' % (config.get('DB_TYPE', None)))
     LOGGER.info('DB_CONNECT: <%s>' % (config.get('DB_CONNECT', None)))
-    LOGGER.info('DEFAULT_LANG: <%s>' % (config.get('DEFAULT_LANG', None)))
-    LOGGER.info('SEND_MAP_ONLY: <%s>' % (config.get('SEND_MAP_ONLY', None)))
-    LOGGER.info('STICKERS: <%s>' % (config.get('STICKERS', None)))
-    LOGGER.info('SEND_POKEMON_WITHOUT_IV: <%s>' % (config.get('SEND_POKEMON_WITHOUT_IV', None)))
+    LOGGER.info('DEFAULT_LANG: <%s>' % (config.get('DEFAULT_LANG', 'en')))
+    LOGGER.info('SEND_MAP_ONLY: <%s>' % (config.get('SEND_MAP_ONLY', False)))
+    LOGGER.info('STICKERS: <%s>' % (config.get('STICKERS', True)))
+    LOGGER.info('SEND_POKEMON_WITHOUT_IV: <%s>' % (config.get('SEND_POKEMON_WITHOUT_IV', True)))
 
 
 def read_pokemon_names(loc):
@@ -1497,7 +1497,7 @@ def main():
     gmaps_client = googlemaps.Client(
         key=google_key, timeout=3, retry_timeout=4) if google_key is not None else None
 
-    set_lang('en')
+    set_lang(config.get('DEFAULT_LANG', 'en'))
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
