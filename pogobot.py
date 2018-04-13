@@ -467,8 +467,11 @@ def cmd_find_gym(bot, update, args):
     chat_id = update.message.chat_id
     user_name = update.message.from_user.username
 
-    pref = prefs.get(chat_id)
-    set_lang(pref.get('language'))
+    if chat_id < 0:
+        set_lang(config.get('DEFAULT_LANG', 'en'))
+    else:
+        pref = prefs.get(chat_id)
+        set_lang(pref.get('language'))
 
     if len(args) < 1:
         bot.delete_message(chat_id=chat_id, message_id=update.message.message_id)
