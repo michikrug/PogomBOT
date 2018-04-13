@@ -11,7 +11,7 @@ from .DSRaid import DSRaid
 LOGGER = logging.getLogger(__name__)
 
 
-def __get_pokemon_cpm(level):
+def get_pokemon_cpm(level):
     cp_multiplier = [
         0.094, 0.166398, 0.215732, 0.25572, 0.29025, 0.321088, 0.349213, 0.375236, 0.399567, 0.4225,
         0.443108, 0.462798, 0.481685, 0.499858, 0.517394, 0.534354, 0.550793, 0.566755, 0.582279,
@@ -51,7 +51,7 @@ class DSRocketMapIVMysql():
         if pkm['cp'] > 0:
             values_query_parts.append('cp >= %s' % pkm['cp'])
         if pkm['level'] > 0:
-            values_query_parts.append('cp_multiplier >= %s' % __get_pokemon_cpm(pkm['level']))
+            values_query_parts.append('cp_multiplier >= %s' % get_pokemon_cpm(pkm['level']))
         if pkm['matchmode'] == 0:
             values_query = ' AND '.join(values_query_parts)
         elif pkm['matchmode'] == 1:
@@ -146,8 +146,8 @@ class DSRocketMapIVMysql():
 
         return poke_list
 
-    def get_raids_by_list(self, raid_list):
-        raid_query_parts = list(map(self.__build_raid_query, raid_list))
+    def get_raids_by_list(self, raids):
+        raid_query_parts = list(map(self.__build_raid_query, raids))
         sql_query = ("SELECT raid.gym_id, name, latitude, longitude, "
                      "start, end, pokemon_id, cp, move_1, move_2 "
                      "FROM raid JOIN gym ON gym.gym_id=raid.gym_id "
