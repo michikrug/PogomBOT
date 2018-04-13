@@ -942,7 +942,7 @@ def add_job_for_chat_id(chat_id, job_queue):
             jobs[chat_id] = job
             if not webhook_enabled:
                 LOGGER.info('Putting job')
-                job_queue.put(job)
+                job_queue._put(job)
 
             # User dependant
             if chat_id not in sent:
