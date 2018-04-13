@@ -457,7 +457,7 @@ def print_gym(bot, chat_id, gym):
 def cb_button(bot, update):
     query = update.callback_query
     chat_id = query.message.chat_id
-    gyms = data_source.get_gyms_by_name(gym_name=query.data, wildcard=False)
+    gyms = data_source.get_gyms_by_name(gym_name=query.data, use_id=True)
     if gyms:
         print_gym(bot, chat_id, gyms[0])
     bot.delete_message(chat_id=chat_id, message_id=query.message.message_id)
@@ -489,7 +489,7 @@ def cmd_find_gym(bot, update, args):
             keyboard = []
             for gym in gyms:
                 keyboard.append(
-                    [InlineKeyboardButton(gym.get_name(), callback_data=gym.get_name())])
+                    [InlineKeyboardButton(gym.get_name(), callback_data=gym.get_gym_id())])
 
             update.message.reply_text(
                 _('Multiple gyms were found. Please choose one of the following:'),
