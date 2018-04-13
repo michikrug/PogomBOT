@@ -183,7 +183,8 @@ class UserPreferencesModel(object):
             #. value (object): The value of the given key or given default value is
                key does not exist.
         """
-        return self.__preferences.get(key, default)
+        val = self.__preferences.get(key, default)
+        return self.default_dict[key] if val is None else val
 
     @staticmethod
     def check_preferences(preferences):
