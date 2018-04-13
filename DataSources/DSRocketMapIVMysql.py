@@ -119,8 +119,7 @@ class DSRocketMapIVMysql():
     def __execute_pokemon_query(self, sql_query):
         poke_list = []
         try:
-            with self.con:
-                cur = self.con.cursor()
+            with self.con.cursor() as cur:
                 cur.execute(sql_query)
                 rows = cur.fetchall()
                 for row in rows:
@@ -160,8 +159,7 @@ class DSRocketMapIVMysql():
 
         raid_list = []
         try:
-            with self.con:
-                cur = self.con.cursor()
+            with self.con.cursor() as cur:
                 cur.execute(sql_query)
                 rows = cur.fetchall()
                 for row in rows:
@@ -195,8 +193,7 @@ class DSRocketMapIVMysql():
 
         gym_list = []
         try:
-            with self.con:
-                cur = self.con.cursor()
+            with self.con.cursor() as cur:
                 cur.execute(sql_query, (gym_name,))
                 rows = cur.fetchall()
                 for row in rows:
