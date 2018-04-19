@@ -1,6 +1,7 @@
 import json
 import logging
 import threading
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from .Conversion import (floatOrNone, intOrNone, strOrNone,
@@ -95,5 +96,14 @@ class DSRocketMapIVWebhook():
     def get_raids_by_list(self, raid_list):
         return []
 
-    def get_gyms_by_name(self, gym_name):
+    def get_gyms_by_name(self, gym_name, use_id=False):
         return []
+
+    def add_new_raid(self, gym_id, level, spawn, start, end, pokemon_id):
+        LOGGER.info("%s, %s, %s, %s, %s, %s, %s" % (gym_id,
+            level,
+            spawn.strftime('%Y-%m-%d %H:%M:%S'),
+            start.strftime('%Y-%m-%d %H:%M:%S'),
+            end.strftime('%Y-%m-%d %H:%M:%S'),
+            pokemon_id,
+            datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
