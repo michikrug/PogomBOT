@@ -652,8 +652,8 @@ msgstr "Bitte gib die Startzeit des Raids an (Format: hh:mm):"
 msgid "*Raid start time: %s*"
 msgstr "*Raid-Startzeit: %s*"
 
-msgid "*Thanks!"
-msgstr "*Danke schön!*"
+msgid "Thanks!"
+msgstr "Danke schön!"
 
 msgid "Alright. See you later."
 msgstr "Alles klar. Bis bald."

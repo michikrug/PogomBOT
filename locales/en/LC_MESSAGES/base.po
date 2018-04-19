@@ -652,7 +652,7 @@ msgstr ""
 msgid "*Raid start time: %s*"
 msgstr ""
 
-msgid "*Thanks!"
+msgid "Thanks!"
 msgstr ""
 
 msgid "Alright. See you later."
