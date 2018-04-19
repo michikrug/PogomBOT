@@ -621,3 +621,39 @@ msgstr "Dies ist keine gültige Option für diese Einstellung. Gültig sind: *%s
 
 msgid "The stated Pokémon is *blacklisted* and therefore can not be checked."
 msgstr "Das angegebene Pokémon steht auf der *schwarzen Liste* und kann deshalb nicht überwacht werden."
+
+msgid "Please choose the raid level:"
+msgstr "Bitte wähle das Raid-Level:"
+
+msgid "*Raid level: %s*"
+msgstr "*Raid-Level: %s*"
+
+msgid "Please choose the raid boss:"
+msgstr "Bitte wähle den Raid-Boss:"
+
+msgid "*Raid boss: %s*"
+msgstr "*Raid-Boss: %s*"
+
+msgid "Please enter the gym name:"
+msgstr "Bitte gib den Arena-Name ein:"
+
+msgid "Please select the matching gym:"
+msgstr "Bitte wähle die passende Arena:"
+
+msgid "No gym with this name could be found. Please try again."
+msgstr "Leider wurde keine Arena mit diesem Name gefunden. Bitte versuche es erneut."
+
+msgid "*Raid gym: %s*"
+msgstr "*Raid-Arena: %s*"
+
+msgid "Please enter the start time of the raid (Format: hh:mm):"
+msgstr "Bitte gib die Startzeit des Raids an (Format: hh:mm):"
+
+msgid "*Raid start time: %s*"
+msgstr "*Raid-Startzeit: %s*"
+
+msgid "*Thanks!"
+msgstr "*Danke schön!*"
+
+msgid "Alright. See you later."
+msgstr "Alles klar. Bis bald."

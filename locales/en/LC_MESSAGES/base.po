@@ -621,3 +621,39 @@ msgstr ""
 
 msgid "The stated Pokémon is *blacklisted* and therefore can not be checked."
 msgstr ""
+
+msgid "Please choose the raid level:"
+msgstr ""
+
+msgid "*Raid level: %s*"
+msgstr ""
+
+msgid "Please choose the raid boss:"
+msgstr ""
+
+msgid "*Raid boss: %s*"
+msgstr ""
+
+msgid "Please enter the gym name:"
+msgstr ""
+
+msgid "Please select the matching gym:"
+msgstr ""
+
+msgid "No gym with this name could be found. Please try again."
+msgstr ""
+
+msgid "*Raid gym: %s*"
+msgstr ""
+
+msgid "Please enter the start time of the raid (Format: hh:mm):"
+msgstr ""
+
+msgid "*Raid start time: %s*"
+msgstr ""
+
+msgid "*Thanks!"
+msgstr ""
+
+msgid "Alright. See you later."
+msgstr ""
