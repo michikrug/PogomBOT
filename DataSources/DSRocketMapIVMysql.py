@@ -1,6 +1,6 @@
-from datetime import datetime
 import logging
 import re
+from datetime import datetime, timedelta
 
 import pymysql
 
@@ -223,22 +223,23 @@ class DSRocketMapIVMysql():
 
         return gym_list
 
-    def add_new_raid(self, gym_id, level, spawn, start, end, pokemon_id):
-        sql_query = ("REPLACE INTO `raid` (`gym_id`, `level`, `spawn`, `start`, `end`, `pokemon_id`, `last_scanned`) "
-                     "VALUES (%s, %s, %s, %s, %s, %s, %s)")
+    def add_new_raid(self, gym_id, level, start, pokemon_id):
+        end = start + timedelta(minutes=45)
+        sql_query = (
+            "REPLACE INTO `raid` (`gym_id`, `level`, `spawn`, `start`, `end`, `pokemon_id`, `last_scanned`) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s)")
 
         try:
             with self.con.cursor() as cur:
-                cur.execute(sql_query, (
-                        gym_id,
-                        level,
-                        spawn.strftime('%Y-%m-%d %H:%M:%S'),
-                        start.strftime('%Y-%m-%d %H:%M:%S'),
-                        end.strftime('%Y-%m-%d %H:%M:%S'),
-                        pokemon_id,
-                        datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    )
-                )
+                cur.execute(
+                    sql_query,
+                    (gym_id,
+                     level,
+                     datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+                     start.strftime('%Y-%m-%d %H:%M:%S'),
+                     end.strftime('%Y-%m-%d %H:%M:%S'),
+                     pokemon_id,
+                     datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')))
             self.con.commit()
 
         except pymysql.err.OperationalError as e:
@@ -252,7 +253,6 @@ class DSRocketMapIVMysql():
 
         except Exception as e:
             LOGGER.error('add_new_raid: %s' % (repr(e)))
-
 
     def __connect(self):
         self.con = pymysql.connect(

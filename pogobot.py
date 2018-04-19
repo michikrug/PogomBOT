@@ -15,7 +15,7 @@ import logging
 import os
 import sys
 import threading
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 import googlemaps
 from geopy.distance import vincenty
@@ -1539,7 +1539,7 @@ def enter_raid_time(bot, update, user_data):
     pref = prefs.get(update.message.chat_id)
     set_lang(pref.get('language'))
     try:
-        user_data['time'] = datetime.strptime(datetime.now().strftime("%d %m %Y ") + update.message.text, "%d %m %Y %H:%M")
+        user_data['time'] = datetime.strptime(datetime.now().strftime("%d %m %Y") + update.message.text, "%d %m %Y %H:%M")
     except Exception as e:
         LOGGER.error(repr(e))
         update.message.reply_text(_('Please enter the start time of the raid (Format: hh:mm):'))
@@ -1547,9 +1547,7 @@ def enter_raid_time(bot, update, user_data):
     update.message.reply_text(_('*Raid start time: %s*') % user_data['time'].strftime("%H:%M am %d.%m.%Y"), parse_mode='Markdown')
     bot.sendMessage(update.message.chat_id, text=_('Thanks!'))
 
-    spawn = user_data['time'] - timedelta(hours=1)
-    end = user_data['time'] + timedelta(minutes=45)
-    data_source.add_new_raid(user_data['gym'], user_data['level'], spawn, user_data['time'], end, user_data['pkm'])
+    data_source.add_new_raid(user_data['gym'], user_data['level'], user_data['time'].astimezone(timezone.utc), user_data['pkm'])
 
     user_data.clear()
     return ConversationHandler.END
