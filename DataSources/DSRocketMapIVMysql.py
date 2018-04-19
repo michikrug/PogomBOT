@@ -224,7 +224,7 @@ class DSRocketMapIVMysql():
         return gym_list
 
     def add_new_raid(self, gym_id, level, spawn, start, end, pokemon_id):
-        sql_query = ("INSERT INTO `raid` (`gym_id`, `level`, `spawn`, `start`, `end`, `pokemon_id`, `last_scanned`) "
+        sql_query = ("REPLACE INTO `raid` (`gym_id`, `level`, `spawn`, `start`, `end`, `pokemon_id`, `last_scanned`) "
                      "VALUES (%s, %s, %s, %s, %s, %s, %s)")
 
         try:
