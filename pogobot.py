@@ -1527,7 +1527,7 @@ def cb_raid_gym(bot, update, user_data):
     pref = prefs.get(query.message.chat_id)
     set_lang(pref.get('language'))
 
-    user_data['gym'] = int(update.callback_query.data[8:])
+    user_data['gym'] = update.callback_query.data[8:]
     query.answer()
     gyms = data_source.get_gyms_by_name(gym_name=user_data['gym'], use_id=True)
     query.edit_message_text(_('*Raid gym: %s*') % gyms[0].get_name(), parse_mode='Markdown')
