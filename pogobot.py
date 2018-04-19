@@ -15,15 +15,17 @@ import logging
 import os
 import sys
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import googlemaps
 from geopy.distance import vincenty
 from geopy.geocoders import Nominatim
 from geopy.point import Point
-from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters, Job, MessageHandler,
-                          Updater)
+from telegram import (Bot, InlineKeyboardButton, InlineKeyboardMarkup,
+                      ReplyKeyboardMarkup)
+from telegram.ext import (CallbackQueryHandler, CommandHandler,
+                          ConversationHandler, Filters, Job, MessageHandler,
+                          RegexHandler, Updater)
 
 import DataSources
 import Preferences
@@ -95,12 +97,11 @@ pokemon_rarity = [[], [
     "230", "233", "235", "236", "238", "239", "240", "243", "244", "245", "249", "250", "251"
 ]]
 
-raid_levels = [[],
-               ["129", "153", "156", "159"],
-               ["89", "103", "110", "125", "126"],
-               ["59", "65", "68", "94", "134", "135", "136"],
-               ["3", "6", "9", "112", "131", "143", "248"],
-               ["144", "145", "146", "150", "151", "243", "244", "245", "249", "250", "251"]]
+raid_levels = [[], ["361", "355", "353", "333", "129"], ["303", "302", "215", "200", "103"],
+               ["221", "210", "127", "124", "94", "68"], ["365", "359", "306", "248",
+                                                          "229"], ["381", "380", "150"]]
+
+CHOOSE_LEVEL, CHOOSE_PKM, CHOOSE_GYM, CHOOSE_GYM_SEARCH, CHOOSE_TIME = range(5)
 
 
 def set_lang(lang):
@@ -255,7 +256,13 @@ def default_settings_cmd(bot, update, args, setting, data_type=None, valid_optio
         bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/' + setting))
 
 
-def default_pkm_settings_cmd(bot, update, args, setting, data_type=None, valid_options=None, reset=False):
+def default_pkm_settings_cmd(bot,
+                             update,
+                             args,
+                             setting,
+                             data_type=None,
+                             valid_options=None,
+                             reset=False):
     if not default_cmd(bot, update, setting):
         return
 
@@ -454,13 +461,14 @@ def print_gym(bot, chat_id, gym):
     bot.sendVenue(chat_id, gym.get_latitude(), gym.get_longitude(), gym.get_name(), dist)
 
 
-def cb_button(bot, update):
+def cb_find_gym(bot, update):
     query = update.callback_query
     chat_id = query.message.chat_id
-    gyms = data_source.get_gyms_by_name(gym_name=query.data, use_id=True)
+    gyms = data_source.get_gyms_by_name(gym_name=query.data[10:], use_id=True)
     if gyms:
         print_gym(bot, chat_id, gyms[0])
     bot.delete_message(chat_id=chat_id, message_id=query.message.message_id)
+    query.answer()
 
 
 def cmd_find_gym(bot, update, args):
@@ -489,7 +497,7 @@ def cmd_find_gym(bot, update, args):
             keyboard = []
             for gym in gyms:
                 keyboard.append(
-                    [InlineKeyboardButton(gym.get_name(), callback_data=gym.get_gym_id())])
+                    [InlineKeyboardButton(gym.get_name(), callback_data='gymsearch_' + gym.get_gym_id())])
 
             update.message.reply_text(
                 _('Multiple gyms were found. Please choose one of the following:'),
@@ -1449,6 +1457,109 @@ def get_walking_data(user_location, lat, lng):
         LOGGER.error('Encountered error while getting walking data (%s)' % (repr(e)))
     return data
 
+# Raid enter
+def enter_raid_level(bot, update, user_data):
+    default_cmd(bot, update, 'enter_raid_level')
+    reply_keyboard = [
+        [
+            InlineKeyboardButton('⭐', callback_data='raidlevel_1'),
+            InlineKeyboardButton('⭐⭐', callback_data='raidlevel_2'),
+            InlineKeyboardButton('⭐⭐⭐', callback_data='raidlevel_3')
+        ],
+        [
+            InlineKeyboardButton('⭐⭐⭐⭐', callback_data='raidlevel_4'),
+            InlineKeyboardButton('⭐⭐⭐⭐⭐', callback_data='raidlevel_5')
+        ]
+    ]
+    markup = InlineKeyboardMarkup(reply_keyboard)
+    update.message.reply_text(_('Please choose the raid level:'), reply_markup=markup)
+    return CHOOSE_LEVEL
+
+
+def cb_raid_level(bot, update, user_data):
+    query = update.callback_query
+    pref = prefs.get(query.message.chat_id)
+    set_lang(pref.get('language'))
+
+    user_data['level'] = int(update.callback_query.data[10:])
+    query.answer()
+    query.edit_message_text(_('*Raid level: %s*') % user_data['level'], parse_mode='Markdown')
+    reply_keyboard = []
+    for pkm_id in raid_levels[user_data['level']]:
+        reply_keyboard.append(
+            [InlineKeyboardButton(pokemon_name[pref.get('language')][pkm_id], callback_data='raidpkm_' + pkm_id)])
+    markup = InlineKeyboardMarkup(reply_keyboard)
+    query.message.reply_text(_('Please choose the raid boss:'), reply_markup=markup)
+    return CHOOSE_PKM 
+
+
+def cb_raid_pkm(bot, update, user_data):
+    query = update.callback_query
+    pref = prefs.get(query.message.chat_id)
+    set_lang(pref.get('language'))
+
+    user_data['pkm'] = update.callback_query.data[8:]
+    query.answer()
+    query.edit_message_text(_('*Raid boss: %s*') % pokemon_name[pref.get('language')][user_data['pkm']], parse_mode='Markdown')
+    query.message.reply_text(_('Please enter the gym name:'))
+    return CHOOSE_GYM
+
+
+def enter_raid_gym_search(bot, update, user_data):
+    pref = prefs.get(update.message.chat_id)
+    set_lang(pref.get('language'))
+    gyms = data_source.get_gyms_by_name(gym_name=update.message.text)
+    if len(gyms) >= 1:
+        reply_keyboard = []
+        for gym in gyms:
+            reply_keyboard.append(
+                [InlineKeyboardButton(gym.get_name(), callback_data='raidgym_' + gym.get_gym_id())])
+        markup = InlineKeyboardMarkup(reply_keyboard)
+        update.message.reply_text(_('Please select the matching gym:'), reply_markup=markup)
+        return CHOOSE_GYM_SEARCH
+
+    update.message.reply_text(_('No gym with this name could be found. Please try again.'))
+    return CHOOSE_GYM
+
+
+def cb_raid_gym(bot, update, user_data):
+    query = update.callback_query
+    pref = prefs.get(query.message.chat_id)
+    set_lang(pref.get('language'))
+
+    user_data['gym'] = int(update.callback_query.data[8:])
+    query.answer()
+    gyms = data_source.get_gyms_by_name(gym_name=user_data['gym'], use_id=True)
+    query.edit_message_text(_('*Raid gym: %s*') % gyms[0].get_name(), parse_mode='Markdown')
+    query.message.reply_text(_('Please enter the start time of the raid (Format: hh:mm):'))
+    return CHOOSE_TIME
+
+
+def enter_raid_time(bot, update, user_data):
+    pref = prefs.get(update.message.chat_id)
+    set_lang(pref.get('language'))
+    try:
+        user_data['time'] = datetime.strptime(datetime.now().strftime("%d %m %Y ") + update.message.text, "%d %m %Y %H:%M")
+    except Exception as e:
+        LOGGER.error(repr(e))
+        update.message.reply_text(_('Please enter the start time of the raid (Format: hh:mm):'))
+        return CHOOSE_TIME
+    update.message.reply_text(_('*Raid start time: %s*') % user_data['time'].strftime("%H:%M am %d.%m.%Y"), parse_mode='Markdown')
+    bot.sendMessage(update.message.chat_id, text=_('Thanks!'))
+
+    spawn = user_data['time'] - timedelta(hours=1)
+    end = user_data['time'] + timedelta(minutes=45)
+    data_source.add_new_raid(user_data['gym'], user_data['level'], spawn, user_data['time'], end, user_data['pkm'])
+
+    user_data.clear()
+    return ConversationHandler.END
+
+
+def enter_raid_cancel(bot, update, user_data):
+    user_data.clear()
+    update.message.reply_text(_('Alright. See you later.'))
+    return ConversationHandler.END
+
 
 def main():
     LOGGER.info('Starting...')
@@ -1524,7 +1635,6 @@ def main():
     dp.add_handler(CommandHandler('radius', cmd_radius, pass_args=True))
     dp.add_handler(CommandHandler('location', cmd_location_str, pass_args=True))
     dp.add_handler(CommandHandler('removelocation', cmd_remove_location))
-    dp.add_handler(MessageHandler(Filters.location, cmd_location))
     dp.add_handler(CommandHandler('wladd', cmd_add_to_whitelist, pass_args=True))
     dp.add_handler(CommandHandler('wlrem', cmd_rem_from_whitelist, pass_args=True))
     dp.add_handler(CommandHandler('stickers', cmd_stickers, pass_args=True))
@@ -1548,8 +1658,35 @@ def main():
     dp.add_handler(CommandHandler('resetpkmmatchmode', cmd_pkm_matchmode_reset, pass_args=True))
     dp.add_handler(CommandHandler('sendwithout', cmd_send_without, pass_args=True))
     dp.add_handler(CommandHandler(['wo', 'where'], cmd_find_gym, pass_args=True))
+
+    conv_handler = ConversationHandler(
+        entry_points=[
+            CommandHandler(['newraid', 'neuerraid'], enter_raid_level, pass_user_data=True)
+        ],
+        states={
+            CHOOSE_LEVEL: [
+                CallbackQueryHandler(cb_raid_level, pattern='^raidlevel_(.*)$', pass_user_data=True)
+            ],
+            CHOOSE_PKM: [
+                CallbackQueryHandler(cb_raid_pkm, pattern='^raidpkm_(.*)$', pass_user_data=True)
+            ],
+            CHOOSE_GYM: [
+                MessageHandler(Filters.text, enter_raid_gym_search, pass_user_data=True)
+            ],
+            CHOOSE_GYM_SEARCH: [
+                CallbackQueryHandler(cb_raid_gym, pattern='^raidgym_(.*)$', pass_user_data=True)
+            ],
+            CHOOSE_TIME: [
+                MessageHandler(Filters.text, enter_raid_time, pass_user_data=True)
+            ]
+        },
+        fallbacks=[RegexHandler('^(Cancel|Abbruch)$', enter_raid_cancel, pass_user_data=True)])
+    dp.add_handler(conv_handler)
+
+    dp.add_handler(MessageHandler(Filters.location, cmd_location))
     dp.add_handler(MessageHandler(Filters.command, cmd_unknown))
-    dp.add_handler(CallbackQueryHandler(cb_button))
+
+    dp.add_handler(CallbackQueryHandler(cb_find_gym, pattern='^gymsearch_(.*)$'))
 
     # log all errors
     dp.add_error_handler(handle_error)
