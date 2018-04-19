@@ -1539,7 +1539,7 @@ def enter_raid_time(bot, update, user_data):
     pref = prefs.get(update.message.chat_id)
     set_lang(pref.get('language'))
     try:
-        user_data['time'] = datetime.strptime(datetime.now().strftime("%d %m %Y") + update.message.text, "%d %m %Y %H:%M")
+        user_data['time'] = datetime.strptime(datetime.now().strftime("%d %m %Y ") + update.message.text, "%d %m %Y %H:%M")
     except Exception as e:
         LOGGER.error(repr(e))
         update.message.reply_text(_('Please enter the start time of the raid (Format: hh:mm):'))
