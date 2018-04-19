@@ -139,10 +139,13 @@ class DSRocketMapIVMysql():
             if e.args[0] == 2006:
                 self.__reconnect()
             else:
-                LOGGER.error(e)
+                LOGGER.error('__execute_pokemon_query: %s' % (repr(e)))
+
+        except pymysql.err.InterfaceError:
+            self.__reconnect()
 
         except Exception as e:
-            LOGGER.error('executePokemonQuery: %s' % (repr(e)))
+            LOGGER.error('__execute_pokemon_query: %s' % (repr(e)))
 
         return poke_list
 
@@ -174,10 +177,13 @@ class DSRocketMapIVMysql():
             if e.args[0] == 2006:
                 self.__reconnect()
             else:
-                LOGGER.error(e)
+                LOGGER.error('get_raids_by_list: %s' % (repr(e)))
+
+        except pymysql.err.InterfaceError:
+            self.__reconnect()
 
         except Exception as e:
-            LOGGER.error('executeRaidQuery: %s' % (repr(e)))
+            LOGGER.error('get_raids_by_list: %s' % (repr(e)))
 
         return raid_list
 
@@ -206,7 +212,10 @@ class DSRocketMapIVMysql():
             if e.args[0] == 2006:
                 self.__reconnect()
             else:
-                LOGGER.error(e)
+                LOGGER.error('get_gyms_by_name: %s' % (repr(e)))
+
+        except pymysql.err.InterfaceError:
+            self.__reconnect()
 
         except Exception as e:
             LOGGER.error('get_gyms_by_name: %s' % (repr(e)))
