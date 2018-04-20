@@ -431,10 +431,10 @@ def cmd_clear(bot, update):
 
 
 def cmd_location(bot, update):
-    if not default_cmd(bot, update, 'location'):
+    chat_id = update.message.chat_id
+    if chat_id < 0 or not default_cmd(bot, update, 'location'):
         return
 
-    chat_id = update.message.chat_id
     pref = prefs.get(chat_id)
     user_location = update.message.location
     set_user_location(chat_id, user_location.latitude, user_location.longitude,
