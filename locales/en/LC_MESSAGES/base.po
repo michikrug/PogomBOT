@@ -657,3 +657,6 @@ msgstr ""
 
 msgid "Alright. See you later."
 msgstr ""
+
+msgid "Not hatched yet"
+msgstr ""

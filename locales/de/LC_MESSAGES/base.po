@@ -657,3 +657,6 @@ msgstr "Danke schön!"
 
 msgid "Alright. See you later."
 msgstr "Alles klar. Bis bald."
+
+msgid "Not hatched yet"
+msgstr "Noch nicht geschlüpft"
