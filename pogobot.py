@@ -1500,7 +1500,7 @@ def cb_raid_pkm(bot, update, user_data):
     set_lang(pref.get('language'))
 
     user_data['pkm'] = update.callback_query.data[8:]
-    if (user_data['pkm'] == '0'):
+    if user_data['pkm'] == '0':
         user_data['pkm'] = None
         query.edit_message_text(_('*Raid boss: %s*') % _('Not hatched yet'), parse_mode='Markdown')
     else:
@@ -1512,6 +1512,8 @@ def cb_raid_pkm(bot, update, user_data):
 
 
 def enter_raid_gym_search(bot, update, user_data):
+    if update.message.text == 'Abbruch' or update.message.text == 'Cancel':
+        return enter_raid_cancel(bot, update, user_data)
     pref = prefs.get(update.message.chat_id)
     set_lang(pref.get('language'))
     gyms = data_source.get_gyms_by_name(gym_name=update.message.text)
@@ -1542,6 +1544,8 @@ def cb_raid_gym(bot, update, user_data):
 
 
 def enter_raid_time(bot, update, user_data):
+    if update.message.text == 'Abbruch' or update.message.text == 'Cancel':
+        return enter_raid_cancel(bot, update, user_data)
     pref = prefs.get(update.message.chat_id)
     set_lang(pref.get('language'))
     try:
