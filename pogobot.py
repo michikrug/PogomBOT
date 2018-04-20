@@ -455,10 +455,10 @@ def print_gym(bot, chat_id, gym):
     set_lang(pref.get('language'))
     user_location = pref.get('location')
     if chat_id < 0 or user_location[0] is None:
-        dist = ''
+        addr = '%f, %f' % (gym.get_latitude(), gym.get_longitude())
     else:
-        dist = _('Distance: %.2fkm') % (gym.get_distance(user_location))
-    bot.sendVenue(chat_id, gym.get_latitude(), gym.get_longitude(), gym.get_name(), dist)
+        addr = _('Distance: %.2fkm') % (gym.get_distance(user_location))
+    bot.sendVenue(chat_id, gym.get_latitude(), gym.get_longitude(), gym.get_name(), addr)
 
 
 def cb_find_gym(bot, update):
@@ -1485,6 +1485,7 @@ def cb_raid_level(bot, update, user_data):
     query.answer()
     query.edit_message_text(_('*Raid level: %s*') % user_data['level'], parse_mode='Markdown')
     reply_keyboard = []
+    reply_keyboard.append([InlineKeyboardButton(_('Not hatched yet'), callback_data='raidpkm_0')])
     for pkm_id in raid_levels[user_data['level']]:
         reply_keyboard.append(
             [InlineKeyboardButton(pokemon_name[pref.get('language')][pkm_id], callback_data='raidpkm_' + pkm_id)])
@@ -1499,8 +1500,13 @@ def cb_raid_pkm(bot, update, user_data):
     set_lang(pref.get('language'))
 
     user_data['pkm'] = update.callback_query.data[8:]
+    if (user_data['pkm'] == '0'):
+        user_data['pkm'] = None
+        query.edit_message_text(_('*Raid boss: %s*') % _('Not hatched yet'), parse_mode='Markdown')
+    else:
+        query.edit_message_text(_('*Raid boss: %s*') % pokemon_name[pref.get('language')][user_data['pkm']], parse_mode='Markdown')
+
     query.answer()
-    query.edit_message_text(_('*Raid boss: %s*') % pokemon_name[pref.get('language')][user_data['pkm']], parse_mode='Markdown')
     query.message.reply_text(_('Please enter the gym name:'))
     return CHOOSE_GYM
 
