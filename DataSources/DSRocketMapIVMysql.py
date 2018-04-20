@@ -228,6 +228,7 @@ class DSRocketMapIVMysql():
         sql_query = (
             "REPLACE INTO `raid` (`gym_id`, `level`, `spawn`, `start`, `end`, `pokemon_id`, `last_scanned`) "
             "VALUES (%s, %s, %s, %s, %s, %s, %s)")
+        sql_query2 = ("UPDATE `gym` SET `last_scanned`=%s WHERE `gym_id`=%s")
 
         try:
             with self.con.cursor() as cur:
@@ -240,6 +241,7 @@ class DSRocketMapIVMysql():
                      end.strftime('%Y-%m-%d %H:%M:%S'),
                      pokemon_id,
                      datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')))
+                cur.execute(sql_query2, (datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), gym_id))
             self.con.commit()
 
         except pymysql.err.OperationalError as e:
