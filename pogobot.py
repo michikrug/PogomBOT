@@ -479,11 +479,11 @@ def cmd_find_gym(bot, update, args):
         pref = prefs.get(chat_id)
         set_lang(pref.get('language'))
 
-    if len(args) < 1:
-        bot.delete_message(chat_id=chat_id, message_id=update.message.message_id)
-        return
-
     try:
+        if len(args) < 1:
+            bot.delete_message(chat_id=chat_id, message_id=update.message.message_id)
+            return
+
         gym_name = ' '.join(args).lower()
         LOGGER.info('[%s@%s] Searching for gym: %s' % (user_name, chat_id, gym_name))
 
@@ -1458,7 +1458,6 @@ def get_walking_data(user_location, lat, lng):
     return data
 
 
-# Raid enter
 def enter_raid_level(bot, update, user_data):
     default_cmd(bot, update, 'enter_raid_level')
     reply_keyboard = [[
