@@ -15,7 +15,7 @@ import logging
 import os
 import sys
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import googlemaps
 from geopy.distance import vincenty
@@ -1287,6 +1287,9 @@ def send_one_raid(chat_id, raid):
 
         delta = end - datetime.utcnow()
         deltaStr = '%02dh %02dm' % (int(delta.seconds / 3600), int((delta.seconds / 60) % 60))
+
+        start_time_str = (end - timedelta(minutes=45)).replace(tzinfo=timezone.utc).astimezone(
+            tz=None).strftime('%H:%M:%S')
         disappear_time_str = end.replace(tzinfo=timezone.utc).astimezone(
             tz=None).strftime('%H:%M:%S')
 
@@ -1318,7 +1321,7 @@ def send_one_raid(chat_id, raid):
         if cp is not None:
             title += ' ' + (_('%dCP') % cp)
 
-        address = '📍 %s\n💨 %s ⏱ %s' % (name, disappear_time_str, deltaStr)
+        address = '📍 %s\n🥚 %s 💨 %s ⏱ %s' % (name, start_time_str, disappear_time_str, deltaStr)
 
         if location_data[0] is not None:
             if pref.get('walkdist'):
@@ -1659,8 +1662,8 @@ def main():
     dp.add_handler(CommandHandler('walkdist', cmd_walk_dist, pass_args=True))
     #dp.add_handler(CommandHandler('pkmradius', cmd_pkm_radius, pass_args=True))
     #dp.add_handler(CommandHandler('resetpkmradius', cmd_pkm_radius_reset, pass_args=True))
-    #dp.add_handler(CommandHandler('raidradius', cmd_raid_radius, pass_args=True))
-    #dp.add_handler(CommandHandler('resetraidradius', cmd_raid_radius_reset, pass_args=True))
+    dp.add_handler(CommandHandler('raidradius', cmd_raid_radius, pass_args=True))
+    dp.add_handler(CommandHandler('resetraidradius', cmd_raid_radius_reset, pass_args=True))
     #dp.add_handler(CommandHandler('iv', cmd_iv, pass_args=True))
     #dp.add_handler(CommandHandler(['cp', 'wp'], cmd_cp, pass_args=True))
     #dp.add_handler(CommandHandler('level', cmd_level, pass_args=True))
