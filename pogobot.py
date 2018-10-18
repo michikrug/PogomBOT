@@ -133,26 +133,27 @@ def cmd_help(bot, update):
     _("/clear") + " - "  + _("Resets all your settings") + "\n" + \
     _("/help") + " - "  + _("Shows a list of available commands") + "\n" + \
     _("/where") + " - "  + _("Searches for a gym by name and outputs its location") + "\n\n" + \
-    _("*Pokémon filter*") + "\n" + \
-    _("/add pokedexID") + " - "  + _("Adds Pokémon with the given ID to the scanner") + "\n" + \
-    _("/add pokedexID1 pokedexID2 ...") + "\n" + \
-    _("/addbyrarity 1-5") + " - "  + _("Adds Pokémon with the given rarity to scanner (1 very common - 5 ultrarare)") + "\n" + \
-    _("/remove pokedexID") + " - "  + _("Removes Pokémon with the given ID from the scanner") + "\n" + \
-    _("/remove pokedexID1 pokedexID2 ...") + "\n" + \
+    #_("*Pokémon filter*") + "\n" + \
+    #_("/add pokedexID") + " - "  + _("Adds Pokémon with the given ID to the scanner") + "\n" + \
+    #_("/add pokedexID1 pokedexID2 ...") + "\n" + \
+    #_("/addbyrarity 1-5") + " - "  + _("Adds Pokémon with the given rarity to scanner (1 very common - 5 ultrarare)") + "\n" + \
+    #_("/remove pokedexID") + " - "  + _("Removes Pokémon with the given ID from the scanner") + "\n" + \
+    #_("/remove pokedexID1 pokedexID2 ...") + "\n" + \
     _("/list") + " - "  + _("Lists the watched Pokémon and Raid Pokémon") + "\n" + \
-    _("/iv") + " - "  + _("Sets the minimum IVs given as percent") + "\n" +\
-    _("/cp") + " - "  + _("Sets the minimum CP") + "\n" +\
-    _("/level") + " - "  + _("Sets the minimum level") + "\n" +\
-    _("/pkmiv") + " - "  + _("Sets the minimum IVs for a specific Pokémon given as percent") + "\n" +\
-    _("/resetpkmiv") + " - "  + _("Resets the minimum IVs for a specific Pokémon") + "\n" +\
-    _("/pkmcp") + " - "  + _("Sets the minimum CP for a specific Pokémon") + "\n" +\
-    _("/resetpkmcp") + " - "  + _("Resets the minimum CP for a specific Pokémon") + "\n" +\
-    _("/pkmlevel") + " - "  + _("Sets the minimum level for a specific Pokémon") + "\n" +\
-    _("/resetpkmlevel") + " - "  + _("Resets the minimum level for a specific Pokémon") + "\n" +\
-    _("/matchmode") + " - "  + _("Sets the match mode (0) Distance AND IVs AND CP AND level / (1) Distance AND IVs OR CP OR level has to match / (2) Distance OR IVs OR CP OR level has to match") + "\n" +\
-    _("/pkmmatchmode") + " - "  + _("Set the match mode for a specific Pokémon") + "n" +\
-    _("/resetpkmmatchmode") + " - "  + _("Reset the match mode for a specific Pokémon") + "\n\n" +\
+    #_("/iv") + " - "  + _("Sets the minimum IVs given as percent") + "\n" +\
+    #_("/cp") + " - "  + _("Sets the minimum CP") + "\n" +\
+    #_("/level") + " - "  + _("Sets the minimum level") + "\n" +\
+    #_("/pkmiv") + " - "  + _("Sets the minimum IVs for a specific Pokémon given as percent") + "\n" +\
+    #_("/resetpkmiv") + " - "  + _("Resets the minimum IVs for a specific Pokémon") + "\n" +\
+    #_("/pkmcp") + " - "  + _("Sets the minimum CP for a specific Pokémon") + "\n" +\
+    #_("/resetpkmcp") + " - "  + _("Resets the minimum CP for a specific Pokémon") + "\n" +\
+    #_("/pkmlevel") + " - "  + _("Sets the minimum level for a specific Pokémon") + "\n" +\
+    #_("/resetpkmlevel") + " - "  + _("Resets the minimum level for a specific Pokémon") + "\n" +\
+    #_("/matchmode") + " - "  + _("Sets the match mode (0) Distance AND IVs AND CP AND level / (1) Distance AND IVs OR CP OR level has to match / (2) Distance OR IVs OR CP OR level has to match") + "\n" +\
+    #_("/pkmmatchmode") + " - "  + _("Set the match mode for a specific Pokémon") + "n" +\
+    #_("/resetpkmmatchmode") + " - "  + _("Reset the match mode for a specific Pokémon") + "\n\n" +\
     _("*Raid filter*") + "\n" + \
+    _("/newraid") + " - " + _("Adds a new Raid entry to the database") + "\n" + \
     _("/addraid pokedexID") + " - "  + _("Adds Raid Pokémon with the given ID to the scanner") + "\n" + \
     _("/addraid pokedexID1 pokedexID2 ...") + "\n" + \
     _("/addraidbylevel 1-5") + " - "  + _("Adds Raid Pokémon with the given level to scanner (1-5)") + "\n" + \
@@ -162,12 +163,12 @@ def cmd_help(bot, update):
     _("/location address") + " - "  + _("Sets the desired search location given as text") + "\n" +\
     _("/radius km") + " - "  + _("Sets the search radius in km") + "\n" +\
     _("/removelocation") + " - "  + _("Clears the search location and radius") + "\n" +\
-    _("/pkmradius") + " - "  + _("Sets the search radius for a specific Pokémon in km") + "\n" +\
-    _("/resetpkmradius") + " - "  + _("Resets the search radius for a specific Pokémon") + "\n" +\
+    #_("/pkmradius") + " - "  + _("Sets the search radius for a specific Pokémon in km") + "\n" +\
+    #_("/resetpkmradius") + " - "  + _("Resets the search radius for a specific Pokémon") + "\n" +\
     _("/raidradius") + " - "  + _("Sets the search radius for a specific Raid Pokémon in km") + "\n" +\
     _("/resetraidradius") + " - "  + _("Resets the search radius for a specific Raid Pokémon") + "\n\n" +\
     _("*Notification settings*") + "\n" + \
-    _("/sendwithout") + " - "  + _("Defines if Pokémon without IV/CP should be sent") + "\n" +\
+    #_("/sendwithout") + " - "  + _("Defines if Pokémon without IV/CP should be sent") + "\n" +\
     _("/stickers") + " - "  + _("Defines if stickers should be sent") + "\n" +\
     _("/maponly") + " - "  + _("Defines if only a map should be sent (without an additional message/sticker)") + "\n\n" +\
     _("Hint: You can also set the scanning location by just sending a location marker")
@@ -722,37 +723,37 @@ def cmd_list(bot, update):
 
     try:
         lan = pref.get('language')
-        dists = pref.get('pkmradius', {})
-        minivs = pref.get('pkmiv', {})
-        mincps = pref.get('pkmcp', {})
-        minlevels = pref.get('pkmlevel', {})
-        matchmodes = pref.get('pkmmatchmode', {})
+        #dists = pref.get('pkmradius', {})
+        #minivs = pref.get('pkmiv', {})
+        #mincps = pref.get('pkmcp', {})
+        #minlevels = pref.get('pkmlevel', {})
+        #matchmodes = pref.get('pkmmatchmode', {})
         user_location = pref.get('location')
-        if user_location[0] is None:
-            tmp = _('*List of watched Pokémon:*') + '\n'
-        else:
-            tmp = _('*List of watched Pokémon within a radius of %.2fkm:*') % (user_location[2]) + '\n'
-        for x in pref.get('pkmids', []):
-            pkm_id = str(x)
-            tmp += '%s %s' % (pkm_id, pokemon_name[lan][pkm_id])
-            if pkm_id in dists:
-                tmp += ' %.2fkm' % (dists[pkm_id])
-            if pkm_id in minivs:
-                tmp += ' %d%%' % (minivs[pkm_id])
-            if pkm_id in mincps:
-                tmp += ' ' + _('%dCP') % (mincps[pkm_id])
-            if pkm_id in minlevels:
-                tmp += ' L%d' % (minlevels[pkm_id])
-            if pkm_id in matchmodes:
-                if matchmodes[pkm_id] == 0:
-                    tmp += ' ' + _('AND')
-                if matchmodes[pkm_id] == 1:
-                    tmp += ' ' + _('OR1')
-                if matchmodes[pkm_id] == 2:
-                    tmp += ' ' + _('OR2')
-            tmp += '\n'
+        #if user_location[0] is None:
+        #    tmp = _('*List of watched Pokémon:*') + '\n'
+        #else:
+        #    tmp = _('*List of watched Pokémon within a radius of %.2fkm:*') % (user_location[2]) + '\n'
+        #for x in pref.get('pkmids', []):
+        #    pkm_id = str(x)
+        #    tmp += '%s %s' % (pkm_id, pokemon_name[lan][pkm_id])
+        #    if pkm_id in dists:
+        #        tmp += ' %.2fkm' % (dists[pkm_id])
+        #    if pkm_id in minivs:
+        #        tmp += ' %d%%' % (minivs[pkm_id])
+        #    if pkm_id in mincps:
+        #        tmp += ' ' + _('%dCP') % (mincps[pkm_id])
+        #    if pkm_id in minlevels:
+        #        tmp += ' L%d' % (minlevels[pkm_id])
+        #    if pkm_id in matchmodes:
+        #        if matchmodes[pkm_id] == 0:
+        #            tmp += ' ' + _('AND')
+        #        if matchmodes[pkm_id] == 1:
+        #            tmp += ' ' + _('OR1')
+        #        if matchmodes[pkm_id] == 2:
+        #            tmp += ' ' + _('OR2')
+        #    tmp += '\n'
 
-        tmp += '\n'
+        tmp = ''
         if user_location[0] is None:
             tmp += _('*List of watched Raid Pokémon:*') + '\n'
         else:
@@ -1030,7 +1031,8 @@ def check_and_send(bot, chat_id):
     try:
         pref = prefs.get(chat_id)
         set_lang(pref.get('language'))
-        pokemons = pref.get('pkmids', [])
+        #pokemons = pref.get('pkmids', [])
+        pokemons = []
         raids = pref.get('raidids', [])
 
         if pokemons:
@@ -1635,10 +1637,10 @@ def main():
     dp.add_handler(CommandHandler('stop', cmd_stop))
     dp.add_handler(CommandHandler('help', cmd_help))
     dp.add_handler(CommandHandler('clear', cmd_clear))
-    dp.add_handler(CommandHandler('add', cmd_add, pass_args=True, pass_job_queue=True))
-    dp.add_handler(
-        CommandHandler('addbyrarity', cmd_add_by_rarity, pass_args=True, pass_job_queue=True))
-    dp.add_handler(CommandHandler('remove', cmd_remove, pass_args=True))
+    #dp.add_handler(CommandHandler('add', cmd_add, pass_args=True, pass_job_queue=True))
+    #dp.add_handler(
+    #    CommandHandler('addbyrarity', cmd_add_by_rarity, pass_args=True, pass_job_queue=True))
+    #dp.add_handler(CommandHandler('remove', cmd_remove, pass_args=True))
     dp.add_handler(CommandHandler('addraid', cmd_add_raid, pass_args=True, pass_job_queue=True))
     dp.add_handler(
         CommandHandler(
@@ -1654,23 +1656,23 @@ def main():
     dp.add_handler(CommandHandler('stickers', cmd_stickers, pass_args=True))
     dp.add_handler(CommandHandler('maponly', cmd_map_only, pass_args=True))
     dp.add_handler(CommandHandler('walkdist', cmd_walk_dist, pass_args=True))
-    dp.add_handler(CommandHandler('pkmradius', cmd_pkm_radius, pass_args=True))
-    dp.add_handler(CommandHandler('resetpkmradius', cmd_pkm_radius_reset, pass_args=True))
-    dp.add_handler(CommandHandler('raidradius', cmd_raid_radius, pass_args=True))
-    dp.add_handler(CommandHandler('resetraidradius', cmd_raid_radius_reset, pass_args=True))
-    dp.add_handler(CommandHandler('iv', cmd_iv, pass_args=True))
-    dp.add_handler(CommandHandler(['cp', 'wp'], cmd_cp, pass_args=True))
-    dp.add_handler(CommandHandler('level', cmd_level, pass_args=True))
-    dp.add_handler(CommandHandler('matchmode', cmd_matchmode, pass_args=True))
-    dp.add_handler(CommandHandler('pkmiv', cmd_pkm_iv, pass_args=True))
-    dp.add_handler(CommandHandler(['pkmcp', 'pkmwp'], cmd_pkm_cp, pass_args=True))
-    dp.add_handler(CommandHandler('pkmlevel', cmd_pkm_level, pass_args=True))
-    dp.add_handler(CommandHandler('pkmmatchmode', cmd_pkm_matchmode, pass_args=True))
-    dp.add_handler(CommandHandler('resetpkmiv', cmd_pkm_iv_reset, pass_args=True))
-    dp.add_handler(CommandHandler(['resetpkmcp', 'resetpkmwp'], cmd_pkm_cp_reset, pass_args=True))
-    dp.add_handler(CommandHandler('resetpkmlevel', cmd_pkm_level_reset, pass_args=True))
-    dp.add_handler(CommandHandler('resetpkmmatchmode', cmd_pkm_matchmode_reset, pass_args=True))
-    dp.add_handler(CommandHandler('sendwithout', cmd_send_without, pass_args=True))
+    #dp.add_handler(CommandHandler('pkmradius', cmd_pkm_radius, pass_args=True))
+    #dp.add_handler(CommandHandler('resetpkmradius', cmd_pkm_radius_reset, pass_args=True))
+    #dp.add_handler(CommandHandler('raidradius', cmd_raid_radius, pass_args=True))
+    #dp.add_handler(CommandHandler('resetraidradius', cmd_raid_radius_reset, pass_args=True))
+    #dp.add_handler(CommandHandler('iv', cmd_iv, pass_args=True))
+    #dp.add_handler(CommandHandler(['cp', 'wp'], cmd_cp, pass_args=True))
+    #dp.add_handler(CommandHandler('level', cmd_level, pass_args=True))
+    #dp.add_handler(CommandHandler('matchmode', cmd_matchmode, pass_args=True))
+    #dp.add_handler(CommandHandler('pkmiv', cmd_pkm_iv, pass_args=True))
+    #dp.add_handler(CommandHandler(['pkmcp', 'pkmwp'], cmd_pkm_cp, pass_args=True))
+    #dp.add_handler(CommandHandler('pkmlevel', cmd_pkm_level, pass_args=True))
+    #dp.add_handler(CommandHandler('pkmmatchmode', cmd_pkm_matchmode, pass_args=True))
+    #dp.add_handler(CommandHandler('resetpkmiv', cmd_pkm_iv_reset, pass_args=True))
+    #dp.add_handler(CommandHandler(['resetpkmcp', 'resetpkmwp'], cmd_pkm_cp_reset, pass_args=True))
+    #dp.add_handler(CommandHandler('resetpkmlevel', cmd_pkm_level_reset, pass_args=True))
+    #dp.add_handler(CommandHandler('resetpkmmatchmode', cmd_pkm_matchmode_reset, pass_args=True))
+    #dp.add_handler(CommandHandler('sendwithout', cmd_send_without, pass_args=True))
     dp.add_handler(CommandHandler(['wo', 'where'], cmd_find_gym, pass_args=True))
 
     conv_handler = ConversationHandler(
