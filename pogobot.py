@@ -133,13 +133,31 @@ def cmd_help(bot, update):
     _("/clear") + " - "  + _("Resets all your settings") + "\n" + \
     _("/help") + " - "  + _("Shows a list of available commands") + "\n" + \
     _("/where") + " - "  + _("Searches for a gym by name and outputs its location") + "\n\n" + \
+    _("*Raid filter*") + "\n" + \
+    _("/list") + " - "  + _("Lists the watched Raid Pokémon") + "\n" + \
+    _("/newraid") + " - " + _("Adds a new Raid entry to the database") + "\n" + \
+    _("/addraid pokedexID") + " - "  + _("Adds Raid Pokémon with the given ID to the scanner") + "\n" + \
+    _("/addraid pokedexID1 pokedexID2 ...") + "\n" + \
+    _("/addraidbylevel 1-5") + " - "  + _("Adds Raid Pokémon with the given level to scanner (1-5)") + "\n" + \
+    _("/removeraid pokedexID") + " - "  + _("Removes Raid Pokémon with the given ID from the scanner") + "\n" + \
+    _("/removeraid pokedexID1 pokedexID2 ...") + "\n\n" + \
+    _("*Distance filter*") + "\n" + \
+    _("/location address") + " - "  + _("Sets the desired search location given as text") + "\n" +\
+    _("/radius km") + " - "  + _("Sets the search radius in km") + "\n" +\
+    _("/removelocation") + " - "  + _("Clears the search location and radius") + "\n" +\
+    _("/raidradius") + " - "  + _("Sets the search radius for a specific Raid Pokémon in km") + "\n" +\
+    _("/resetraidradius") + " - "  + _("Resets the search radius for a specific Raid Pokémon") + "\n\n" +\
+    _("*Notification settings*") + "\n" + \
+    _("/stickers") + " - "  + _("Defines if stickers should be sent") + "\n" +\
+    _("/maponly") + " - "  + _("Defines if only a map should be sent (without an additional message/sticker)") + "\n\n" +\
+    _("Hint: You can also set the scanning location by just sending a location marker")
+    
     #_("*Pokémon filter*") + "\n" + \
     #_("/add pokedexID") + " - "  + _("Adds Pokémon with the given ID to the scanner") + "\n" + \
     #_("/add pokedexID1 pokedexID2 ...") + "\n" + \
     #_("/addbyrarity 1-5") + " - "  + _("Adds Pokémon with the given rarity to scanner (1 very common - 5 ultrarare)") + "\n" + \
     #_("/remove pokedexID") + " - "  + _("Removes Pokémon with the given ID from the scanner") + "\n" + \
     #_("/remove pokedexID1 pokedexID2 ...") + "\n" + \
-    _("/list") + " - "  + _("Lists the watched Pokémon and Raid Pokémon") + "\n" + \
     #_("/iv") + " - "  + _("Sets the minimum IVs given as percent") + "\n" +\
     #_("/cp") + " - "  + _("Sets the minimum CP") + "\n" +\
     #_("/level") + " - "  + _("Sets the minimum level") + "\n" +\
@@ -152,26 +170,9 @@ def cmd_help(bot, update):
     #_("/matchmode") + " - "  + _("Sets the match mode (0) Distance AND IVs AND CP AND level / (1) Distance AND IVs OR CP OR level has to match / (2) Distance OR IVs OR CP OR level has to match") + "\n" +\
     #_("/pkmmatchmode") + " - "  + _("Set the match mode for a specific Pokémon") + "n" +\
     #_("/resetpkmmatchmode") + " - "  + _("Reset the match mode for a specific Pokémon") + "\n\n" +\
-    _("*Raid filter*") + "\n" + \
-    _("/newraid") + " - " + _("Adds a new Raid entry to the database") + "\n" + \
-    _("/addraid pokedexID") + " - "  + _("Adds Raid Pokémon with the given ID to the scanner") + "\n" + \
-    _("/addraid pokedexID1 pokedexID2 ...") + "\n" + \
-    _("/addraidbylevel 1-5") + " - "  + _("Adds Raid Pokémon with the given level to scanner (1-5)") + "\n" + \
-    _("/removeraid pokedexID") + " - "  + _("Removes Raid Pokémon with the given ID from the scanner") + "\n" + \
-    _("/removeraid pokedexID1 pokedexID2 ...") + "\n\n" + \
-    _("*Distance filter*") + "\n" + \
-    _("/location address") + " - "  + _("Sets the desired search location given as text") + "\n" +\
-    _("/radius km") + " - "  + _("Sets the search radius in km") + "\n" +\
-    _("/removelocation") + " - "  + _("Clears the search location and radius") + "\n" +\
     #_("/pkmradius") + " - "  + _("Sets the search radius for a specific Pokémon in km") + "\n" +\
     #_("/resetpkmradius") + " - "  + _("Resets the search radius for a specific Pokémon") + "\n" +\
-    _("/raidradius") + " - "  + _("Sets the search radius for a specific Raid Pokémon in km") + "\n" +\
-    _("/resetraidradius") + " - "  + _("Resets the search radius for a specific Raid Pokémon") + "\n\n" +\
-    _("*Notification settings*") + "\n" + \
     #_("/sendwithout") + " - "  + _("Defines if Pokémon without IV/CP should be sent") + "\n" +\
-    _("/stickers") + " - "  + _("Defines if stickers should be sent") + "\n" +\
-    _("/maponly") + " - "  + _("Defines if only a map should be sent (without an additional message/sticker)") + "\n\n" +\
-    _("Hint: You can also set the scanning location by just sending a location marker")
 
     bot.sendMessage(chat_id, text, parse_mode='Markdown')
 
