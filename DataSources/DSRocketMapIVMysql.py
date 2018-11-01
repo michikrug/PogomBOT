@@ -262,7 +262,8 @@ class DSRocketMapIVMysql():
             password=self.__passw,
             host=self.__host,
             port=self.__port,
-            database=self.__db)
+            database=self.__db,
+            autocommit=True)
 
     def __reconnect(self):
         LOGGER.info('Reconnecting to remote database')
