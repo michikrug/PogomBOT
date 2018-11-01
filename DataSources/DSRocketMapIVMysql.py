@@ -156,7 +156,7 @@ class DSRocketMapIVMysql():
                      "start, end, pokemon_id, cp, move_1, move_2 "
                      "FROM raid JOIN gym ON gym.gym_id=raid.gym_id "
                      "JOIN gymdetails ON gym.gym_id=gymdetails.gym_id "
-                     "WHERE raid.last_scanned > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) "
+                     "WHERE raid.last_scanned > (UTC_TIMESTAMP() - INTERVAL 30 MINUTE) "
                      "AND end > UTC_TIMESTAMP()")
         sql_query += " AND (" + " OR ".join(raid_query_parts) + ")"
         sql_query += " ORDER BY end ASC"
