@@ -106,7 +106,7 @@ raid_levels = [[],
 CHOOSE_LEVEL, CHOOSE_PKM, CHOOSE_GYM, CHOOSE_GYM_SEARCH, CHOOSE_TIME = range(5)
 
 sticker_url = binascii.unhexlify(
-    '68747470733a2f2f6d6f6e73746572696d616765732e746b2f76312e352f')
+    '68747470733a2f2f6d6f6e73746572696d616765732e746b2f76312e352f').decode('utf-8')
 
 def get_pkm_sticker(pkm_id):
     return '%stelegram/monsters/%s_000.webp' % (sticker_url, pkm_id.zfill(3))
