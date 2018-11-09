@@ -29,7 +29,6 @@ from telegram.ext import (CallbackQueryHandler, CommandHandler, ConversationHand
 import DataSources
 import Preferences
 import Whitelist
-from Stickers import sticker_list
 
 if sys.version_info[0] < 3:
     raise Exception('Must be using Python 3')
@@ -1360,7 +1359,7 @@ def send_one_raid(chat_id, raid):
         else:
             if pref.get('stickers'):
                 telegram_bot.sendSticker(
-                    chat_id, sticker_list.get(pok_id), disable_notification=True)
+                    chat_id, get_pkm_sticker(pok_id), disable_notification=True)
             telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
             telegram_bot.sendMessage(
                 chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
