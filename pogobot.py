@@ -8,6 +8,7 @@
 
 # /* cSpell:disable */
 
+import binascii
 import fnmatch
 import gettext
 import json
@@ -104,6 +105,11 @@ raid_levels = [[],
 
 CHOOSE_LEVEL, CHOOSE_PKM, CHOOSE_GYM, CHOOSE_GYM_SEARCH, CHOOSE_TIME = range(5)
 
+sticker_url = binascii.unhexlify(
+    '68747470733a2f2f6d6f6e73746572696d616765732e746b2f76312e352f')
+
+def get_pkm_sticker(pkm_id):
+    return "%stelegram/monsters/%s_000.webp" % (sticker_url, str(pok_id).zfill(3))
 
 def set_lang(lang):
     global _
@@ -1230,7 +1236,7 @@ def send_one_poke(chat_id, pokemon):
         else:
             if pref.get('stickers'):
                 telegram_bot.sendSticker(
-                    chat_id, sticker_list.get(pok_id), disable_notification=True)
+                    chat_id, get_pkm_sticker(pok_id), disable_notification=True)
             telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
             telegram_bot.sendMessage(
                 chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
