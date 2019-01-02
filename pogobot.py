@@ -198,10 +198,6 @@ def cmd_help(bot, update):
     _("/removelocation") + " - "  + _("Clears the search location and radius") + "\n" +\
     _("/raidradius") + " - "  + _("Sets the search radius for a specific Raid Pokémon in km") + "\n" +\
     _("/resetraidradius") + " - "  + _("Resets the search radius for a specific Raid Pokémon") + "\n\n" +\
-    _("*Notification settings*") + "\n" + \
-    _("/stickers") + " - "  + _("Defines if stickers should be sent") + "\n" +\
-    _("/maponly") + " - "  + _("Defines if only a map should be sent (without an additional message/sticker)") + "\n\n" +\
-    _("Hint: You can also set the scanning location by just sending a location marker") + "\n\n" + \
     _("*Pokémon filter*") + "\n" + \
     _("/add pokedexID") + " - "  + _("Adds Pokémon with the given ID to the scanner") + "\n" + \
     _("/add pokedexID1 pokedexID2 ...") + "\n" + \
@@ -222,7 +218,11 @@ def cmd_help(bot, update):
     _("/resetpkmmatchmode") + " - "  + _("Reset the match mode for a specific Pokémon") + "\n\n" +\
     _("/pkmradius") + " - "  + _("Sets the search radius for a specific Pokémon in km") + "\n" +\
     _("/resetpkmradius") + " - "  + _("Resets the search radius for a specific Pokémon") + "\n" +\
-    _("/sendwithout") + " - "  + _("Defines if Pokémon without IV/CP should be sent") + "\n" +\
+    _("/sendwithout") + " - "  + _("Defines if Pokémon without IV/CP should be sent") + "\n\n" + \
+    _("*Notification settings*") + "\n" + \
+    _("/stickers") + " - "  + _("Defines if stickers should be sent") + "\n" +\
+    _("/maponly") + " - "  + _("Defines if only a map should be sent (without an additional message/sticker)") + "\n\n" +\
+    _("Hint: You can also set the scanning location by just sending a location marker")
 
     bot.sendMessage(chat_id, text, parse_mode='Markdown')
 
