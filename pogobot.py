@@ -804,7 +804,6 @@ def cmd_list(bot, update):
                     tmp += ' ' + _('OR2')
             tmp += '\n'
 
-        tmp = ''
         if user_location[0] is None:
             tmp += _('*List of watched Raid Pokémon:*') + '\n'
         else:
