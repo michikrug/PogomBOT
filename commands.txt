@@ -1,0 +1,34 @@
+add - Fügt Pokémon mit der gegebenen ID zum Scanner hinzu
+addbyrarity - Fügt Pokémon it der gegebenen Seltenheit zum Scanner hinzu (1 sehr häufig - 5 ultra selten)
+addraid - Fügt Raid-Pokémon mit der gegebenen ID zum Scanner hinzu
+addraidbylevel - Fügt Raid-Pokémon it dem gegebenen Level zum Scanner hinzu (1-5)
+clear - Setzt alle deine Einstellungen zurück
+help - Zeigt eine Liste mit verfügbaren Befehlen
+iv - Setzt den Minimal-IV-Wert in Prozent
+language - Setzt die Sprache des Bots
+level - Setzt das Minimal-Level
+list - Zeigt eine Liste mit den überwachten Pokémon und Raid-Pokémon
+location - Setzt die Suchposition gegeben als Text
+maponly - Legt fest, ob nur eine Karte gesendet werden soll (ohne zusätzliche Nachricht/Sticker)
+matchmode - Legt den Übereinstimmungs-Modus fest (0) Entfernung UND IV- UND WP-Wert UND Level / (1) Entfernung UND IV- ODER WP-Wert ODER Level muss übereinstimmen / (2) Entfernung ODER IV- ODER WP-Wert ODER Level muss übereinstimmen
+pkmiv - Setzt den Minimal-IV-Wert für ein bestimmtes Pokémon in Prozent
+pkmlevel - Setzt das Minimal-Level für ein bestimmtes Pokémon
+pkmmatchmode - Legt den Übereinstimmungs-Modus für ein bestimmtes Pokémon festn/resetpkmmatchmode pokedexID - Setzt den Übereinstimmungs-Modus für ein bestimmtes Pokémon zurück
+pkmradius - Setzt den Suchradius für ein bestimmtes Pokémon in km
+pkmwp - Setzt den Minimal-WP-Wert für ein bestimmtes Pokémon
+radius - Setzt den Suchradius in km
+raidradius - Setzt den Suchradius für ein bestimmtes Raid-Pokémon in km
+remove - Entfernt Pokémon mit der gegebenen ID vom Scanner
+removelocation - Setzt die Suchposition und den Radius zurück
+removeraid - Entfernt Raid-Pokémon mit der gegebenen ID vom Scanner
+resetpkmiv - Resets the minimum IVs for a specific Pokémon
+resetpkmlevel - Setzt das Minimal-Level für ein bestimmtes Pokémon zurück
+resetpkmradius - Setzt den Suchradius für ein bestimmtes Pokémon zurück
+resetpkmwp - Setzt den Minimal-WP-Wert für ein bestimmtes Pokémon zurück
+resetraidradius - Setzt den Suchradius für ein bestimmtes Raid-Pokémon zurück
+sendwithout - Legt fest, ob Pokémon ohne IV/WP-Werte gesendet werden sollen
+start - Startet den Bot (z.B. nach dem Pausieren)
+stickers - Legt fest, ob Sticker gesendet werden sollen
+stop - Pausiert den Bot (nutze /start zum Fortsetzen)
+wo - Sucht nach einer Arena mit dem Name und gibt deren Standort zurück
+wp - Setzt den Minimal-WP-Wert
