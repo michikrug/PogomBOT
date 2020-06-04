@@ -1426,6 +1426,7 @@ def send_one_raid(chat_id, raid):
 
 
 def read_config():
+    global config
     config_path = os.path.join(os.path.dirname(sys.argv[0]), 'config-bot.json')
     LOGGER.info('Reading config: <%s>' % config_path)
 
@@ -1631,6 +1632,10 @@ def main():
         if fnmatch.fnmatch(file, 'moves.*.json'):
             read_move_names(file.split('.')[1])
 
+    global data_source
+    global webhook_enabled
+    global iv_available
+
     db_type = config.get('DB_TYPE', None)
     scanner_name = config.get('SCANNER_NAME', None)
 
@@ -1648,17 +1653,20 @@ def main():
         raise Exception('The combination SCANNER_NAME, DB_TYPE is not available: %s,%s' %
                         (scanner_name, db_type))
 
+    global whitelist
     whitelist = Whitelist.Whitelist(config)
 
     #ask it to the bot father in telegram
     token = config.get('TELEGRAM_TOKEN', None)
     updater = Updater(token)
 
+    global telegram_bot
     telegram_bot = Bot(token)
     LOGGER.info('BotName: <%s>' % (telegram_bot.name))
 
     # Get the Google Maps API
     google_key = config.get('GMAPS_KEY', None)
+    global gmaps_client
     gmaps_client = googlemaps.Client(
         key=google_key, timeout=3, retry_timeout=4) if google_key is not None else None
 
