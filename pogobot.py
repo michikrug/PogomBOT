@@ -47,15 +47,17 @@ geo_locator = Nominatim()
 telegram_bot = None
 gmaps_client = None
 
-clearCntThreshold = 20
 data_source = None
 webhook_enabled = False
 iv_available = False
 
+whitelist = None
+config = None
+
 # User dependant - dont add
 sent = dict()
 locks = dict()
-clearCnt = dict()
+messages_sent = dict()
 
 pokemon_name = dict()
 move_name = dict()
@@ -157,7 +159,6 @@ def get_pkm_sticker(pkm_id):
     return '%stelegram/monsters/%s_000.webp' % (sticker_url, pkm_id.zfill(3))
 
 def set_lang(lang):
-    global _
     translation = gettext.translation('base', localedir='locales', languages=[lang], fallback=True)
     _ = translation.gettext
 
@@ -220,6 +221,7 @@ def cmd_help(bot, update):
     _("/raidradius") + " - "  + _("Sets the search radius for a specific Raid Pokémon in km") + "\n" +\
     _("/resetraidradius") + " - "  + _("Resets the search radius for a specific Raid Pokémon") + "\n\n" +\
     _("*Notification settings*") + "\n" + \
+    _("/cleanup") + " - "  + _("Defines if messages of disappeared Pokémon should be deleted") + "\n" +\
     _("/stickers") + " - "  + _("Defines if stickers should be sent") + "\n" +\
     _("/maponly") + " - "  + _("Defines if only a map should be sent (without an additional message/sticker)") + "\n\n" +\
     _("Hint: You can also set the scanning location by just sending a location marker")
@@ -372,6 +374,10 @@ def default_pkm_settings_cmd(bot,
 
 def cmd_stickers(bot, update, args):
     default_settings_cmd(bot, update, args, 'stickers', 'bool')
+
+
+def cmd_cleanup(bot, update, args):
+    default_settings_cmd(bot, update, args, 'cleanup', 'bool')
 
 
 def cmd_map_only(bot, update, args):
@@ -987,6 +993,7 @@ def cleanup(chat_id):
     del jobs[chat_id]
     del sent[chat_id]
     del locks[chat_id]
+    del messages_sent[chat_id]
 
 
 def add_job(update, job_queue):
@@ -1011,8 +1018,8 @@ def add_job_for_chat_id(chat_id, job_queue):
                 sent[chat_id] = dict()
             if chat_id not in locks:
                 locks[chat_id] = threading.Lock()
-            if chat_id not in clearCnt:
-                clearCnt[chat_id] = 0
+            if chat_id not in messages_sent:
+                messages_sent[chat_id] = dict()
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
@@ -1077,6 +1084,7 @@ def build_detailed_raid_list(chat_id):
 
 
 def check_and_send(bot, chat_id):
+    lock = locks[chat_id]
     LOGGER.info('[%s] Checking pokemons and raids' % (chat_id))
     try:
         pref = prefs.get(chat_id)
@@ -1102,6 +1110,22 @@ def check_and_send(bot, chat_id):
 
             for raid in all_raids:
                 send_one_raid(chat_id, raid)
+
+        # Clean messages for already disappeared mons
+        lock.acquire()
+        current_time = datetime.utcnow()
+        toDel = []
+        for event_id in sent[chat_id]:
+            time = sent[chat_id][event_id]
+            if time < current_time:
+                toDel.append(event_id)
+        for event_id in toDel:
+            del sent[chat_id][event_id]
+            if pref.get('cleanup'):
+                for messageId in messages_sent[chat_id][event_id]:
+                    telegram_bot.deleteMessage(chat_id, messageId)
+                del messages_sent[chat_id][event_id]
+        lock.release()
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
@@ -1142,8 +1166,6 @@ def send_one_poke(chat_id, pokemon):
         cp = pokemon.get_cp()
         level = pokemon.get_level()
 
-        mySent = sent[chat_id]
-
         send_poke_without_iv = pref.get('sendwithout', True)
         lan = pref.get('language')
 
@@ -1152,7 +1174,7 @@ def send_one_poke(chat_id, pokemon):
         disappear_time_str = disappear_time.replace(tzinfo=timezone.utc).astimezone(
             tz=None).strftime('%H:%M:%S')
 
-        if encounter_id in mySent:
+        if encounter_id in sent[chat_id]:
             LOGGER.info('[%s] Not sending pokemon notification. Already sent. %s' % (chat_id,
                                                                                      pok_id))
             lock.release()
@@ -1272,42 +1294,27 @@ def send_one_poke(chat_id, pokemon):
             move2Name = moveNames[str(move2)] if str(move2) in moveNames else '?'
             address += '\n⚔ %s / %s' % (move1Name, move2Name)
 
-        mySent[encounter_id] = disappear_time
+        sent[chat_id][encounter_id] = disappear_time
+        messages_sent[chat_id][encounter_id] = list()
 
         if pref.get('maponly'):
-            telegram_bot.sendVenue(chat_id, latitude, longitude, title, address)
+            message = telegram_bot.sendVenue(chat_id, latitude, longitude, title, address)
+            messages_sent[chat_id][encounter_id] += [message.message_id]
         else:
             if pref.get('stickers'):
-                telegram_bot.sendSticker(
+                message = telegram_bot.sendSticker(
                     chat_id, get_pkm_sticker(pok_id), disable_notification=True)
-            telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
-            telegram_bot.sendMessage(
+                messages_sent[chat_id][encounter_id] += [message.message_id]
+
+            message = telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
+            messages_sent[chat_id][encounter_id] += [message.message_id]
+
+            message = telegram_bot.sendMessage(
                 chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
+            messages_sent[chat_id][encounter_id] += [message.message_id]
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
-    lock.release()
-
-    # Clean already disappeared pokemon
-    # 2016-08-19 20:10:10.000000
-    # 2016-08-19 20:10:10
-    lock.acquire()
-    if clearCnt[chat_id] > clearCntThreshold:
-        clearCnt[chat_id] = 0
-        LOGGER.info('[%s] Cleaning sentlist' % (chat_id))
-        try:
-            current_time = datetime.utcnow()
-            toDel = []
-            for encounter_id in mySent:
-                time = mySent[encounter_id]
-                if time < current_time:
-                    toDel.append(encounter_id)
-            for encounter_id in toDel:
-                del mySent[encounter_id]
-        except Exception as e:
-            LOGGER.error('[%s] %s' % (chat_id, repr(e)))
-    else:
-        clearCnt[chat_id] = clearCnt[chat_id] + 1
     lock.release()
 
 
@@ -1330,8 +1337,6 @@ def send_one_raid(chat_id, raid):
 
         raid_id = str(gym_id) + str(end)
 
-        mySent = sent[chat_id]
-
         lan = pref.get('language')
 
         delta = end - datetime.utcnow()
@@ -1342,7 +1347,7 @@ def send_one_raid(chat_id, raid):
         disappear_time_str = end.replace(tzinfo=timezone.utc).astimezone(
             tz=None).strftime('%H:%M:%S')
 
-        if raid_id in mySent:
+        if raid_id in sent[chat_id]:
             LOGGER.info('[%s] Not sending raid notification. Already sent. %s' % (chat_id, pok_id))
             lock.release()
             return
@@ -1396,49 +1401,33 @@ def send_one_raid(chat_id, raid):
             move2Name = moveNames[str(move2)] if str(move2) in moveNames else '?'
             address += '\n⚔ %s / %s' % (move1Name, move2Name)
 
-        mySent[raid_id] = end
+        sent[chat_id][raid_id] = end
+        messages_sent[chat_id][raid_id] = list()
 
         if pref.get('maponly'):
-            telegram_bot.sendVenue(chat_id, latitude, longitude, title, address)
+            message = telegram_bot.sendVenue(chat_id, latitude, longitude, title, address)
+            messages_sent[chat_id][raid_id] += [message.message_id]
         else:
             if pref.get('stickers'):
-                telegram_bot.sendSticker(
+                message = telegram_bot.sendSticker(
                     chat_id, get_pkm_sticker(pok_id), disable_notification=True)
-            telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
-            telegram_bot.sendMessage(
+                messages_sent[chat_id][raid_id] += [message.message_id]
+
+            message = telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
+            messages_sent[chat_id][raid_id] += [message.message_id]
+
+            message = telegram_bot.sendMessage(
                 chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
+            messages_sent[chat_id][raid_id] += [message.message_id]
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
-    lock.release()
-
-    # Clean already disappeared raids
-    # 2016-08-19 20:10:10.000000
-    # 2016-08-19 20:10:10
-    lock.acquire()
-    if clearCnt[chat_id] > clearCntThreshold:
-        clearCnt[chat_id] = 0
-        LOGGER.info('[%s] Cleaning sentlist' % (chat_id))
-        try:
-            current_time = datetime.utcnow()
-            toDel = []
-            for raid_id in mySent:
-                time = mySent[raid_id]
-                if time < current_time:
-                    toDel.append(raid_id)
-            for raid_id in toDel:
-                del mySent[raid_id]
-        except Exception as e:
-            LOGGER.error('[%s] %s' % (chat_id, repr(e)))
-    else:
-        clearCnt[chat_id] = clearCnt[chat_id] + 1
     lock.release()
 
 
 def read_config():
     config_path = os.path.join(os.path.dirname(sys.argv[0]), 'config-bot.json')
     LOGGER.info('Reading config: <%s>' % config_path)
-    global config
 
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
@@ -1645,10 +1634,6 @@ def main():
     db_type = config.get('DB_TYPE', None)
     scanner_name = config.get('SCANNER_NAME', None)
 
-    global data_source
-    global webhook_enabled
-    global iv_available
-
     if db_type == 'mysql':
         if scanner_name == 'rocketmap-iv':
             iv_available = True
@@ -1663,19 +1648,16 @@ def main():
         raise Exception('The combination SCANNER_NAME, DB_TYPE is not available: %s,%s' %
                         (scanner_name, db_type))
 
-    global whitelist
     whitelist = Whitelist.Whitelist(config)
 
     #ask it to the bot father in telegram
     token = config.get('TELEGRAM_TOKEN', None)
     updater = Updater(token)
 
-    global telegram_bot
     telegram_bot = Bot(token)
     LOGGER.info('BotName: <%s>' % (telegram_bot.name))
 
     # Get the Google Maps API
-    global gmaps_client
     google_key = config.get('GMAPS_KEY', None)
     gmaps_client = googlemaps.Client(
         key=google_key, timeout=3, retry_timeout=4) if google_key is not None else None
@@ -1707,6 +1689,7 @@ def main():
     dp.add_handler(CommandHandler('wladd', cmd_add_to_whitelist, pass_args=True))
     dp.add_handler(CommandHandler('wlrem', cmd_rem_from_whitelist, pass_args=True))
     dp.add_handler(CommandHandler('stickers', cmd_stickers, pass_args=True))
+    dp.add_handler(CommandHandler('cleanup', cmd_cleanup, pass_args=True))
     dp.add_handler(CommandHandler('maponly', cmd_map_only, pass_args=True))
     dp.add_handler(CommandHandler('walkdist', cmd_walk_dist, pass_args=True))
     dp.add_handler(CommandHandler('pkmradius', cmd_pkm_radius, pass_args=True))

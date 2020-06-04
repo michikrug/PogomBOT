@@ -29,6 +29,7 @@ resetraidradius - Setzt den Suchradius für ein bestimmtes Raid-Pokémon zurück
 sendwithout - Legt fest, ob Pokémon ohne IV/WP-Werte gesendet werden sollen
 start - Startet den Bot (z.B. nach dem Pausieren)
 stickers - Legt fest, ob Sticker gesendet werden sollen
+cleanup - Legt fest, ob Nachrichten von verschwundenen Pokémons gelöscht werden sollen
 stop - Pausiert den Bot (nutze /start zum Fortsetzen)
 wo - Sucht nach einer Arena mit dem Name und gibt deren Standort zurück
 wp - Setzt den Minimal-WP-Wert
