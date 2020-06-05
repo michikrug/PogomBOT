@@ -144,11 +144,11 @@ pokemon_rarity = [[],
 ]
 
 raid_levels = [[],
-               ["129", "90", "361", "403"],
-               ["103", "215", "87", "303"],
-               ["26", "221", "124", "68"],
-               ["131", "248", "105", "365"],
-               ["386", "485"]]
+               ["618", "572", "532", "599", "543"],
+               ["103", "520", "510", "207", "303"],
+               ["597", "26", "615", "232", "141"],
+               ["105", "110", "530", "306"],
+               ["643"]]
 
 CHOOSE_LEVEL, CHOOSE_PKM, CHOOSE_GYM, CHOOSE_GYM_SEARCH, CHOOSE_TIME = range(5)
 
@@ -159,6 +159,7 @@ def get_pkm_sticker(pkm_id):
     return '%stelegram/monsters/%s_000.webp' % (sticker_url, pkm_id.zfill(3))
 
 def set_lang(lang):
+    global _
     translation = gettext.translation('base', localedir='locales', languages=[lang], fallback=True)
     _ = translation.gettext
 
