@@ -28,6 +28,7 @@ from telegram import (Bot, InlineKeyboardButton, InlineKeyboardMarkup,
 from telegram.ext import (CallbackQueryHandler, CommandHandler,
                           ConversationHandler, Filters, Job, MessageHandler,
                           RegexHandler, Updater)
+from telegram.error import Unauthorized
 
 import DataSources
 import Preferences
@@ -1209,7 +1210,7 @@ def send_one_poke(chat_id, pokemon):
         if pok_id in matchmodes:
             matchmode = matchmodes[pok_id]
 
-        if matchmode < 2:
+        if matchmode is not None and matchmode < 2:
             if location_data[0] is not None and not pokemon.filter_by_location(location_data):
                 LOGGER.info('[%s] Not sending pokemon notification. Too far away. %s' % (chat_id,
                                                                                          pok_id))
@@ -1277,19 +1278,19 @@ def send_one_poke(chat_id, pokemon):
         address = '💨 %s ⏱ %s' % (disappear_time_str, deltaStr)
 
         if location_data[0] is not None:
-            # if pref.get('walkdist'):
-            #     walkin_data = get_walking_data(location_data, latitude, longitude)
-            #     if walkin_data['walk_dist'] < 1:
-            #         title += ' 📍%dm' % int(1000 * walkin_data['walk_dist'])
-            #     else:
-            #         title += ' 📍%.2fkm' % walkin_data['walk_dist']
-            #     address += ' 🚶%s' % walkin_data['walk_time']
-            # else:
-            dist = round(pokemon.get_distance(location_data), 2)
-            if dist < 1:
-                title += ' 📍%dm' % int(1000 * dist)
+            if pref.get('walkdist'):
+                walkin_data = get_walking_data(location_data, latitude, longitude)
+                if walkin_data['walk_dist'] < 1:
+                    title += ' 📍%dm' % int(1000 * walkin_data['walk_dist'])
+                else:
+                    title += ' 📍%.2fkm' % walkin_data['walk_dist']
+                address += ' 🚶%s' % walkin_data['walk_time']
             else:
-                title += ' 📍%.2fkm' % dist
+                dist = round(pokemon.get_distance(location_data), 2)
+                if dist < 1:
+                    title += ' 📍%dm' % int(1000 * dist)
+                else:
+                    title += ' 📍%.2fkm' % dist
 
         if move1 is not None and move2 is not None:
             moveNames = move_name['en']
@@ -1318,6 +1319,10 @@ def send_one_poke(chat_id, pokemon):
             message = telegram_bot.sendMessage(
                 chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
             messages_sent[chat_id][encounter_id] += [message.message_id]
+
+    except Unauthorized as e:
+        LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
+        cleanup(chat_id)
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
@@ -1425,6 +1430,10 @@ def send_one_raid(chat_id, raid):
             message = telegram_bot.sendMessage(
                 chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
             messages_sent[chat_id][raid_id] += [message.message_id]
+
+    except Unauthorized as e:
+        LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
+        cleanup(chat_id)
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
