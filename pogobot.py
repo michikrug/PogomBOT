@@ -1095,7 +1095,6 @@ def check_and_send(bot, chat_id):
         pref = prefs.get(chat_id)
         set_lang(pref.get('language'))
         pokemons = pref.get('pkmids', [])
-        #pokemons = []
         raids = pref.get('raidids', [])
 
         if pokemons:
@@ -1104,12 +1103,15 @@ def check_and_send(bot, chat_id):
             allpokes = data_source.get_pokemon_by_list(
                 build_detailed_pokemon_list(chat_id), send_without)
 
-            if len(allpokes) > 50:
+            if len(allpokes) > 20:
                 bot.sendMessage(chat_id, text=_('Your filter rules are matching too many Pokémon') + '\n' + _('Please check your settings!'))
             else:
                 for pokemon in allpokes:
                     send_one_poke(chat_id, pokemon)
                     sleep(2)
+
+        if chat_id not in locks:
+            return
 
         if raids:
             all_raids = data_source.get_raids_by_list(build_detailed_raid_list(chat_id))
@@ -1325,7 +1327,8 @@ def send_one_poke(chat_id, pokemon):
             messages_sent[chat_id][encounter_id] += [message.message_id]
 
     except Unauthorized as e:
-        pass
+        LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
+        cleanup(chat_id)
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
@@ -1436,7 +1439,8 @@ def send_one_raid(chat_id, raid):
             messages_sent[chat_id][raid_id] += [message.message_id]
 
     except Unauthorized as e:
-        pass
+        LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
+        cleanup(chat_id)
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
