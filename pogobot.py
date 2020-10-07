@@ -1108,16 +1108,17 @@ def check_and_send(bot, chat_id):
             else:
                 for pokemon in allpokes:
                     send_one_poke(chat_id, pokemon)
+                    if chat_id not in locks:
+                        return
                     sleep(2)
-
-        if chat_id not in locks:
-            return
 
         if raids:
             all_raids = data_source.get_raids_by_list(build_detailed_raid_list(chat_id))
 
             for raid in all_raids:
                 send_one_raid(chat_id, raid)
+                if chat_id not in locks:
+                    return
                 sleep(2)
 
         # Clean messages for already disappeared mons
@@ -1138,6 +1139,7 @@ def check_and_send(bot, chat_id):
 
     except Unauthorized as e:
         LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
+        pref.reset_user()
         cleanup(chat_id)
 
     except Exception as e:
@@ -1328,6 +1330,7 @@ def send_one_poke(chat_id, pokemon):
 
     except Unauthorized as e:
         LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
+        pref.reset_user()
         cleanup(chat_id)
 
     except Exception as e:
@@ -1440,6 +1443,7 @@ def send_one_raid(chat_id, raid):
 
     except Unauthorized as e:
         LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
+        pref.reset_user()
         cleanup(chat_id)
 
     except Exception as e:
