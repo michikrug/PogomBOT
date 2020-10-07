@@ -1134,6 +1134,10 @@ def check_and_send(bot, chat_id):
                 del messages_sent[chat_id][event_id]
         lock.release()
 
+    except Unauthorized as e:
+        LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
+        cleanup(chat_id)
+
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
 
@@ -1321,11 +1325,11 @@ def send_one_poke(chat_id, pokemon):
             messages_sent[chat_id][encounter_id] += [message.message_id]
 
     except Unauthorized as e:
-        LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
-        cleanup(chat_id)
+        pass
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
+
     lock.release()
 
 
@@ -1432,11 +1436,11 @@ def send_one_raid(chat_id, raid):
             messages_sent[chat_id][raid_id] += [message.message_id]
 
     except Unauthorized as e:
-        LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
-        cleanup(chat_id)
+        pass
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
+
     lock.release()
 
 
