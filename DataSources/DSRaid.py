@@ -1,4 +1,4 @@
-from geopy.distance import vincenty
+from geopy.distance import distance
 
 
 class DSRaid:
@@ -48,7 +48,7 @@ class DSRaid:
     def get_distance(self, user_location):
         user_lat_lon = (user_location[0], user_location[1])
         raid_loc = (self.latitude, self.longitude)
-        return vincenty(user_lat_lon, raid_loc).km
+        return distance(user_lat_lon, raid_loc).km
 
     def filter_by_location(self, user_location):
         return self.get_distance(user_location) <= user_location[2]
