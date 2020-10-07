@@ -16,15 +16,18 @@ import logging
 import os
 import sys
 import threading
+import time
 from datetime import datetime, timedelta, timezone
 
 import googlemaps
 from geopy.distance import distance
 from geopy.geocoders import Nominatim
 from geopy.point import Point
-from telegram import (Bot, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup)
-from telegram.ext import (CallbackQueryHandler, CommandHandler, ConversationHandler, Filters, Job,
-                          MessageHandler, RegexHandler, Updater)
+from telegram import (Bot, InlineKeyboardButton, InlineKeyboardMarkup,
+                      ReplyKeyboardMarkup)
+from telegram.ext import (CallbackQueryHandler, CommandHandler,
+                          ConversationHandler, Filters, Job, MessageHandler,
+                          RegexHandler, Updater)
 
 import DataSources
 import Preferences
@@ -1105,12 +1108,14 @@ def check_and_send(bot, chat_id):
             else:
                 for pokemon in allpokes:
                     send_one_poke(chat_id, pokemon)
+                    time.sleep(2)
 
         if raids:
             all_raids = data_source.get_raids_by_list(build_detailed_raid_list(chat_id))
 
             for raid in all_raids:
                 send_one_raid(chat_id, raid)
+                time.sleep(2)
 
         # Clean messages for already disappeared mons
         lock.acquire()
