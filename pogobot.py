@@ -16,7 +16,7 @@ import logging
 import os
 import sys
 import threading
-import time
+from time import sleep
 from datetime import datetime, timedelta, timezone
 
 import googlemaps
@@ -1108,14 +1108,14 @@ def check_and_send(bot, chat_id):
             else:
                 for pokemon in allpokes:
                     send_one_poke(chat_id, pokemon)
-                    time.sleep(2)
+                    sleep(2)
 
         if raids:
             all_raids = data_source.get_raids_by_list(build_detailed_raid_list(chat_id))
 
             for raid in all_raids:
                 send_one_raid(chat_id, raid)
-                time.sleep(2)
+                sleep(2)
 
         # Clean messages for already disappeared mons
         lock.acquire()
@@ -1277,19 +1277,19 @@ def send_one_poke(chat_id, pokemon):
         address = '💨 %s ⏱ %s' % (disappear_time_str, deltaStr)
 
         if location_data[0] is not None:
-            if pref.get('walkdist'):
-                walkin_data = get_walking_data(location_data, latitude, longitude)
-                if walkin_data['walk_dist'] < 1:
-                    title += ' 📍%dm' % int(1000 * walkin_data['walk_dist'])
-                else:
-                    title += ' 📍%.2fkm' % walkin_data['walk_dist']
-                address += ' 🚶%s' % walkin_data['walk_time']
+            # if pref.get('walkdist'):
+            #     walkin_data = get_walking_data(location_data, latitude, longitude)
+            #     if walkin_data['walk_dist'] < 1:
+            #         title += ' 📍%dm' % int(1000 * walkin_data['walk_dist'])
+            #     else:
+            #         title += ' 📍%.2fkm' % walkin_data['walk_dist']
+            #     address += ' 🚶%s' % walkin_data['walk_time']
+            # else:
+            dist = round(pokemon.get_distance(location_data), 2)
+            if dist < 1:
+                title += ' 📍%dm' % int(1000 * dist)
             else:
-                dist = round(pokemon.get_distance(location_data), 2)
-                if dist < 1:
-                    title += ' 📍%dm' % int(1000 * dist)
-                else:
-                    title += ' 📍%.2fkm' % dist
+                title += ' 📍%.2fkm' % dist
 
         if move1 is not None and move2 is not None:
             moveNames = move_name['en']
