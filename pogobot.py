@@ -478,7 +478,7 @@ def cmd_start(update, context):
     if has_entries:
         add_job(update, context.job_queue)
     else:
-        cmd_help(context.bot, update)
+        cmd_help(update, context)
 
 
 def cmd_stop(update, context):
@@ -603,7 +603,7 @@ def cmd_add(update, context):
                 search.append(int(x))
         search.sort()
         pref.set('pkmids', search)
-        cmd_list(context.bot, update)
+        cmd_list(update, context)
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
@@ -642,7 +642,7 @@ def cmd_add_by_rarity(update, context):
                 search.append(int(x))
         search.sort()
         pref.set('pkmids', search)
-        cmd_list(context.bot, update)
+        cmd_list(update, context)
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
@@ -667,7 +667,7 @@ def cmd_remove(update, context):
             if int(x) in search:
                 search.remove(int(x))
         pref.set('pkmids', search)
-        cmd_list(context.bot, update)
+        cmd_list(update, context)
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
@@ -706,7 +706,7 @@ def cmd_add_raid_by_level(update, context):
                 search.append(int(x))
         search.sort()
         pref.set('raidids', search)
-        cmd_list(context.bot, update)
+        cmd_list(update, context)
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
@@ -739,7 +739,7 @@ def cmd_add_raid(update, context):
                 search.append(int(x))
         search.sort()
         pref.set('raidids', search)
-        cmd_list(context.bot, update)
+        cmd_list(update, context)
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
@@ -764,7 +764,7 @@ def cmd_remove_raid(update, context):
             if int(x) in search:
                 search.remove(int(x))
         pref.set('raidids', search)
-        cmd_list(context.bot, update)
+        cmd_list(update, context)
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
