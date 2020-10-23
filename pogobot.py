@@ -319,9 +319,11 @@ def default_settings_cmd(update, context, setting, data_type=None, valid_options
         context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/' + setting))
 
 
-def default_pkm_settings_cmd(update, context, args, setting, data_type=None, valid_options=None, reset=False):
+def default_pkm_settings_cmd(update, context, setting, data_type=None, valid_options=None, reset=False):
     if not default_cmd(update, context, setting):
         return
+
+    args = context.args
 
     chat_id = update.message.chat_id
 
