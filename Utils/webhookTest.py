@@ -1,8 +1,8 @@
 import json
 import urllib.request
 
-#WebHook CallBack
-#Request body contains:
+# WebHook CallBack
+# Request body contains:
 # - type: String ("pokemon")
 # - message: Object
 #   - disappear_time: Long

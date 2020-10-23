@@ -3,7 +3,8 @@ import logging
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from .Conversion import (floatOrNone, intOrNone, strOrNone, utcfromtimestampOrNone)
+from .Conversion import (floatOrNone, intOrNone, strOrNone,
+                         utcfromtimestampOrNone)
 from .DSPokemon import DSPokemon
 
 LOGGER = logging.getLogger(__name__)
@@ -14,8 +15,8 @@ def start_server(port):
     server.serve_forever()
 
 
-#WebHook CallBack
-#Request body contains:
+# WebHook CallBack
+# Request body contains:
 # - type: String ("pokemon")
 # - message: Object
 #   - disappear_time: Long

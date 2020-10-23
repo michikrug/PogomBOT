@@ -16,23 +16,23 @@ import logging
 import os
 import sys
 import threading
-from time import sleep
 from datetime import datetime, timedelta, timezone
+from time import sleep
 
-import googlemaps
-from geopy.distance import distance
-from geopy.geocoders import Nominatim
-from geopy.point import Point
 from telegram import (Bot, InlineKeyboardButton, InlineKeyboardMarkup,
                       ReplyKeyboardMarkup)
+from telegram.error import Unauthorized
 from telegram.ext import (CallbackQueryHandler, CommandHandler,
                           ConversationHandler, Filters, Job, MessageHandler,
                           RegexHandler, Updater)
-from telegram.error import Unauthorized
 
 import DataSources
+import googlemaps
 import Preferences
 import Whitelist
+from geopy.distance import distance
+from geopy.geocoders import Nominatim
+from geopy.point import Point
 
 if sys.version_info[0] < 3:
     raise Exception('Must be using Python 3')
@@ -75,77 +75,77 @@ pokemon_blacklist = [
 ]
 
 pokemon_rarity = [[],
-	["7","16","19","41","133","161","163","165","167","170","177","183","187","194","198","216","220"],
-	["1","7","10","17","21","23","25","29","32","35","43","46","48","58","60","69","84","92","96","98",
-	"120","127","129","147","152","155","158","162","164","166","168","171","178","184","185","188","190",
-	"191","200","206","209","211","215","223","228"],
-	["2","4","8","11","14","15","18","20","22","27","37","39","42","47","49","50","52","54","56","61","63",
-	"66","70","72","74","77","79","81","86","90","93","95","97","100","102","104","107","108","109","111",
-	"114","116","118","123","124","125","126","128","138","140","143","153","156","159","169","185","193",
-	"195","202","203","204","207","213","218","221","231","234"],
-	["3","5","6","9","12","24","30","31","33","34","36","44","53","55","57","59","64","67","73","75","78",
-	"80","85","88","99","103","105","106","110","112","113","117","119","121","122","131","134","135","137",
-	"142","148","149","179","180","189","205","210","217","219","224","226","227","246","247"],
-	["26","28","38","40","45","51","62","65","68","71","76","82","83","87","89","91","94","101","115","130",
-	"132","136","139","141","144","145","146","149","150","151","154","157","160","172","173","174","175",
-	"176","181","182","186","192","196","197","199","201","208","210","212","214","222","225","229","230",
-	"232","233","235","236","237","238","239","240","241","242","243","244","245","248","249","250","251"],
-	["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22",
-	"23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43",
-	"44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63","64",
-	"65","66","67","68","69","70","71","72","73","74","75","76","77","78","79","80","81","82","83","84","85",
-	"86","87","88","89","90","91","92","93","94","95","96","97","98","99","100","101","102","103","104","105",
-	"106","107","108","109","110","111","112","113","114","115","116","117","118","119","120","121","122","123",
-	"124","125","126","127","128","129","130","131","132","133","134","135","136","137","138","139","140","141",
-	"142","143","144","145","146","147","148","149","150","151"],
-	["152","153","154","155","156","157","158","159","160","161","162","163","164","165","166","167","168","169",
-	"170","171","172","173","174","175","176","177","178","179","180","181","182","183","184","185","186","187",
-	"188","189","190","191","192","193","194","195","196","197","198","199","200","201","202","203","204","205",
-	"206","207","208","209","210","211","212","213","214","215","216","217","218","219","220","221","222","223",
-	"224","225","226","227","228","229","230","231","232","233","234","235","236","237","238","239","240","241",
-	"242","243","244","245","246","247","248","249","250","251"],
-    ["252","253","254","255","256","257","258","259","260","261","262","263","264","265","266","267","268",
-    "269","270","271","272","273","274","275","276","277","278","279","280","281","282","283","284","285","286",
-    "287","288","289","290","291","292","293","294","295","296","297","298","299","300","301","302","303","304",
-    "305","306","307","308","309","310","311","312","313","314","315","316","317","318","319","320","321","322",
-    "323","324","325","326","327","328","329","330","331","332","333","334","335","336","337","338","339","340",
-    "341","342","343","344","345","346","347","348","349","350","351","352","353","354","355","356","357","358",
-    "359","360","361","362","363","364","365","366","367","368","369","370","371","372","373","374","375","376",
-    "377","378","379","380","381","382","383","384","385","386"],
-    ["387","388","389","390","391","392","393","394","395","396","397","398","399","400","401","402","403","404",
-    "405","406","407","408","409","410","411","412","413","414","415","416","417","418","419","420","421","422",
-    "423","424","425","426","427","428","429","430","431","432","433","434","435","436","437","438","439","440",
-    "441","442","443","444","445","446","447","448","449","450","451","452","453","454","455","456","457","458",
-    "459","460","461","462","463","464","465","466","467","468","469","470","471","472","473","474","475","476",
-    "477","478","479","480","481","482","483","484","485","486","487","488","489","490","491","492"],
-    ["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23",
-    "24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44",
-    "45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63","64","65",
-    "66","67","68","69","70","71","72","73","74","75","76","77","78","79","80","81","82","83","84","85","86",
-    "87","88","89","90","91","92","93","94","95","96","97","98","99","100","101","102","103","104","105","106",
-    "107","108","109","110","111","112","113","114","115","116","117","118","119","120","121","122","123","124",
-    "125","126","127","128","129","130","131","132","133","134","135","136","137","138","139","140","141","142",
-    "143","144","145","146","147","148","149","150","151","152","153","154","155","156","157","158","159","160",
-    "161","162","163","164","165","166","167","168","169","170","171","172","173","174","175","176","177","178",
-    "179","180","181","182","183","184","185","186","187","188","189","190","191","192","193","194","195","196",
-    "197","198","199","200","201","202","203","204","205","206","207","208","209","210","211","212","213","214",
-    "215","216","217","218","219","220","221","222","223","224","225","226","227","228","229","230","231","232",
-    "233","234","235","236","237","238","239","240","241","242","243","244","245","246","247","248","249","250",
-    "251","252","253","254","255","256","257","258","259","260","261","262","263","264","265","266","267","268",
-    "269","270","271","272","273","274","275","276","277","278","279","280","281","282","283","284","285","286",
-    "287","288","289","290","291","292","293","294","295","296","297","298","299","300","301","302","303","304",
-    "305","306","307","308","309","310","311","312","313","314","315","316","317","318","319","320","321","322",
-    "323","324","325","326","327","328","329","330","331","332","333","334","335","336","337","338","339","340",
-    "341","342","343","344","345","346","347","348","349","350","351","352","353","354","355","356","357","358",
-    "359","360","361","362","363","364","365","366","367","368","369","370","371","372","373","374","375","376",
-    "377","378","379","380","381","382","383","384","385","386","387","388","389","390","391","392","393","394",
-    "395","396","397","398","399","400","401","402","403","404","405","406","407","408","409","410","411","412",
-    "413","414","415","416","417","418","419","420","421","422","423","424","425","426","427","428","429","430",
-    "431","432","433","434","435","436","437","438","439","440","441","442","443","444","445","446","447","448",
-    "449","450","451","452","453","454","455","456","457","458","459","460","461","462","463","464","465","466",
-    "467","468","469","470","471","472","473","474","475","476","477","478","479","480","481","482","483","484",
-    "485","486","487","488","489","490","491","492"]
-]
+                  ["7", "16", "19", "41", "133", "161", "163", "165", "167", "170", "177", "183", "187", "194", "198", "216", "220"],
+                  ["1", "7", "10", "17", "21", "23", "25", "29", "32", "35", "43", "46", "48", "58", "60", "69", "84", "92", "96", "98",
+                   "120", "127", "129", "147", "152", "155", "158", "162", "164", "166", "168", "171", "178", "184", "185", "188", "190",
+                   "191", "200", "206", "209", "211", "215", "223", "228"],
+                  ["2", "4", "8", "11", "14", "15", "18", "20", "22", "27", "37", "39", "42", "47", "49", "50", "52", "54", "56", "61", "63",
+                   "66", "70", "72", "74", "77", "79", "81", "86", "90", "93", "95", "97", "100", "102", "104", "107", "108", "109", "111",
+                   "114", "116", "118", "123", "124", "125", "126", "128", "138", "140", "143", "153", "156", "159", "169", "185", "193",
+                   "195", "202", "203", "204", "207", "213", "218", "221", "231", "234"],
+                  ["3", "5", "6", "9", "12", "24", "30", "31", "33", "34", "36", "44", "53", "55", "57", "59", "64", "67", "73", "75", "78",
+                   "80", "85", "88", "99", "103", "105", "106", "110", "112", "113", "117", "119", "121", "122", "131", "134", "135", "137",
+                   "142", "148", "149", "179", "180", "189", "205", "210", "217", "219", "224", "226", "227", "246", "247"],
+                  ["26", "28", "38", "40", "45", "51", "62", "65", "68", "71", "76", "82", "83", "87", "89", "91", "94", "101", "115", "130",
+                   "132", "136", "139", "141", "144", "145", "146", "149", "150", "151", "154", "157", "160", "172", "173", "174", "175",
+                   "176", "181", "182", "186", "192", "196", "197", "199", "201", "208", "210", "212", "214", "222", "225", "229", "230",
+                   "232", "233", "235", "236", "237", "238", "239", "240", "241", "242", "243", "244", "245", "248", "249", "250", "251"],
+                  ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22",
+                   "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43",
+                   "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64",
+                   "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85",
+                   "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99", "100", "101", "102", "103", "104", "105",
+                   "106", "107", "108", "109", "110", "111", "112", "113", "114", "115", "116", "117", "118", "119", "120", "121", "122", "123",
+                   "124", "125", "126", "127", "128", "129", "130", "131", "132", "133", "134", "135", "136", "137", "138", "139", "140", "141",
+                   "142", "143", "144", "145", "146", "147", "148", "149", "150", "151"],
+                  ["152", "153", "154", "155", "156", "157", "158", "159", "160", "161", "162", "163", "164", "165", "166", "167", "168", "169",
+                   "170", "171", "172", "173", "174", "175", "176", "177", "178", "179", "180", "181", "182", "183", "184", "185", "186", "187",
+                   "188", "189", "190", "191", "192", "193", "194", "195", "196", "197", "198", "199", "200", "201", "202", "203", "204", "205",
+                   "206", "207", "208", "209", "210", "211", "212", "213", "214", "215", "216", "217", "218", "219", "220", "221", "222", "223",
+                   "224", "225", "226", "227", "228", "229", "230", "231", "232", "233", "234", "235", "236", "237", "238", "239", "240", "241",
+                   "242", "243", "244", "245", "246", "247", "248", "249", "250", "251"],
+                  ["252", "253", "254", "255", "256", "257", "258", "259", "260", "261", "262", "263", "264", "265", "266", "267", "268",
+                   "269", "270", "271", "272", "273", "274", "275", "276", "277", "278", "279", "280", "281", "282", "283", "284", "285", "286",
+                   "287", "288", "289", "290", "291", "292", "293", "294", "295", "296", "297", "298", "299", "300", "301", "302", "303", "304",
+                   "305", "306", "307", "308", "309", "310", "311", "312", "313", "314", "315", "316", "317", "318", "319", "320", "321", "322",
+                   "323", "324", "325", "326", "327", "328", "329", "330", "331", "332", "333", "334", "335", "336", "337", "338", "339", "340",
+                   "341", "342", "343", "344", "345", "346", "347", "348", "349", "350", "351", "352", "353", "354", "355", "356", "357", "358",
+                   "359", "360", "361", "362", "363", "364", "365", "366", "367", "368", "369", "370", "371", "372", "373", "374", "375", "376",
+                   "377", "378", "379", "380", "381", "382", "383", "384", "385", "386"],
+                  ["387", "388", "389", "390", "391", "392", "393", "394", "395", "396", "397", "398", "399", "400", "401", "402", "403", "404",
+                   "405", "406", "407", "408", "409", "410", "411", "412", "413", "414", "415", "416", "417", "418", "419", "420", "421", "422",
+                   "423", "424", "425", "426", "427", "428", "429", "430", "431", "432", "433", "434", "435", "436", "437", "438", "439", "440",
+                   "441", "442", "443", "444", "445", "446", "447", "448", "449", "450", "451", "452", "453", "454", "455", "456", "457", "458",
+                   "459", "460", "461", "462", "463", "464", "465", "466", "467", "468", "469", "470", "471", "472", "473", "474", "475", "476",
+                   "477", "478", "479", "480", "481", "482", "483", "484", "485", "486", "487", "488", "489", "490", "491", "492"],
+                  ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23",
+                   "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44",
+                   "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65",
+                   "66", "67", "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86",
+                   "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99", "100", "101", "102", "103", "104", "105", "106",
+                   "107", "108", "109", "110", "111", "112", "113", "114", "115", "116", "117", "118", "119", "120", "121", "122", "123", "124",
+                   "125", "126", "127", "128", "129", "130", "131", "132", "133", "134", "135", "136", "137", "138", "139", "140", "141", "142",
+                   "143", "144", "145", "146", "147", "148", "149", "150", "151", "152", "153", "154", "155", "156", "157", "158", "159", "160",
+                   "161", "162", "163", "164", "165", "166", "167", "168", "169", "170", "171", "172", "173", "174", "175", "176", "177", "178",
+                   "179", "180", "181", "182", "183", "184", "185", "186", "187", "188", "189", "190", "191", "192", "193", "194", "195", "196",
+                   "197", "198", "199", "200", "201", "202", "203", "204", "205", "206", "207", "208", "209", "210", "211", "212", "213", "214",
+                   "215", "216", "217", "218", "219", "220", "221", "222", "223", "224", "225", "226", "227", "228", "229", "230", "231", "232",
+                   "233", "234", "235", "236", "237", "238", "239", "240", "241", "242", "243", "244", "245", "246", "247", "248", "249", "250",
+                   "251", "252", "253", "254", "255", "256", "257", "258", "259", "260", "261", "262", "263", "264", "265", "266", "267", "268",
+                   "269", "270", "271", "272", "273", "274", "275", "276", "277", "278", "279", "280", "281", "282", "283", "284", "285", "286",
+                   "287", "288", "289", "290", "291", "292", "293", "294", "295", "296", "297", "298", "299", "300", "301", "302", "303", "304",
+                   "305", "306", "307", "308", "309", "310", "311", "312", "313", "314", "315", "316", "317", "318", "319", "320", "321", "322",
+                   "323", "324", "325", "326", "327", "328", "329", "330", "331", "332", "333", "334", "335", "336", "337", "338", "339", "340",
+                   "341", "342", "343", "344", "345", "346", "347", "348", "349", "350", "351", "352", "353", "354", "355", "356", "357", "358",
+                   "359", "360", "361", "362", "363", "364", "365", "366", "367", "368", "369", "370", "371", "372", "373", "374", "375", "376",
+                   "377", "378", "379", "380", "381", "382", "383", "384", "385", "386", "387", "388", "389", "390", "391", "392", "393", "394",
+                   "395", "396", "397", "398", "399", "400", "401", "402", "403", "404", "405", "406", "407", "408", "409", "410", "411", "412",
+                   "413", "414", "415", "416", "417", "418", "419", "420", "421", "422", "423", "424", "425", "426", "427", "428", "429", "430",
+                   "431", "432", "433", "434", "435", "436", "437", "438", "439", "440", "441", "442", "443", "444", "445", "446", "447", "448",
+                   "449", "450", "451", "452", "453", "454", "455", "456", "457", "458", "459", "460", "461", "462", "463", "464", "465", "466",
+                   "467", "468", "469", "470", "471", "472", "473", "474", "475", "476", "477", "478", "479", "480", "481", "482", "483", "484",
+                   "485", "486", "487", "488", "489", "490", "491", "492"]
+                  ]
 
 raid_levels = [[],
                ["618", "572", "532", "599", "543"],
@@ -159,8 +159,10 @@ CHOOSE_LEVEL, CHOOSE_PKM, CHOOSE_GYM, CHOOSE_GYM_SEARCH, CHOOSE_TIME = range(5)
 sticker_url = binascii.unhexlify(
     '68747470733a2f2f6d6f6e73746572696d616765732e746b2f76312e352f').decode('utf-8')
 
+
 def get_pkm_sticker(pkm_id):
     return '%stelegram/monsters/%s_000.webp' % (sticker_url, pkm_id.zfill(3))
+
 
 def set_lang(lang):
     global _
@@ -183,53 +185,53 @@ def cmd_help(update, context):
     set_lang(pref.get('language'))
 
     text = _("*The PoGo Chemnitz Bot knows the following commands:*") + "\n\n" + \
-    _("*General*") + "\n" + \
-    _("/start") + " - "  + _("Starts the bot (e.g. after pausing)") + "\n" + \
-    _("/stop") + " - "  + _("Pauses the bot (use /start to resume)") + "\n" + \
-    _("/list") + " - "  + _("Lists the watched Pokémon and Raid Pokémon") + "\n" + \
-    _("/language") + " - "  + _("Sets the language of the bot") + "\n" + \
-    _("/clear") + " - "  + _("Resets all your settings") + "\n" + \
-    _("/help") + " - "  + _("Shows a list of available commands") + "\n" + \
-    _("/where") + " - "  + _("Searches for a gym by name and outputs its location") + "\n\n" + \
-    _("*Pokémon filter*") + "\n" + \
-    _("/add pokedexID") + " - "  + _("Adds Pokémon with the given ID to the scanner") + "\n" + \
-    _("/add pokedexID1 pokedexID2 ...") + "\n" + \
-    _("/addbyrarity 1-5") + " - "  + _("Adds Pokémon with the given rarity to scanner (1 very common - 5 ultrarare)") + "\n" + \
-    _("/remove pokedexID") + " - "  + _("Removes Pokémon with the given ID from the scanner") + "\n" + \
-    _("/remove pokedexID1 pokedexID2 ...") + "\n" + \
-    _("/iv") + " - "  + _("Sets the minimum IVs given as percent") + "\n" +\
-    _("/cp") + " - "  + _("Sets the minimum CP") + "\n" +\
-    _("/level") + " - "  + _("Sets the minimum level") + "\n" +\
-    _("/pkmiv") + " - "  + _("Sets the minimum IVs for a specific Pokémon given as percent") + "\n" +\
-    _("/resetpkmiv") + " - "  + _("Resets the minimum IVs for a specific Pokémon") + "\n" +\
-    _("/pkmcp") + " - "  + _("Sets the minimum CP for a specific Pokémon") + "\n" +\
-    _("/resetpkmcp") + " - "  + _("Resets the minimum CP for a specific Pokémon") + "\n" +\
-    _("/pkmlevel") + " - "  + _("Sets the minimum level for a specific Pokémon") + "\n" +\
-    _("/resetpkmlevel") + " - "  + _("Resets the minimum level for a specific Pokémon") + "\n" +\
-    _("/matchmode") + " - "  + _("Sets the match mode (0) Distance AND IVs AND CP AND level / (1) Distance AND IVs OR CP OR level has to match / (2) Distance OR IVs OR CP OR level has to match") + "\n" +\
-    _("/pkmmatchmode") + " - "  + _("Set the match mode for a specific Pokémon") + "n" +\
-    _("/resetpkmmatchmode") + " - "  + _("Reset the match mode for a specific Pokémon") + "\n\n" +\
-    _("/pkmradius") + " - "  + _("Sets the search radius for a specific Pokémon in km") + "\n" +\
-    _("/resetpkmradius") + " - "  + _("Resets the search radius for a specific Pokémon") + "\n" +\
-    _("/sendwithout") + " - "  + _("Defines if Pokémon without IV/CP should be sent") + "\n\n" + \
-    _("*Raid filter*") + "\n" + \
-    _("/newraid") + " - " + _("Adds a new Raid entry to the database") + "\n" + \
-    _("/addraid pokedexID") + " - "  + _("Adds Raid Pokémon with the given ID to the scanner") + "\n" + \
-    _("/addraid pokedexID1 pokedexID2 ...") + "\n" + \
-    _("/addraidbylevel 1-5") + " - "  + _("Adds Raid Pokémon with the given level to scanner (1-5)") + "\n" + \
-    _("/removeraid pokedexID") + " - "  + _("Removes Raid Pokémon with the given ID from the scanner") + "\n" + \
-    _("/removeraid pokedexID1 pokedexID2 ...") + "\n\n" + \
-    _("*Distance filter*") + "\n" + \
-    _("/location address") + " - "  + _("Sets the desired search location given as text") + "\n" +\
-    _("/radius km") + " - "  + _("Sets the search radius in km") + "\n" +\
-    _("/removelocation") + " - "  + _("Clears the search location and radius") + "\n" +\
-    _("/raidradius") + " - "  + _("Sets the search radius for a specific Raid Pokémon in km") + "\n" +\
-    _("/resetraidradius") + " - "  + _("Resets the search radius for a specific Raid Pokémon") + "\n\n" +\
-    _("*Notification settings*") + "\n" + \
-    _("/cleanup") + " - "  + _("Defines if messages of disappeared Pokémon should be deleted") + "\n" +\
-    _("/stickers") + " - "  + _("Defines if stickers should be sent") + "\n" +\
-    _("/maponly") + " - "  + _("Defines if only a map should be sent (without an additional message/sticker)") + "\n\n" +\
-    _("Hint: You can also set the scanning location by just sending a location marker")
+        _("*General*") + "\n" + \
+        _("/start") + " - " + _("Starts the bot (e.g. after pausing)") + "\n" + \
+        _("/stop") + " - " + _("Pauses the bot (use /start to resume)") + "\n" + \
+        _("/list") + " - " + _("Lists the watched Pokémon and Raid Pokémon") + "\n" + \
+        _("/language") + " - " + _("Sets the language of the bot") + "\n" + \
+        _("/clear") + " - " + _("Resets all your settings") + "\n" + \
+        _("/help") + " - " + _("Shows a list of available commands") + "\n" + \
+        _("/where") + " - " + _("Searches for a gym by name and outputs its location") + "\n\n" + \
+        _("*Pokémon filter*") + "\n" + \
+        _("/add pokedexID") + " - " + _("Adds Pokémon with the given ID to the scanner") + "\n" + \
+        _("/add pokedexID1 pokedexID2 ...") + "\n" + \
+        _("/addbyrarity 1-5") + " - " + _("Adds Pokémon with the given rarity to scanner (1 very common - 5 ultrarare)") + "\n" + \
+        _("/remove pokedexID") + " - " + _("Removes Pokémon with the given ID from the scanner") + "\n" + \
+        _("/remove pokedexID1 pokedexID2 ...") + "\n" + \
+        _("/iv") + " - " + _("Sets the minimum IVs given as percent") + "\n" +\
+        _("/cp") + " - " + _("Sets the minimum CP") + "\n" +\
+        _("/level") + " - " + _("Sets the minimum level") + "\n" +\
+        _("/pkmiv") + " - " + _("Sets the minimum IVs for a specific Pokémon given as percent") + "\n" +\
+        _("/resetpkmiv") + " - " + _("Resets the minimum IVs for a specific Pokémon") + "\n" +\
+        _("/pkmcp") + " - " + _("Sets the minimum CP for a specific Pokémon") + "\n" +\
+        _("/resetpkmcp") + " - " + _("Resets the minimum CP for a specific Pokémon") + "\n" +\
+        _("/pkmlevel") + " - " + _("Sets the minimum level for a specific Pokémon") + "\n" +\
+        _("/resetpkmlevel") + " - " + _("Resets the minimum level for a specific Pokémon") + "\n" +\
+        _("/matchmode") + " - " + _("Sets the match mode (0) Distance AND IVs AND CP AND level / (1) Distance AND IVs OR CP OR level has to match / (2) Distance OR IVs OR CP OR level has to match") + "\n" +\
+        _("/pkmmatchmode") + " - " + _("Set the match mode for a specific Pokémon") + "n" +\
+        _("/resetpkmmatchmode") + " - " + _("Reset the match mode for a specific Pokémon") + "\n\n" +\
+        _("/pkmradius") + " - " + _("Sets the search radius for a specific Pokémon in km") + "\n" +\
+        _("/resetpkmradius") + " - " + _("Resets the search radius for a specific Pokémon") + "\n" +\
+        _("/sendwithout") + " - " + _("Defines if Pokémon without IV/CP should be sent") + "\n\n" + \
+        _("*Raid filter*") + "\n" + \
+        _("/newraid") + " - " + _("Adds a new Raid entry to the database") + "\n" + \
+        _("/addraid pokedexID") + " - " + _("Adds Raid Pokémon with the given ID to the scanner") + "\n" + \
+        _("/addraid pokedexID1 pokedexID2 ...") + "\n" + \
+        _("/addraidbylevel 1-5") + " - " + _("Adds Raid Pokémon with the given level to scanner (1-5)") + "\n" + \
+        _("/removeraid pokedexID") + " - " + _("Removes Raid Pokémon with the given ID from the scanner") + "\n" + \
+        _("/removeraid pokedexID1 pokedexID2 ...") + "\n\n" + \
+        _("*Distance filter*") + "\n" + \
+        _("/location address") + " - " + _("Sets the desired search location given as text") + "\n" +\
+        _("/radius km") + " - " + _("Sets the search radius in km") + "\n" +\
+        _("/removelocation") + " - " + _("Clears the search location and radius") + "\n" +\
+        _("/raidradius") + " - " + _("Sets the search radius for a specific Raid Pokémon in km") + "\n" +\
+        _("/resetraidradius") + " - " + _("Resets the search radius for a specific Raid Pokémon") + "\n\n" +\
+        _("*Notification settings*") + "\n" + \
+        _("/cleanup") + " - " + _("Defines if messages of disappeared Pokémon should be deleted") + "\n" +\
+        _("/stickers") + " - " + _("Defines if stickers should be sent") + "\n" +\
+        _("/maponly") + " - " + _("Defines if only a map should be sent (without an additional message/sticker)") + "\n\n" +\
+        _("Hint: You can also set the scanning location by just sending a location marker")
 
     context.bot.sendMessage(chat_id, text, parse_mode='Markdown')
 
@@ -269,8 +271,8 @@ def parse_type(data_type, value):
     return value
 
 
-def default_cmd(bot, update, cmd, text=None):
-    if is_not_whitelisted(bot, update, cmd):
+def default_cmd(update, context, cmd, text=None):
+    if is_not_whitelisted(update, context, cmd):
         return False
 
     chat_id = update.message.chat_id
@@ -281,7 +283,7 @@ def default_cmd(bot, update, cmd, text=None):
     LOGGER.info('[%s@%s] %s' % (user_name, chat_id, cmd))
 
     if text:
-        bot.sendMessage(chat_id, text=_(text), parse_mode='Markdown')
+        context.bot.sendMessage(chat_id, text=_(text), parse_mode='Markdown')
 
     return True
 
@@ -302,13 +304,14 @@ def default_settings_cmd(update, context, setting, data_type=None, valid_options
 
         if valid_options and parsed_value not in valid_options:
             context.bot.sendMessage(chat_id,
-                            text=_('This is not a valid option for this setting. Valid options: *%s*') % (', '.join(list(map(str, valid_options)))),
-                            parse_mode='Markdown')
+                                    text=_(
+                                        'This is not a valid option for this setting. Valid options: *%s*') % (', '.join(list(map(str, valid_options)))),
+                                    parse_mode='Markdown')
         else:
             pref.set(setting, parsed_value)
             context.bot.sendMessage(chat_id,
-                            text=_('%s was set to *%s*') % (_(setting), parsed_value),
-                            parse_mode='Markdown')
+                                    text=_('%s was set to *%s*') % (_(setting), parsed_value),
+                                    parse_mode='Markdown')
 
     except Exception as e:
         user_name = update.message.from_user.username
@@ -316,29 +319,23 @@ def default_settings_cmd(update, context, setting, data_type=None, valid_options
         context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/' + setting))
 
 
-def default_pkm_settings_cmd(bot,
-                             update,
-                             args,
-                             setting,
-                             data_type=None,
-                             valid_options=None,
-                             reset=False):
-    if not default_cmd(bot, update, setting):
+def default_pkm_settings_cmd(update, context, args, setting, data_type=None, valid_options=None, reset=False):
+    if not default_cmd(update, context, setting):
         return
 
     chat_id = update.message.chat_id
 
     if len(args) < 1 or (reset and len(args) > 1) or (not reset and len(args) > 2):
-        bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/' + ('reset' if reset else '') + setting))
+        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/' + ('reset' if reset else '') + setting))
         return
 
     pkm_id = str(args[0])
 
     if int(pkm_id) < min_pokemon_id or int(pkm_id) > max_pokemon_id or int(
             pkm_id) in pokemon_blacklist:
-        bot.sendMessage(chat_id,
-                        text=_('The stated Pokémon is *blacklisted* and therefore can not be checked.'),
-                        parse_mode='Markdown')
+        context.bot.sendMessage(chat_id,
+                                text=_('The stated Pokémon is *blacklisted* and therefore can not be checked.'),
+                                parse_mode='Markdown')
         return
 
     pref = prefs.get(chat_id)
@@ -347,34 +344,35 @@ def default_pkm_settings_cmd(bot,
     pkm_pref = values[pkm_id] if pkm_id in values else None
 
     if not reset and len(args) < 2:
-        send_current_value(bot, chat_id, _(setting), pkm_pref, pkm_id)
+        send_current_value(context.bot, chat_id, _(setting), pkm_pref, pkm_id)
         return
 
     try:
         if not reset:
             parsed_value = parse_type(data_type, args[1].lower())
             if valid_options and parsed_value not in valid_options:
-                bot.sendMessage(chat_id,
-                                text=_('This is not a valid option for this setting. Valid options: *%s*') % (', '.join(list(map(str, valid_options)))),
-                                parse_mode='Markdown')
+                context.bot.sendMessage(chat_id,
+                                        text=_(
+                                            'This is not a valid option for this setting. Valid options: *%s*') % (', '.join(list(map(str, valid_options)))),
+                                        parse_mode='Markdown')
             else:
                 values[pkm_id] = parsed_value
-                bot.sendMessage(chat_id,
-                                text=_('%s for %s was set to *%s*') % (_(setting), pkm_name, parsed_value),
-                                parse_mode='Markdown')
+                context.bot.sendMessage(chat_id,
+                                        text=_('%s for %s was set to *%s*') % (_(setting), pkm_name, parsed_value),
+                                        parse_mode='Markdown')
         else:
             if pkm_id in values:
                 del values[pkm_id]
-            bot.sendMessage(chat_id,
-                            text=_('%s for %s was reset') % (_(setting), pkm_name),
-                            parse_mode='Markdown')
+            context.bot.sendMessage(chat_id,
+                                    text=_('%s for %s was reset') % (_(setting), pkm_name),
+                                    parse_mode='Markdown')
 
         pref.set(setting, values)
 
     except Exception as e:
         user_name = update.message.from_user.username
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
-        bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/' + ('reset' if reset else '') + setting))
+        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/' + ('reset' if reset else '') + setting))
 
 
 def cmd_stickers(update, context):
@@ -684,7 +682,7 @@ def cmd_add_raid_by_level(update, context):
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
 
-    usage_message = _('Usage:')  + '\n' + _('/addraidbylevel 1-5')
+    usage_message = _('Usage:') + '\n' + _('/addraidbylevel 1-5')
 
     if len(context.args) < 1:
         context.bot.sendMessage(chat_id, text=usage_message)
@@ -851,7 +849,8 @@ def send_current_location(bot, chat_id, set_new=False):
         if set_new:
             bot.sendMessage(chat_id, text=_('Setting new scan location with radius %.2fkm:') % (user_location[2]))
         else:
-            bot.sendMessage(chat_id, text=_('This is your current scan location with radius %.2fkm:') % (user_location[2]))
+            bot.sendMessage(chat_id, text=_('This is your current scan location with radius %.2fkm:') %
+                            (user_location[2]))
         bot.sendLocation(chat_id, user_location[0], user_location[1], disable_notification=True)
 
 
@@ -897,14 +896,14 @@ def cmd_radius(update, context):
     send_current_location(context.bot, chat_id, True)
 
 
-def is_not_whitelisted(bot, update, command):
+def is_not_whitelisted(update, context, command):
     chat_id = update.message.chat_id
     message_id = update.message.message_id
     user_name = update.message.from_user.username
     if chat_id < 0 or not whitelist.is_whitelisted(user_name):
         LOGGER.info('[%s@%s] User blocked (%s)' % (user_name, chat_id, command))
         try:
-            bot.delete_message(chat_id=chat_id, message_id=message_id)
+            context.bot.delete_message(chat_id=chat_id, message_id=message_id)
         except Exception as e:
             LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
         return True
@@ -926,7 +925,8 @@ def cmd_add_to_whitelist(update, context):
         return
 
     if len(context.args) < 1:
-        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wladd <username>') + _(' or ') + _('/wladd <username_1> <username_2>'))
+        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wladd <username>') +
+                                _(' or ') + _('/wladd <username_1> <username_2>'))
         return
 
     try:
@@ -935,7 +935,8 @@ def cmd_add_to_whitelist(update, context):
         context.bot.sendMessage(chat_id, 'Added to whitelist.')
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
-        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wladd <username>') + _(' or ') + _('/wladd <username_1> <username_2>'))
+        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wladd <username>') +
+                                _(' or ') + _('/wladd <username_1> <username_2>'))
 
 
 def cmd_rem_from_whitelist(update, context):
@@ -953,7 +954,8 @@ def cmd_rem_from_whitelist(update, context):
         return
 
     if len(context.args) < 1:
-        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wlrem <username>') + _(' or ') + _('/wlrem <username_1> <username_2>'))
+        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wlrem <username>') +
+                                _(' or ') + _('/wlrem <username_1> <username_2>'))
         return
 
     try:
@@ -963,7 +965,8 @@ def cmd_rem_from_whitelist(update, context):
 
     except Exception as e:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
-        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wlrem <username>') + _(' or ') + _('/wlrem <username_1> <username_2>'))
+        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wlrem <username>') +
+                                _(' or ') + _('/wlrem <username_1> <username_2>'))
 
 
 def cmd_unknown(update, context):
@@ -978,7 +981,7 @@ def cmd_unknown(update, context):
     context.bot.sendMessage(chat_id, text=_('Unfortunately, I do not understand this command'))
 
 
-## Functions
+# Functions
 def handle_error(update, context):
     LOGGER.warning('Update "%s" caused error "%s"' % (update, context.error))
 
@@ -1104,7 +1107,8 @@ def check_and_send(bot, chat_id):
                 build_detailed_pokemon_list(chat_id), send_without)
 
             if len(allpokes) > 20:
-                bot.sendMessage(chat_id, text=_('Your filter rules are matching too many Pokémon') + '\n' + _('Please check your settings!'))
+                bot.sendMessage(chat_id, text=_('Your filter rules are matching too many Pokémon') +
+                                '\n' + _('Please check your settings!'))
             else:
                 for pokemon in allpokes:
                     send_one_poke(chat_id, pokemon)
@@ -1578,7 +1582,8 @@ def cb_raid_pkm(update, context):
         context.user_data['pkm'] = None
         query.edit_message_text(_('*Raid boss: %s*') % _('Not hatched yet'), parse_mode='Markdown')
     else:
-        query.edit_message_text(_('*Raid boss: %s*') % pokemon_name[pref.get('language')][context.user_data['pkm']], parse_mode='Markdown')
+        query.edit_message_text(_('*Raid boss: %s*') %
+                                pokemon_name[pref.get('language')][context.user_data['pkm']], parse_mode='Markdown')
 
     query.answer()
     query.message.reply_text(_('Please enter the gym name:'))
@@ -1629,7 +1634,8 @@ def enter_raid_time(update, context):
         LOGGER.error(repr(e))
         update.message.reply_text(_('Please enter the start time of the raid (Format: hh:mm):'))
         return CHOOSE_TIME
-    update.message.reply_text(_('*Raid start time: %s*') % context.user_data['time'].strftime("%H:%M am %d.%m.%Y"), parse_mode='Markdown')
+    update.message.reply_text(_('*Raid start time: %s*') %
+                              context.user_data['time'].strftime("%H:%M am %d.%m.%Y"), parse_mode='Markdown')
     context.bot.sendMessage(update.message.chat_id, text=_('Thanks!'))
 
     data_source.add_new_raid(context.user_data['gym'], context.user_data['level'], context.user_data['time'].astimezone(
@@ -1683,7 +1689,7 @@ def main():
     global whitelist
     whitelist = Whitelist.Whitelist(config)
 
-    #ask it to the bot father in telegram
+    # ask it to the bot father in telegram
     token = config.get('TELEGRAM_TOKEN', None)
     updater = Updater(token, use_context=True)
 
