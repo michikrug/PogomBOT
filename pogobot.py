@@ -176,7 +176,7 @@ def cmd_help(update, context):
     chat_id = update.message.chat_id
     user_name = update.message.from_user.username
 
-    if is_not_whitelisted(context.bot, update, 'help'):
+    if is_not_whitelisted(context, update, 'help'):
         return
 
     LOGGER.info('[%s@%s] Sending help text' % (user_name, chat_id))
@@ -289,7 +289,7 @@ def default_cmd(update, context, cmd, text=None):
 
 
 def default_settings_cmd(update, context, setting, data_type=None, valid_options=None):
-    if not default_cmd(context.bot, update, setting):
+    if not default_cmd(context, update, setting):
         return
 
     chat_id = update.message.chat_id
@@ -470,7 +470,7 @@ def cmd_start(update, context):
 
     text = 'Bot was started' if has_entries else 'Hello! You seem to be a new user. Here is a list of available commands:'
 
-    if not default_cmd(context.bot, update, 'start', text=text):
+    if not default_cmd(context, update, 'start', text=text):
         return
 
     if has_entries:
@@ -480,13 +480,13 @@ def cmd_start(update, context):
 
 
 def cmd_stop(update, context):
-    if not default_cmd(context.bot, update, 'stop', text='Bot was paused. Use /start to resume'):
+    if not default_cmd(context, update, 'stop', text='Bot was paused. Use /start to resume'):
         return
     cleanup(update.message.chat_id)
 
 
 def cmd_clear(update, context):
-    if not default_cmd(context.bot, update, 'clear', text='Your settings were successfully reset'):
+    if not default_cmd(context, update, 'clear', text='Your settings were successfully reset'):
         return
     chat_id = update.message.chat_id
     pref = prefs.get(chat_id)
@@ -496,7 +496,7 @@ def cmd_clear(update, context):
 
 def cmd_location(update, context):
     chat_id = update.message.chat_id
-    if chat_id < 0 or not default_cmd(context.bot, update, 'location'):
+    if chat_id < 0 or not default_cmd(context, update, 'location'):
         return
 
     pref = prefs.get(chat_id)
@@ -507,7 +507,7 @@ def cmd_location(update, context):
 
 
 def cmd_remove_location(update, context):
-    if not default_cmd(context.bot, update, 'removelocation', text='Your scan location has been removed'):
+    if not default_cmd(context, update, 'removelocation', text='Your scan location has been removed'):
         return
     set_user_location(update.message.chat_id, None, None, 1)
 
@@ -578,7 +578,7 @@ def cmd_add(update, context):
     chat_id = update.message.chat_id
     user_name = update.message.from_user.username
 
-    if is_not_whitelisted(context.bot, update, 'add'):
+    if is_not_whitelisted(context, update, 'add'):
         return
 
     pref = prefs.get(chat_id)
@@ -612,7 +612,7 @@ def cmd_add_by_rarity(update, context):
     chat_id = update.message.chat_id
     user_name = update.message.from_user.username
 
-    if is_not_whitelisted(context.bot, update, 'addByRarity'):
+    if is_not_whitelisted(context, update, 'addByRarity'):
         return
 
     pref = prefs.get(chat_id)
@@ -651,7 +651,7 @@ def cmd_remove(update, context):
     chat_id = update.message.chat_id
     user_name = update.message.from_user.username
 
-    if is_not_whitelisted(context.bot, update, 'remove'):
+    if is_not_whitelisted(context, update, 'remove'):
         return
 
     pref = prefs.get(chat_id)
@@ -676,7 +676,7 @@ def cmd_add_raid_by_level(update, context):
     chat_id = update.message.chat_id
     user_name = update.message.from_user.username
 
-    if is_not_whitelisted(context.bot, update, 'addraidbylevel'):
+    if is_not_whitelisted(context, update, 'addraidbylevel'):
         return
 
     pref = prefs.get(chat_id)
@@ -715,7 +715,7 @@ def cmd_add_raid(update, context):
     chat_id = update.message.chat_id
     user_name = update.message.from_user.username
 
-    if is_not_whitelisted(context.bot, update, 'addraid'):
+    if is_not_whitelisted(context, update, 'addraid'):
         return
 
     pref = prefs.get(chat_id)
@@ -748,7 +748,7 @@ def cmd_remove_raid(update, context):
     chat_id = update.message.chat_id
     user_name = update.message.from_user.username
 
-    if is_not_whitelisted(context.bot, update, 'removeraid'):
+    if is_not_whitelisted(context, update, 'removeraid'):
         return
 
     pref = prefs.get(chat_id)
@@ -773,7 +773,7 @@ def cmd_list(update, context):
     chat_id = update.message.chat_id
     user_name = update.message.from_user.username
 
-    if is_not_whitelisted(context.bot, update, 'list'):
+    if is_not_whitelisted(context, update, 'list'):
         return
 
     pref = prefs.get(chat_id)
@@ -858,7 +858,7 @@ def cmd_location_str(update, context):
     chat_id = update.message.chat_id
     user_name = update.message.from_user.username
 
-    if is_not_whitelisted(context.bot, update, 'location_str'):
+    if is_not_whitelisted(context, update, 'location_str'):
         return
 
     pref = prefs.get(chat_id)
@@ -883,7 +883,7 @@ def cmd_location_str(update, context):
 def cmd_radius(update, context):
     chat_id = update.message.chat_id
 
-    if is_not_whitelisted(context.bot, update, 'radius'):
+    if is_not_whitelisted(context, update, 'radius'):
         return
 
     if len(context.args) < 1:
@@ -972,7 +972,7 @@ def cmd_rem_from_whitelist(update, context):
 def cmd_unknown(update, context):
     chat_id = update.message.chat_id
 
-    if is_not_whitelisted(context.bot, update, 'unknown'):
+    if is_not_whitelisted(context, update, 'unknown'):
         return
 
     pref = prefs.get(chat_id)
@@ -1538,7 +1538,7 @@ def get_walking_data(user_location, lat, lng):
 
 
 def enter_raid_level(update, context):
-    default_cmd(context.bot, update, 'enter_raid_level')
+    default_cmd(context, update, 'enter_raid_level')
     reply_keyboard = [[
         InlineKeyboardButton('⭐', callback_data='raidlevel_1'),
         InlineKeyboardButton('⭐⭐', callback_data='raidlevel_2'),
@@ -1592,7 +1592,7 @@ def cb_raid_pkm(update, context):
 
 def enter_raid_gym_search(update, context):
     if update.message.text == 'Abbruch' or update.message.text == 'Cancel':
-        return enter_raid_cancel(context.bot, update, context.user_data)
+        return enter_raid_cancel(context, update, context.user_data)
     pref = prefs.get(update.message.chat_id)
     set_lang(pref.get('language'))
     gyms = data_source.get_gyms_by_name(gym_name=update.message.text)
@@ -1624,7 +1624,7 @@ def cb_raid_gym(update, context):
 
 def enter_raid_time(update, context):
     if update.message.text == 'Abbruch' or update.message.text == 'Cancel':
-        return enter_raid_cancel(context.bot, update, context.user_data)
+        return enter_raid_cancel(context, update, context.user_data)
     pref = prefs.get(update.message.chat_id)
     set_lang(pref.get('language'))
     try:
