@@ -1186,6 +1186,7 @@ def send_one_poke(chat_id, pokemon):
         move2 = pokemon.get_move2()
         cp = pokemon.get_cp()
         level = pokemon.get_level()
+        gender = pokemon.get_gender()
 
         send_poke_without_iv = pref.get('sendwithout', True)
         lan = pref.get('language')
@@ -1279,6 +1280,13 @@ def send_one_poke(chat_id, pokemon):
         LOGGER.info('[%s] Sending one pokemon notification. %s' % (chat_id, pok_id))
 
         title = pokemon_name[lan][pok_id]
+
+        if gender == 1:
+            title += ' \u2642'
+        if gender == 2:
+            title += ' \u2640'
+        if gender == 3:
+            title += ' \u26b2'
 
         if iv is not None:
             title += ' %s%%' % iv
