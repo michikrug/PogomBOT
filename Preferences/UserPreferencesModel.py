@@ -29,6 +29,7 @@ class UserPreferencesModel(object):
         self.chat_id = chat_id
         self.loadedconfig = config
         self.default_dict = dict(
+            disabled=False,
             location=[None, None, 1],
             language=self.loadedconfig.get('DEFAULT_LANG', 'en'),
             stickers=self.loadedconfig.get('STICKERS', True),

@@ -476,6 +476,7 @@ def cmd_start(update, context):
         return
 
     if has_entries:
+        pref.set('disabled', False)
         add_job(update, context.job_queue)
     else:
         cmd_help(update, context)
@@ -997,6 +998,9 @@ def alarm(context):
 def cleanup(chat_id):
     if chat_id not in jobs:
         return
+
+    pref = prefs.get(chat_id)
+    pref.set('disabled', True)
 
     job = jobs[chat_id]
     job.schedule_removal()
@@ -1804,7 +1808,7 @@ def main():
             chat_id = int(file.split('.')[0])
             pref = prefs.get(chat_id)
             pref.load()
-            if pref.get('pkmids', []) or pref.get('raidids', []):
+            if not pref.get('disabled', False) and (pref.get('pkmids', []) or pref.get('raidids', [])):
                 add_job_for_chat_id(chat_id, j)
 
     # Block until the you presses Ctrl-C or the process receives SIGINT,
