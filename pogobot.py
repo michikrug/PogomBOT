@@ -168,6 +168,10 @@ def set_lang(lang):
     _ = translation.gettext
 
 
+####################################################################################################
+# Commands
+####################################################################################################
+
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
 def cmd_help(update, context):
@@ -475,7 +479,7 @@ def cmd_start(update, context):
 
     if has_entries:
         pref.set('disabled', False)
-        register_client(update)
+        register_client(chat_id)
     else:
         cmd_help(update, context)
 
@@ -591,7 +595,7 @@ def cmd_add(update, context):
         context.bot.sendMessage(chat_id, text=usage_message)
         return
 
-    register_client(update)
+    register_client(chat_id)
     LOGGER.info('[%s@%s] Add pokemon' % (user_name, chat_id))
 
     try:
@@ -625,7 +629,7 @@ def cmd_add_by_rarity(update, context):
         context.bot.sendMessage(chat_id, text=usage_message)
         return
 
-    register_client(update)
+    register_client(chat_id)
     LOGGER.info('[%s@%s] Add pokemon by rarity' % (user_name, chat_id))
 
     try:
@@ -689,7 +693,7 @@ def cmd_add_raid_by_level(update, context):
         context.bot.sendMessage(chat_id, text=usage_message)
         return
 
-    register_client(update)
+    register_client(chat_id)
     LOGGER.info('[%s@%s] Add raid pokemon by level' % (user_name, chat_id))
 
     try:
@@ -982,10 +986,24 @@ def cmd_unknown(update, context):
     context.bot.sendMessage(chat_id, text=_('Unfortunately, I do not understand this command'))
 
 
+####################################################################################################
 # Functions
+####################################################################################################
+
 def handle_error(update, context):
     LOGGER.warning('Update "%s" caused error "%s"' % (update, context.error))
 
+
+def register_client(chat_id):
+    try:
+        LOGGER.info('[%s] Registering Client' % (chat_id))
+        if chat_id not in locks:
+            locks[chat_id] = threading.Lock()
+            sent[chat_id] = dict()
+            messages_sent[chat_id] = dict()
+
+    except Exception as e:
+        LOGGER.error('[%s] %s' % (chat_id, repr(e)))
 
 def unregister_client(chat_id):
     if chat_id not in locks:
@@ -1000,59 +1018,6 @@ def unregister_client(chat_id):
     del sent[chat_id]
     del locks[chat_id]
     del messages_sent[chat_id]
-
-
-def register_client(update):
-    chat_id = update.message.chat_id
-    user_name = update.message.from_user.username
-    LOGGER.info('[%s@%s] Registering Client' % (user_name, chat_id))
-    register_client_for_chat_id(chat_id)
-
-
-def register_client_for_chat_id(chat_id):
-    try:
-        if chat_id not in locks:
-            locks[chat_id] = threading.Lock()
-            sent[chat_id] = dict()
-            messages_sent[chat_id] = dict()
-
-    except Exception as e:
-        LOGGER.error('[%s] %s' % (chat_id, repr(e)))
-
-
-def build_detailed_pokemon_list(chat_id):
-    pref = prefs.get(chat_id)
-    pokemons = pref.get('pkmids', [])
-    if not pokemons:
-        return []
-    location = pref.get('location')
-    miniv = pref.get('iv', 0)
-    mincp = pref.get('cp', 0)
-    minlevel = pref.get('level', 0)
-    matchmode = pref.get('matchmode', 0)
-    dists = pref.get('pkmradius', {})
-    minivs = pref.get('pkmiv', {})
-    mincps = pref.get('pkmcp', {})
-    minlevels = pref.get('pkmlevel', {})
-    matchmodes = pref.get('pkmmatchmode', {})
-    pokemon_list = []
-    for pkm in pokemons:
-        entry = {}
-        pkm_id = str(pkm)
-        entry['id'] = pkm_id
-        entry['iv'] = minivs[pkm_id] if pkm_id in minivs else miniv
-        entry['cp'] = mincps[pkm_id] if pkm_id in mincps else mincp
-        entry['level'] = minlevels[pkm_id] if pkm_id in minlevels else minlevel
-        entry['matchmode'] = matchmodes[pkm_id] if pkm_id in matchmodes else matchmode
-        if location[0] is not None:
-            radius = dists[pkm_id] if pkm_id in dists else location[2]
-            origin = Point(location[0], location[1])
-            entry['lat_max'] = distance(kilometers=radius).destination(origin, 0).latitude
-            entry['lng_max'] = distance(kilometers=radius).destination(origin, 90).longitude
-            entry['lat_min'] = distance(kilometers=radius).destination(origin, 180).latitude
-            entry['lng_min'] = distance(kilometers=radius).destination(origin, 270).longitude
-        pokemon_list.append(entry)
-    return pokemon_list
 
 
 def build_detailed_raid_list(chat_id):
@@ -1773,7 +1738,7 @@ def main():
             pref = prefs.get(chat_id)
             pref.load()
             if not pref.get('disabled', False) and (pref.get('pkmids', []) or pref.get('raidids', [])):
-                register_client_for_chat_id(chat_id)
+                register_client(chat_id)
 
     jobqueue._put(Job(get_pokemon_and_send, 30, repeat=True))
 
