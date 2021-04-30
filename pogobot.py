@@ -1113,27 +1113,27 @@ def filter_pokemon_for_user(pokemon, chat_id):
         pref = prefs.get(chat_id)
         poke_id = str(pokemon.get_pokemon_id())
         if int(poke_id) not in pref.get('pkmids', []):
-            LOGGER.info('[%s] Not sending pokemon notification. Pokemon not in list. %s' % (chat_id,
-                                                                                            poke_id))
+            #LOGGER.info('[%s] Not sending pokemon notification. Pokemon not in list. %s' % (chat_id,
+            #                                                                                poke_id))
             return False
 
         encounter_id = pokemon.get_encounter_id()
         if encounter_id in sent[chat_id]:
-            LOGGER.info('[%s] Not sending pokemon notification. Already sent. %s' % (chat_id,
-                                                                                     poke_id))
+            #LOGGER.info('[%s] Not sending pokemon notification. Already sent. %s' % (chat_id,
+            #                                                                         poke_id))
             return False
 
         disappear_time = pokemon.get_disappear_time()
         if (disappear_time - datetime.utcnow()).seconds <= 0:
-            LOGGER.info('[%s] Not sending pokemon notification. Already disappeared. %s' % (chat_id,
-                                                                                            poke_id))
+            #LOGGER.info('[%s] Not sending pokemon notification. Already disappeared. %s' % (chat_id,
+            #                                                                                poke_id))
             return False
 
         iv = pokemon.get_ivs()
         send_poke_without_iv = pref.get('sendwithout', True)
         if iv is None and not send_poke_without_iv:
-            LOGGER.info(
-                '[%s] Not sending pokemon notification. Has no IVs. %s' % (chat_id, poke_id))
+            #LOGGER.info(
+            #    '[%s] Not sending pokemon notification. Has no IVs. %s' % (chat_id, poke_id))
             return False
 
         location_data = pref.preferences.get('location')
@@ -1147,8 +1147,8 @@ def filter_pokemon_for_user(pokemon, chat_id):
             matchmode = matchmodes[poke_id]
 
         if matchmode is not None and matchmode < 2 and location_data[0] is not None and not pokemon.filter_by_location(location_data):
-            LOGGER.info('[%s] Not sending pokemon notification. Too far away. %s' % (chat_id,
-                                                                                     poke_id))
+            #LOGGER.info('[%s] Not sending pokemon notification. Too far away. %s' % (chat_id,
+            #                                                                         poke_id))
             return False
 
         cp = pokemon.get_cp()
@@ -1170,25 +1170,25 @@ def filter_pokemon_for_user(pokemon, chat_id):
             minlevel = minlevels[poke_id]
 
         if matchmode == 0 and iv is not None and iv < miniv:
-            LOGGER.info('[%s] Not sending pokemon notification. IV filter mismatch. %s' %
-                        (chat_id, poke_id))
+            #LOGGER.info('[%s] Not sending pokemon notification. IV filter mismatch. %s' %
+            #            (chat_id, poke_id))
             return False
 
         if matchmode == 0 and cp is not None and cp < mincp:
-            LOGGER.info('[%s] Not sending pokemon notification. CP filter mismatch. %s' %
-                        (chat_id, poke_id))
+            #LOGGER.info('[%s] Not sending pokemon notification. CP filter mismatch. %s' %
+            #            (chat_id, poke_id))
             return False
 
         if matchmode == 0 and level is not None and level < minlevel:
-            LOGGER.info('[%s] Not sending pokemon notification. Level filter mismatch. %s' %
-                        (chat_id, poke_id))
+            #LOGGER.info('[%s] Not sending pokemon notification. Level filter mismatch. %s' %
+            #            (chat_id, poke_id))
             return False
 
         if matchmode > 0 and (iv is not None and iv < miniv) and (cp is not None and
                                                                   cp < mincp) and (level is not None and level < minlevel):
-            LOGGER.info(
-                '[%s] Not sending pokemon notification: IV/CP/Level filter mismatch. %s' %
-                (chat_id, poke_id))
+            #LOGGER.info(
+            #    '[%s] Not sending pokemon notification: IV/CP/Level filter mismatch. %s' %
+            #    (chat_id, poke_id))
             return False
 
     except Exception as e:
