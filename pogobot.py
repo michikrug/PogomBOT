@@ -1039,7 +1039,7 @@ def get_pokemon_and_send(context):
                     send_pokemon_notification(chat_id, pokemon)
                     if chat_id not in locks:
                         break
-                    sleep(2)
+                    sleep(.5)
 
             # Clean messages for already disappeared mons
             lock = locks[chat_id]
@@ -1179,7 +1179,7 @@ def filter_pokemon_for_user(pokemon, chat_id):
             #            (chat_id, poke_id))
             return False
 
-        if matchmode == 0 and ((level is None and minlevel > 0) or (level is not None and cp < minlevel)):
+        if matchmode == 0 and ((level is None and minlevel > 0) or (level is not None and level < minlevel)):
             # LOGGER.info('[%s] Not sending pokemon notification. Level filter mismatch. %s' %
             #            (chat_id, poke_id))
             return False
@@ -1211,9 +1211,6 @@ def filter_pokemon_for_user(pokemon, chat_id):
 def send_pokemon_notification(chat_id, pokemon):
     pref = prefs.get(chat_id)
     lock = locks[chat_id]
-    LOGGER.info('[%s] Trying to send one pokemon notification. %s' % (chat_id,
-                                                                      pokemon.get_pokemon_id()))
-
     lock.acquire()
     try:
         encounter_id = pokemon.get_encounter_id()
