@@ -26,7 +26,7 @@ class DSRocketMapIVMysql():
 
     def __init__(self, connectString):
         # open the database
-        sql_pattern = 'mysql://(.*?):(.*?)@(.*?):(\d*)/(\S+)'
+        sql_pattern = r'mysql://(.*?):(.*?)@(.*?):(\d*)/(\S+)'
         (user, passw, host, port, db) = re.compile(sql_pattern).findall(connectString)[0]
         self.__user = user
         self.__passw = passw
@@ -35,44 +35,6 @@ class DSRocketMapIVMysql():
         self.__db = db
         LOGGER.info('Connecting to remote database')
         self.__connect()
-
-    @staticmethod
-    def __build_pokemon_query(pkm):
-        values_query = None
-        query_parts = []
-        sub_query_parts = []
-        values_query_parts = []
-
-        query_parts.append('pokemon_id = %s' % pkm['id'])
-
-        if pkm['iv'] > 0:
-            values_query_parts.append(
-                '(individual_attack + individual_defense + individual_stamina) >= %s' %
-                (float(pkm['iv']) / 100 * 45))
-        if pkm['cp'] > 0:
-            values_query_parts.append('cp >= %s' % pkm['cp'])
-        if pkm['level'] > 0:
-            values_query_parts.append('cp_multiplier >= %s' % get_pokemon_cpm(pkm['level']))
-        if pkm['matchmode'] == 0:
-            values_query = ' AND '.join(values_query_parts)
-        elif pkm['matchmode'] == 1:
-            values_query = ' OR '.join(values_query_parts)
-        if values_query:
-            sub_query_parts.append('(' + values_query + ')')
-
-        if 'lat_max' in pkm:
-            location_query = 'latitude BETWEEN %s AND %s' % (pkm['lat_min'], pkm['lat_max'])
-            location_query += ' AND '
-            location_query += 'longitude BETWEEN %s AND %s' % (pkm['lng_min'], pkm['lng_max'])
-            sub_query_parts.append('(' + location_query + ')')
-
-        if sub_query_parts:
-            if pkm['matchmode'] == 2:
-                query_parts.append('(' + ' OR '.join(sub_query_parts) + ')')
-            else:
-                query_parts.append('(' + ' AND '.join(sub_query_parts) + ')')
-
-        return '(' + ' AND '.join(query_parts) + ')'
 
     @staticmethod
     def __build_raid_query(raid):
@@ -88,40 +50,13 @@ class DSRocketMapIVMysql():
 
         return '(' + ' AND '.join(query_parts) + ')'
 
-    def get_pokemon_by_list(self, pokemon_list, send_without=True):
-        pokemon_query_parts = list(map(self.__build_pokemon_query, pokemon_list))
-        sql_query = (
-            "SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
-            "individual_attack, individual_defense, individual_stamina, move_1, move_2, "
-            "weight, height, gender, form, cp, cp_multiplier "
-            "FROM pokemon WHERE last_modified > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) "
-            "AND disappear_time > UTC_TIMESTAMP()")
-        sql_query += ' AND (' + ' OR '.join(pokemon_query_parts) + ')'
-        if not send_without:
-            sql_query += ' AND individual_attack IS NOT NULL'
-
-        return self.__execute_pokemon_query(sql_query)
-
-    def get_pokemon_by_ids(self, ids, send_without=True):
-        sql_query = (
-            "SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
-            "individual_attack, individual_defense, individual_stamina, move_1, move_2, "
-            "weight, height, gender, form, cp, cp_multiplier "
-            "FROM pokemon WHERE last_modified > (UTC_TIMESTAMP() - INTERVAL 10 MINUTE) "
-            "AND disappear_time > UTC_TIMESTAMP()")
-        sql_query += ' AND pokemon_id in (' + ','.join(map(str, ids)) + ')'
-        if not send_without:
-            sql_query += ' AND individual_attack IS NOT NULL'
-
-        return self.__execute_pokemon_query(sql_query)
-
     def get_pokemon_by_time(self, timestamp):
         sql_query = (
             "SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
             "individual_attack, individual_defense, individual_stamina, move_1, move_2, "
             "weight, height, gender, form, cp, cp_multiplier "
-            "FROM pokemon WHERE last_modified > %s"
-            "AND disappear_time > UTC_TIMESTAMP()" % (timestamp))
+            "FROM pokemon WHERE last_modified >= '%s'"
+            "AND disappear_time > UTC_TIMESTAMP()" % (timestamp.strftime('%Y-%m-%d %H:%M:%S')))
 
         return self.__execute_pokemon_query(sql_query)
 

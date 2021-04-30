@@ -1005,6 +1005,7 @@ def register_client(chat_id):
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
 
+
 def unregister_client(chat_id):
     if chat_id not in locks:
         return
@@ -1020,43 +1021,21 @@ def unregister_client(chat_id):
     del messages_sent[chat_id]
 
 
-def build_detailed_raid_list(chat_id):
-    pref = prefs.get(chat_id)
-    raids = pref.get('raidids', [])
-    if not raids:
-        return []
-    location = pref.get('location')
-    dists = pref.get('raidradius', {})
-    raid_list = []
-    for raid in raids:
-        entry = {}
-        raid_pkm_id = str(raid)
-        entry['id'] = raid_pkm_id
-        if location[0] is not None:
-            radius = dists[raid_pkm_id] if raid_pkm_id in dists else location[2]
-            origin = Point(location[0], location[1])
-            entry['lat_max'] = distance(kilometers=radius).destination(origin, 0).latitude
-            entry['lng_max'] = distance(kilometers=radius).destination(origin, 90).longitude
-            entry['lat_min'] = distance(kilometers=radius).destination(origin, 180).latitude
-            entry['lng_min'] = distance(kilometers=radius).destination(origin, 270).longitude
-        raid_list.append(entry)
-    return raid_list
-
-
 def get_pokemon_and_send():
     global last_timestamp
     LOGGER.info('[NEW] Checking pokemons')
     allpokes = data_source.get_pokemon_by_time(last_timestamp)
     last_timestamp = datetime.utcnow()
     for chat_id in locks:
-        check_and_send_raids(chat_id)
+        # check_and_send_raids(chat_id)
 
         pref = prefs.get(chat_id)
         if not pref.get('pkmids', []):
             continue
+
         for pokemon in allpokes:
             if filter_pokemon_for_user(pokemon, chat_id):
-                send_one_poke(chat_id, pokemon)
+                send_pokemon_notification(chat_id, pokemon)
                 if chat_id not in locks:
                     break
                 sleep(2)
@@ -1088,7 +1067,7 @@ def check_and_send_raids(chat_id):
         if raids:
             all_raids = data_source.get_raids_by_list(build_detailed_raid_list(chat_id))
             for raid in all_raids:
-                send_one_raid(chat_id, raid)
+                send_raid_notification(chat_id, raid)
                 if chat_id not in locks:
                     return
                 sleep(2)
@@ -1100,6 +1079,30 @@ def check_and_send_raids(chat_id):
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
+
+
+def build_detailed_raid_list(chat_id):
+    pref = prefs.get(chat_id)
+    raids = pref.get('raidids', [])
+    if not raids:
+        return []
+    location = pref.get('location')
+    dists = pref.get('raidradius', {})
+    raid_list = []
+    for raid in raids:
+        entry = {}
+        raid_pkm_id = str(raid)
+        entry['id'] = raid_pkm_id
+        if location[0] is not None:
+            radius = dists[raid_pkm_id] if raid_pkm_id in dists else location[2]
+            origin = Point(location[0], location[1])
+            entry['lat_max'] = distance(kilometers=radius).destination(origin, 0).latitude
+            entry['lng_max'] = distance(kilometers=radius).destination(origin, 90).longitude
+            entry['lat_min'] = distance(kilometers=radius).destination(origin, 180).latitude
+            entry['lng_min'] = distance(kilometers=radius).destination(origin, 270).longitude
+        raid_list.append(entry)
+    return raid_list
+
 
 def filter_pokemon_for_user(pokemon, chat_id):
     try:
@@ -1191,7 +1194,7 @@ def filter_pokemon_for_user(pokemon, chat_id):
     return True
 
 
-def send_one_poke(chat_id, pokemon):
+def send_pokemon_notification(chat_id, pokemon):
     pref = prefs.get(chat_id)
     lock = locks[chat_id]
     LOGGER.info('[%s] Trying to send one pokemon notification. %s' % (chat_id,
@@ -1295,7 +1298,7 @@ def send_one_poke(chat_id, pokemon):
     lock.release()
 
 
-def send_one_raid(chat_id, raid):
+def send_raid_notification(chat_id, raid):
     pref = prefs.get(chat_id)
     lock = locks[chat_id]
     LOGGER.info('[%s] Trying to send one raid notification. %s' % (chat_id, raid.get_pokemon_id()))
