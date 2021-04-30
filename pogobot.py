@@ -1084,53 +1084,25 @@ def get_pokemon_and_send():
     allpokes = data_source.get_pokemon_by_time(last_timestamp)
     last_timestamp = datetime.utcnow()
     for chat_id in locks:
-        filteredpokes = []
+        check_and_send_raids(chat_id)
+
+        pref = prefs.get(chat_id)
+        if not pref.get('pkmids', []):
+            continue
         for pokemon in allpokes:
             if filter_pokemon_for_user(pokemon, chat_id):
-                filteredpokes.append(pokemon)
-
-
-def check_and_send(bot, chat_id):
-    lock = locks[chat_id]
-    LOGGER.info('[%s] Checking pokemons and raids' % (chat_id))
-    try:
-        pref = prefs.get(chat_id)
-        set_lang(pref.get('language'))
-        pokemons = pref.get('pkmids', [])
-        raids = pref.get('raidids', [])
-
-        if pokemons:
-            send_without = pref.get('sendwithout', True)
-
-            allpokes = data_source.get_pokemon_by_list(
-                build_detailed_pokemon_list(chat_id), send_without)
-
-            if len(allpokes) > 20:
-                bot.sendMessage(chat_id, text=_('Your filter rules are matching too many Pokémon') +
-                                '\n' + _('Please check your settings!'))
-            else:
-                for pokemon in allpokes:
-                    send_one_poke(chat_id, pokemon)
-                    if chat_id not in locks:
-                        return
-                    sleep(2)
-
-        if raids:
-            all_raids = data_source.get_raids_by_list(build_detailed_raid_list(chat_id))
-
-            for raid in all_raids:
-                send_one_raid(chat_id, raid)
+                send_one_poke(chat_id, pokemon)
                 if chat_id not in locks:
-                    return
+                    break
                 sleep(2)
 
         # Clean messages for already disappeared mons
+        lock = locks[chat_id]
         lock.acquire()
-        current_time = datetime.utcnow()
         toDel = []
         for event_id in sent[chat_id]:
             time = sent[chat_id][event_id]
-            if time < current_time:
+            if time < datetime.utcnow():
                 toDel.append(event_id)
         for event_id in toDel:
             del sent[chat_id][event_id]
@@ -1140,6 +1112,22 @@ def check_and_send(bot, chat_id):
                 del messages_sent[chat_id][event_id]
         lock.release()
 
+
+def check_and_send_raids(chat_id):
+    LOGGER.info('[%s] Checking raids' % (chat_id))
+    try:
+        pref = prefs.get(chat_id)
+        set_lang(pref.get('language'))
+        raids = pref.get('raidids', [])
+
+        if raids:
+            all_raids = data_source.get_raids_by_list(build_detailed_raid_list(chat_id))
+            for raid in all_raids:
+                send_one_raid(chat_id, raid)
+                if chat_id not in locks:
+                    return
+                sleep(2)
+
     except Unauthorized as e:
         LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
         pref.reset_user()
@@ -1147,23 +1135,6 @@ def check_and_send(bot, chat_id):
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
-
-
-def find_users_by_poke_id(pokemon):
-    poke_id = pokemon.get_pokemon_id()
-    LOGGER.info('Checking pokemon %s for all users' % (poke_id))
-    for chat_id in locks:
-        if int(poke_id) in prefs.get(chat_id).get('pkmids', []):
-            send_one_poke(chat_id, pokemon)
-
-
-def find_users_by_raid_id(raid):
-    raid_id = raid.get_pokemon_id()
-    LOGGER.info('Checking raid pokemon %s for all users' % (raid_id))
-    for chat_id in locks:
-        if int(raid_id) in prefs.get(chat_id).get('raidids', []):
-            send_one_raid(chat_id, raid)
-
 
 def filter_pokemon_for_user(pokemon, chat_id):
     try:
@@ -1275,94 +1246,12 @@ def send_one_poke(chat_id, pokemon):
         level = pokemon.get_level()
         gender = pokemon.get_gender()
 
-        send_poke_without_iv = pref.get('sendwithout', True)
         lan = pref.get('language')
 
         delta = disappear_time - datetime.utcnow()
         deltaStr = '%02dm %02ds' % (int(delta.seconds / 60), int(delta.seconds % 60))
         disappear_time_str = disappear_time.replace(tzinfo=timezone.utc).astimezone(
             tz=None).strftime('%H:%M:%S')
-
-        if encounter_id in sent[chat_id]:
-            LOGGER.info('[%s] Not sending pokemon notification. Already sent. %s' % (chat_id,
-                                                                                     pok_id))
-            lock.release()
-            return
-
-        if delta.seconds <= 0:
-            LOGGER.info('[%s] Not sending pokemon notification. Already disappeared. %s' % (chat_id,
-                                                                                            pok_id))
-            lock.release()
-            return
-
-        if iv is None and not send_poke_without_iv:
-            LOGGER.info('[%s] Not sending pokemon notification. Has no IVs. %s' % (chat_id, pok_id))
-            lock.release()
-            return
-
-        location_data = pref.preferences.get('location')
-
-        dists = pref.get('pkmradius', {})
-        if pok_id in dists:
-            location_data[2] = dists[pok_id]
-
-        matchmode = pref.preferences.get('matchmode', 0)
-
-        matchmodes = pref.get('pkmmatchmode', {})
-        if pok_id in matchmodes:
-            matchmode = matchmodes[pok_id]
-
-        if matchmode is not None and matchmode < 2:
-            if location_data[0] is not None and not pokemon.filter_by_location(location_data):
-                LOGGER.info('[%s] Not sending pokemon notification. Too far away. %s' % (chat_id,
-                                                                                         pok_id))
-                lock.release()
-                return
-
-        if webhook_enabled:
-
-            miniv = pref.preferences.get('iv', 0)
-            mincp = pref.preferences.get('cp', 0)
-            minlevel = pref.preferences.get('level', 0)
-
-            minivs = pref.get('pkmiv', {})
-            if pok_id in minivs:
-                miniv = minivs[pok_id]
-
-            mincps = pref.get('pkmcp', {})
-            if pok_id in mincps:
-                mincp = mincps[pok_id]
-
-            minlevels = pref.get('pkmlevel', {})
-            if pok_id in minlevels:
-                minlevel = minlevels[pok_id]
-
-            if matchmode == 0:
-                if iv is not None and iv < miniv:
-                    LOGGER.info('[%s] Not sending pokemon notification. IV filter mismatch. %s' %
-                                (chat_id, pok_id))
-                    lock.release()
-                    return
-                if cp is not None and cp < mincp:
-                    LOGGER.info('[%s] Not sending pokemon notification. CP filter mismatch. %s' %
-                                (chat_id, pok_id))
-                    lock.release()
-                    return
-                if level is not None and level < minlevel:
-                    LOGGER.info('[%s] Not sending pokemon notification. Level filter mismatch. %s' %
-                                (chat_id, pok_id))
-                    lock.release()
-                    return
-
-            if matchmode > 0:
-                if (iv is not None and iv < miniv) and (cp is not None and
-                                                        cp < mincp) and (level is not None and
-                                                                         level < minlevel):
-                    LOGGER.info(
-                        '[%s] Not sending pokemon notification: IV/CP/Level filter mismatch. %s' %
-                        (chat_id, pok_id))
-                    lock.release()
-                    return
 
         LOGGER.info('[%s] Sending one pokemon notification. %s' % (chat_id, pok_id))
 
@@ -1386,6 +1275,7 @@ def send_one_poke(chat_id, pokemon):
 
         address = '💨 %s ⏱ %s' % (disappear_time_str, deltaStr)
 
+        location_data = pref.preferences.get('location')
         if location_data[0] is not None:
             if pref.get('walkdist'):
                 walkin_data = get_walking_data(location_data, latitude, longitude)
