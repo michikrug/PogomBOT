@@ -1025,8 +1025,8 @@ def unregister_client(chat_id):
 def get_pokemon_and_send(context):
     global last_timestamp_pokemon
     try:
-        LOGGER.info('[NEW] Checking pokemons')
         allpokes = data_source.get_pokemon_by_time(last_timestamp_pokemon)
+        LOGGER.info('[NEW] Checking pokemons. Got %s results to filter.' % (len(allpokes)))
         last_timestamp_pokemon = datetime.utcnow()
         for chat_id in locks:
             pref = prefs.get(chat_id)
@@ -1038,7 +1038,6 @@ def get_pokemon_and_send(context):
                     send_pokemon_notification(pokemon, chat_id)
                     if chat_id not in locks:
                         break
-                    sleep(.2)
 
             # Clean messages for already disappeared mons
             lock = locks[chat_id]
@@ -1063,8 +1062,8 @@ def get_pokemon_and_send(context):
 def get_raids_and_send(context):
     global last_timestamp_raids
     try:
-        LOGGER.info('[NEW] Checking raids')
         allraids = data_source.get_raids_by_time(last_timestamp_raids)
+        LOGGER.info('[NEW] Checking raids. Got %s results to filter.' % (len(allraids)))
         last_timestamp_raids = datetime.utcnow()
         for chat_id in locks:
             pref = prefs.get(chat_id)
@@ -1076,7 +1075,6 @@ def get_raids_and_send(context):
                     send_raid_notification(raid, chat_id)
                     if chat_id not in locks:
                         break
-                    sleep(.2)
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
@@ -1271,6 +1269,8 @@ def send_pokemon_notification(pokemon, chat_id):
                 chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
             messages_sent[chat_id][encounter_id] += [message.message_id]
 
+        sleep(.25)
+
     except Unauthorized as e:
         LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
         pref.reset_user()
@@ -1398,6 +1398,8 @@ def send_raid_notification(raid, chat_id):
             message = telegram_bot.sendMessage(
                 chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
             messages_sent[chat_id][raid_id] += [message.message_id]
+
+        sleep(.25)
 
     except Unauthorized as e:
         LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
