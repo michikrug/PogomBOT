@@ -1039,7 +1039,7 @@ def get_pokemon_and_send(context):
                     send_pokemon_notification(chat_id, pokemon)
                     if chat_id not in locks:
                         break
-                    sleep(.5)
+                    sleep(.2)
 
             # Clean messages for already disappeared mons
             lock = locks[chat_id]
@@ -1062,19 +1062,19 @@ def get_pokemon_and_send(context):
 
 
 def check_and_send_raids(chat_id):
-    LOGGER.info('[%s] Checking raids' % (chat_id))
     try:
         pref = prefs.get(chat_id)
         set_lang(pref.get('language'))
         raids = pref.get('raidids', [])
 
         if raids:
+            LOGGER.info('[%s] Checking raids' % (chat_id))
             all_raids = data_source.get_raids_by_list(build_detailed_raid_list(chat_id))
             for raid in all_raids:
                 send_raid_notification(chat_id, raid)
                 if chat_id not in locks:
                     return
-                sleep(2)
+                sleep(.2)
 
     except Unauthorized as e:
         LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
