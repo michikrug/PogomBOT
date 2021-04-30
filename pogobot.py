@@ -1738,11 +1738,12 @@ def main():
         if fnmatch.fnmatch(file, '*.json'):
             chat_id = int(file.split('.')[0])
             pref = prefs.get(chat_id)
-            pref.load()
+            # pref.load()
             if not pref.get('disabled', False) and (pref.get('pkmids', []) or pref.get('raidids', [])):
                 register_client(chat_id)
 
     jobqueue._put(Job(get_pokemon_and_send, 30, repeat=True))
+    jobqueue._put(Job(get_raids_and_send, 60, repeat=True))
 
     # Block until the you presses Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
