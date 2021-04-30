@@ -12,43 +12,19 @@ from .DSRaid import DSRaid
 LOGGER = logging.getLogger(__name__)
 
 
-def get_pokemon_cpm(level):
-    cp_multiplier = [
-        0.094, 0.166398, 0.215732, 0.25572, 0.29025, 0.321088, 0.349213, 0.375236, 0.399567, 0.4225,
-        0.443108, 0.462798, 0.481685, 0.499858, 0.517394, 0.534354, 0.550793, 0.566755, 0.582279,
-        0.5974, 0.612157, 0.626567, 0.640653, 0.654436, 0.667934, 0.681165, 0.694144, 0.706884,
-        0.719399, 0.7317
-    ]
-    return cp_multiplier[level - 1]
-
-
 class DSRocketMapIVMysql():
 
     def __init__(self, connectString):
         # open the database
         sql_pattern = r'mysql://(.*?):(.*?)@(.*?):(\d*)/(\S+)'
-        (user, passw, host, port, db) = re.compile(sql_pattern).findall(connectString)[0]
+        (user, passw, host, port, database) = re.compile(sql_pattern).findall(connectString)[0]
         self.__user = user
         self.__passw = passw
         self.__host = host
         self.__port = int(port)
-        self.__db = db
+        self.__db = database
         LOGGER.info('Connecting to remote database')
         self.__connect()
-
-    @staticmethod
-    def __build_raid_query(raid):
-        query_parts = []
-
-        query_parts.append('pokemon_id = %s' % raid['id'])
-
-        if 'lat_max' in raid:
-            location_query = 'latitude BETWEEN %s AND %s' % (raid['lat_min'], raid['lat_max'])
-            location_query += ' AND '
-            location_query += 'longitude BETWEEN %s AND %s' % (raid['lng_min'], raid['lng_max'])
-            query_parts.append('(' + location_query + ')')
-
-        return '(' + ' AND '.join(query_parts) + ')'
 
     def get_pokemon_by_time(self, timestamp):
         sql_query = (
@@ -58,9 +34,6 @@ class DSRocketMapIVMysql():
             "FROM pokemon WHERE last_modified >= '%s'"
             "AND disappear_time > UTC_TIMESTAMP()" % (timestamp.strftime('%Y-%m-%d %H:%M:%S')))
 
-        return self.__execute_pokemon_query(sql_query)
-
-    def __execute_pokemon_query(self, sql_query):
         poke_list = []
         try:
             with self.con.cursor() as cur:
@@ -79,30 +52,27 @@ class DSRocketMapIVMysql():
                             floatOrNone(row[12]), intOrNone(row[13]), intOrNone(row[14]),
                             intOrNone(row[15]), floatOrNone(row[16])))
 
-        except pymysql.err.OperationalError as e:
-            if e.args[0] == 2006:
+        except pymysql.err.OperationalError as err:
+            if err.args[0] == 2006:
                 self.__reconnect()
             else:
-                LOGGER.error('__execute_pokemon_query: %s' % (repr(e)))
+                LOGGER.error('__execute_pokemon_query: %s' % (repr(err)))
 
         except pymysql.err.InterfaceError:
             self.__reconnect()
 
-        except Exception as e:
-            LOGGER.error('__execute_pokemon_query: %s' % (repr(e)))
+        except Exception as err:
+            LOGGER.error('__execute_pokemon_query: %s' % (repr(err)))
 
         return poke_list
 
-    def get_raids_by_list(self, raids):
-        raid_query_parts = list(map(self.__build_raid_query, raids))
+    def get_raids_by_time(self, timestamp):
         sql_query = ("SELECT raid.gym_id, name, latitude, longitude, "
                      "start, end, pokemon_id, cp, move_1, move_2 "
                      "FROM raid JOIN gym ON gym.gym_id=raid.gym_id "
                      "JOIN gymdetails ON gym.gym_id=gymdetails.gym_id "
-                     "WHERE raid.last_scanned > (UTC_TIMESTAMP() - INTERVAL 30 MINUTE) "
-                     "AND end > UTC_TIMESTAMP()")
-        sql_query += " AND (" + " OR ".join(raid_query_parts) + ")"
-        sql_query += " ORDER BY end ASC"
+                     "WHERE raid.last_scanned >= '%s' "
+                     "AND end > UTC_TIMESTAMP()" % (timestamp.strftime('%Y-%m-%d %H:%M:%S')))
 
         raid_list = []
         try:
@@ -117,17 +87,17 @@ class DSRocketMapIVMysql():
                             intOrNone(row[6]), intOrNone(row[7]), intOrNone(row[8]),
                             intOrNone(row[9])))
 
-        except pymysql.err.OperationalError as e:
-            if e.args[0] == 2006:
+        except pymysql.err.OperationalError as err:
+            if err.args[0] == 2006:
                 self.__reconnect()
             else:
-                LOGGER.error('get_raids_by_list: %s' % (repr(e)))
+                LOGGER.error('get_raids_by_list: %s' % (repr(err)))
 
         except pymysql.err.InterfaceError:
             self.__reconnect()
 
-        except Exception as e:
-            LOGGER.error('get_raids_by_list: %s' % (repr(e)))
+        except Exception as err:
+            LOGGER.error('get_raids_by_list: %s' % (repr(err)))
 
         return raid_list
 
@@ -148,21 +118,19 @@ class DSRocketMapIVMysql():
                 rows = cur.fetchall()
                 for row in rows:
                     gym_list.append(
-                        DSGym(
-                            strOrNone(row[0]), strOrNone(row[1]), floatOrNone(row[2]),
-                            floatOrNone(row[3])))
+                        DSGym(strOrNone(row[0]), strOrNone(row[1]), floatOrNone(row[2]), floatOrNone(row[3])))
 
-        except pymysql.err.OperationalError as e:
-            if e.args[0] == 2006:
+        except pymysql.err.OperationalError as err:
+            if err.args[0] == 2006:
                 self.__reconnect()
             else:
-                LOGGER.error('get_gyms_by_name: %s' % (repr(e)))
+                LOGGER.error('get_gyms_by_name: %s' % (repr(err)))
 
         except pymysql.err.InterfaceError:
             self.__reconnect()
 
-        except Exception as e:
-            LOGGER.error('get_gyms_by_name: %s' % (repr(e)))
+        except Exception as err:
+            LOGGER.error('get_gyms_by_name: %s' % (repr(err)))
 
         return gym_list
 
@@ -187,17 +155,17 @@ class DSRocketMapIVMysql():
                 cur.execute(sql_query2, (datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), gym_id))
             self.con.commit()
 
-        except pymysql.err.OperationalError as e:
-            if e.args[0] == 2006:
+        except pymysql.err.OperationalError as err:
+            if err.args[0] == 2006:
                 self.__reconnect()
             else:
-                LOGGER.error('add_new_raid: %s' % (repr(e)))
+                LOGGER.error('add_new_raid: %s' % (repr(err)))
 
         except pymysql.err.InterfaceError:
             self.__reconnect()
 
-        except Exception as e:
-            LOGGER.error('add_new_raid: %s' % (repr(e)))
+        except Exception as err:
+            LOGGER.error('add_new_raid: %s' % (repr(err)))
 
     def __connect(self):
         self.con = pymysql.connect(
