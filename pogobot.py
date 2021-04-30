@@ -20,9 +20,7 @@ from datetime import datetime, timedelta, timezone
 from time import sleep
 
 import googlemaps
-from geopy.distance import distance
 from geopy.geocoders import Nominatim
-from geopy.point import Point
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import Unauthorized
 from telegram.ext import (CallbackQueryHandler, CommandHandler,
