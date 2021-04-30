@@ -31,7 +31,7 @@ class DSRocketMapIVMysql():
             "SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
             "individual_attack, individual_defense, individual_stamina, move_1, move_2, "
             "weight, height, gender, form, cp, cp_multiplier "
-            "FROM pokemon WHERE last_modified >= '%s'"
+            "FROM pokemon WHERE last_modified >= '%s' "
             "AND disappear_time > UTC_TIMESTAMP()" % (timestamp.strftime('%Y-%m-%d %H:%M:%S')))
 
         poke_list = []

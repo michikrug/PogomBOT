@@ -1285,9 +1285,9 @@ def send_pokemon_notification(pokemon, chat_id):
 def filter_raid_for_user(raid, chat_id):
     try:
         pref = prefs.get(chat_id)
-        poke_id = str(raid.get_pokemon_id())
+        poke_id = raid.get_pokemon_id()
 
-        if int(poke_id) not in pref.get('pkmids', []):
+        if poke_id is None or poke_id not in pref.get('pkmids', []):
             # LOGGER.info('[%s] Not sending raid notification. Pokemon not in list. %s' % (chat_id,
             #                                                                              poke_id))
             return False
