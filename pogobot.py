@@ -59,7 +59,7 @@ sent = dict()
 locks = dict()
 messages_sent = dict()
 
-last_timestamp = datetime.utcnow()
+last_timestamp = datetime.now(timezone.utc)
 
 pokemon_name = dict()
 move_name = dict()
@@ -1023,38 +1023,42 @@ def unregister_client(chat_id):
 
 def get_pokemon_and_send():
     global last_timestamp
-    LOGGER.info('[NEW] Checking pokemons')
-    allpokes = data_source.get_pokemon_by_time(last_timestamp)
-    last_timestamp = datetime.utcnow()
-    for chat_id in locks:
-        # check_and_send_raids(chat_id)
+    try:
+        LOGGER.info('[NEW] Checking pokemons')
+        allpokes = data_source.get_pokemon_by_time(last_timestamp)
+        last_timestamp = datetime.now(timezone.utc)
+        for chat_id in locks:
+            # check_and_send_raids(chat_id)
 
-        pref = prefs.get(chat_id)
-        if not pref.get('pkmids', []):
-            continue
+            pref = prefs.get(chat_id)
+            if not pref.get('pkmids', []):
+                continue
 
-        for pokemon in allpokes:
-            if filter_pokemon_for_user(pokemon, chat_id):
-                send_pokemon_notification(chat_id, pokemon)
-                if chat_id not in locks:
-                    break
-                sleep(2)
+            for pokemon in allpokes:
+                if filter_pokemon_for_user(pokemon, chat_id):
+                    send_pokemon_notification(chat_id, pokemon)
+                    if chat_id not in locks:
+                        break
+                    sleep(2)
 
-        # Clean messages for already disappeared mons
-        lock = locks[chat_id]
-        lock.acquire()
-        toDel = []
-        for event_id in sent[chat_id]:
-            time = sent[chat_id][event_id]
-            if time < datetime.utcnow():
-                toDel.append(event_id)
-        for event_id in toDel:
-            del sent[chat_id][event_id]
-            if pref.get('cleanup'):
-                for messageId in messages_sent[chat_id][event_id]:
-                    telegram_bot.deleteMessage(chat_id, messageId)
-                del messages_sent[chat_id][event_id]
-        lock.release()
+            # Clean messages for already disappeared mons
+            lock = locks[chat_id]
+            lock.acquire()
+            toDel = []
+            for event_id in sent[chat_id]:
+                time = sent[chat_id][event_id]
+                if time < datetime.now(timezone.utc):
+                    toDel.append(event_id)
+            for event_id in toDel:
+                del sent[chat_id][event_id]
+                if pref.get('cleanup'):
+                    for messageId in messages_sent[chat_id][event_id]:
+                        telegram_bot.deleteMessage(chat_id, messageId)
+                    del messages_sent[chat_id][event_id]
+            lock.release()
+
+    except Exception as e:
+        LOGGER.error('[%s] %s' % (chat_id, repr(e)))
 
 
 def check_and_send_raids(chat_id):
@@ -1120,7 +1124,7 @@ def filter_pokemon_for_user(pokemon, chat_id):
             return False
 
         disappear_time = pokemon.get_disappear_time()
-        if (disappear_time - datetime.utcnow()).seconds <= 0:
+        if (disappear_time - datetime.now(timezone.utc)).seconds <= 0:
             LOGGER.info('[%s] Not sending pokemon notification. Already disappeared. %s' % (chat_id,
                                                                                             poke_id))
             return False
@@ -1216,7 +1220,7 @@ def send_pokemon_notification(chat_id, pokemon):
 
         lan = pref.get('language')
 
-        delta = disappear_time - datetime.utcnow()
+        delta = disappear_time - datetime.now(timezone.utc)
         deltaStr = '%02dm %02ds' % (int(delta.seconds / 60), int(delta.seconds % 60))
         disappear_time_str = disappear_time.replace(tzinfo=timezone.utc).astimezone(
             tz=None).strftime('%H:%M:%S')
@@ -1319,7 +1323,7 @@ def send_raid_notification(chat_id, raid):
 
         lan = pref.get('language')
 
-        delta = end - datetime.utcnow()
+        delta = end - datetime.now(timezone.utc)
         deltaStr = '%02dh %02dm' % (int(delta.seconds / 3600), int((delta.seconds / 60) % 60))
 
         start_time_str = (end - timedelta(minutes=45)).replace(tzinfo=timezone.utc).astimezone(
@@ -1409,64 +1413,6 @@ def send_raid_notification(chat_id, raid):
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
 
     lock.release()
-
-
-def read_config():
-    global config
-    config_path = os.path.join(os.path.dirname(sys.argv[0]), 'config-bot.json')
-    LOGGER.info('Reading config: <%s>' % config_path)
-
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            config = json.loads(f.read())
-
-    except Exception as e:
-        LOGGER.error('%s' % (repr(e)))
-        config = {}
-
-    report_config()
-
-
-def report_config():
-    admins_list = config.get('LIST_OF_ADMINS', [])
-    tmp = ''
-    for admin in admins_list:
-        tmp = '%s, %s' % (tmp, admin)
-    tmp = tmp[2:]
-    LOGGER.info('LIST_OF_ADMINS: <%s>' % (tmp))
-    LOGGER.info('TELEGRAM_TOKEN: <%s>' % (config.get('TELEGRAM_TOKEN', None)))
-    LOGGER.info('GMAPS_KEY: <%s>' % (config.get('GMAPS_KEY', None)))
-    LOGGER.info('SCANNER_NAME: <%s>' % (config.get('SCANNER_NAME', None)))
-    LOGGER.info('DB_TYPE: <%s>' % (config.get('DB_TYPE', None)))
-    LOGGER.info('DB_CONNECT: <%s>' % (config.get('DB_CONNECT', None)))
-    LOGGER.info('DEFAULT_LANG: <%s>' % (config.get('DEFAULT_LANG', 'en')))
-    LOGGER.info('SEND_MAP_ONLY: <%s>' % (config.get('SEND_MAP_ONLY', False)))
-    LOGGER.info('STICKERS: <%s>' % (config.get('STICKERS', True)))
-    LOGGER.info('SEND_POKEMON_WITHOUT_IV: <%s>' % (config.get('SEND_POKEMON_WITHOUT_IV', True)))
-
-
-def read_pokemon_names(loc):
-    LOGGER.info('Reading pokemon names. <%s>' % loc)
-    config_path = 'locales/pokemon.' + loc + '.json'
-
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            pokemon_name[loc] = json.loads(f.read())
-
-    except Exception as e:
-        LOGGER.error('%s' % (repr(e)))
-
-
-def read_move_names(loc):
-    LOGGER.info('Reading move names. <%s>' % loc)
-    config_path = 'locales/moves.' + loc + '.json'
-
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            move_name[loc] = json.loads(f.read())
-
-    except Exception as e:
-        LOGGER.error('%s' % (repr(e)))
 
 
 # Returns a set with walking dist and walking duration via Google Distance Matrix API
@@ -1606,6 +1552,64 @@ def enter_raid_cancel(update, context):
     context.user_data.clear()
     update.message.reply_text(_('Alright. See you later.'))
     return ConversationHandler.END
+
+
+def read_config():
+    global config
+    config_path = os.path.join(os.path.dirname(sys.argv[0]), 'config-bot.json')
+    LOGGER.info('Reading config: <%s>' % config_path)
+
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.loads(f.read())
+
+    except Exception as e:
+        LOGGER.error('%s' % (repr(e)))
+        config = {}
+
+    report_config()
+
+
+def report_config():
+    admins_list = config.get('LIST_OF_ADMINS', [])
+    tmp = ''
+    for admin in admins_list:
+        tmp = '%s, %s' % (tmp, admin)
+    tmp = tmp[2:]
+    LOGGER.info('LIST_OF_ADMINS: <%s>' % (tmp))
+    LOGGER.info('TELEGRAM_TOKEN: <%s>' % (config.get('TELEGRAM_TOKEN', None)))
+    LOGGER.info('GMAPS_KEY: <%s>' % (config.get('GMAPS_KEY', None)))
+    LOGGER.info('SCANNER_NAME: <%s>' % (config.get('SCANNER_NAME', None)))
+    LOGGER.info('DB_TYPE: <%s>' % (config.get('DB_TYPE', None)))
+    LOGGER.info('DB_CONNECT: <%s>' % (config.get('DB_CONNECT', None)))
+    LOGGER.info('DEFAULT_LANG: <%s>' % (config.get('DEFAULT_LANG', 'en')))
+    LOGGER.info('SEND_MAP_ONLY: <%s>' % (config.get('SEND_MAP_ONLY', False)))
+    LOGGER.info('STICKERS: <%s>' % (config.get('STICKERS', True)))
+    LOGGER.info('SEND_POKEMON_WITHOUT_IV: <%s>' % (config.get('SEND_POKEMON_WITHOUT_IV', True)))
+
+
+def read_pokemon_names(loc):
+    LOGGER.info('Reading pokemon names. <%s>' % loc)
+    config_path = 'locales/pokemon.' + loc + '.json'
+
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            pokemon_name[loc] = json.loads(f.read())
+
+    except Exception as e:
+        LOGGER.error('%s' % (repr(e)))
+
+
+def read_move_names(loc):
+    LOGGER.info('Reading move names. <%s>' % loc)
+    config_path = 'locales/moves.' + loc + '.json'
+
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            move_name[loc] = json.loads(f.read())
+
+    except Exception as e:
+        LOGGER.error('%s' % (repr(e)))
 
 
 def main():
