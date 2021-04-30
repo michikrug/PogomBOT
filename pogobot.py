@@ -59,7 +59,8 @@ sent = dict()
 locks = dict()
 messages_sent = dict()
 
-last_timestamp = datetime.utcnow()
+last_timestamp_pokemon = datetime.utcnow()
+last_timestamp_raids = datetime.utcnow()
 
 pokemon_name = dict()
 move_name = dict()
@@ -520,7 +521,7 @@ def cmd_remove_location(update, context):
 def print_gym(bot, chat_id, gym):
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
-    user_location = pref.get('location')
+    user_location = pref.get('location', [])
     if chat_id < 0 or user_location[0] is None:
         addr = '%f, %f' % (gym.get_latitude(), gym.get_longitude())
     else:
@@ -793,7 +794,7 @@ def cmd_list(update, context):
         mincps = pref.get('pkmcp', {})
         minlevels = pref.get('pkmlevel', {})
         matchmodes = pref.get('pkmmatchmode', {})
-        user_location = pref.get('location')
+        user_location = pref.get('location', [])
         if user_location[0] is None:
             tmp = _('*List of watched Pokémon:*') + '\n'
         else:
@@ -847,7 +848,7 @@ def send_current_location(bot, chat_id, set_new=False):
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
 
-    user_location = pref.get('location')
+    user_location = pref.get('location', [])
     if user_location[0] is None:
         bot.sendMessage(chat_id, text=_('You have not supplied a scan location'))
     else:
@@ -896,7 +897,7 @@ def cmd_radius(update, context):
         return
 
     pref = prefs.get(chat_id)
-    user_location = pref.get('location')
+    user_location = pref.get('location', [])
     set_user_location(chat_id, user_location[0], user_location[1], float(context.args[0]))
     send_current_location(context.bot, chat_id, True)
 
@@ -1022,21 +1023,19 @@ def unregister_client(chat_id):
 
 
 def get_pokemon_and_send(context):
-    global last_timestamp
+    global last_timestamp_pokemon
     try:
         LOGGER.info('[NEW] Checking pokemons')
-        allpokes = data_source.get_pokemon_by_time(last_timestamp)
-        last_timestamp = datetime.utcnow()
+        allpokes = data_source.get_pokemon_by_time(last_timestamp_pokemon)
+        last_timestamp_pokemon = datetime.utcnow()
         for chat_id in locks:
-            # check_and_send_raids(chat_id)
-
             pref = prefs.get(chat_id)
             if not pref.get('pkmids', []):
                 continue
 
             for pokemon in allpokes:
                 if filter_pokemon_for_user(pokemon, chat_id):
-                    send_pokemon_notification(chat_id, pokemon)
+                    send_pokemon_notification(pokemon, chat_id)
                     if chat_id not in locks:
                         break
                     sleep(.2)
@@ -1061,51 +1060,26 @@ def get_pokemon_and_send(context):
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
 
 
-def check_and_send_raids(chat_id):
+def get_raids_and_send(context):
+    global last_timestamp_raids
     try:
-        pref = prefs.get(chat_id)
-        set_lang(pref.get('language'))
-        raids = pref.get('raidids', [])
+        LOGGER.info('[NEW] Checking raids')
+        allraids = data_source.get_raids_by_time(last_timestamp_raids)
+        last_timestamp_raids = datetime.utcnow()
+        for chat_id in locks:
+            pref = prefs.get(chat_id)
+            if not pref.get('raidids', []):
+                continue
 
-        if raids:
-            LOGGER.info('[%s] Checking raids' % (chat_id))
-            all_raids = data_source.get_raids_by_list(build_detailed_raid_list(chat_id))
-            for raid in all_raids:
-                send_raid_notification(chat_id, raid)
-                if chat_id not in locks:
-                    return
-                sleep(.2)
-
-    except Unauthorized as e:
-        LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
-        pref.reset_user()
-        unregister_client(chat_id)
+            for raid in allraids:
+                if filter_raid_for_user(raid, chat_id):
+                    send_raid_notification(raid, chat_id)
+                    if chat_id not in locks:
+                        break
+                    sleep(.2)
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
-
-
-def build_detailed_raid_list(chat_id):
-    pref = prefs.get(chat_id)
-    raids = pref.get('raidids', [])
-    if not raids:
-        return []
-    location = pref.get('location')
-    dists = pref.get('raidradius', {})
-    raid_list = []
-    for raid in raids:
-        entry = {}
-        raid_pkm_id = str(raid)
-        entry['id'] = raid_pkm_id
-        if location[0] is not None:
-            radius = dists[raid_pkm_id] if raid_pkm_id in dists else location[2]
-            origin = Point(location[0], location[1])
-            entry['lat_max'] = distance(kilometers=radius).destination(origin, 0).latitude
-            entry['lng_max'] = distance(kilometers=radius).destination(origin, 90).longitude
-            entry['lat_min'] = distance(kilometers=radius).destination(origin, 180).latitude
-            entry['lng_min'] = distance(kilometers=radius).destination(origin, 270).longitude
-        raid_list.append(entry)
-    return raid_list
 
 
 def filter_pokemon_for_user(pokemon, chat_id):
@@ -1136,7 +1110,7 @@ def filter_pokemon_for_user(pokemon, chat_id):
             #    '[%s] Not sending pokemon notification. Has no IVs. %s' % (chat_id, poke_id))
             return False
 
-        location_data = pref.preferences.get('location')
+        location_data = pref.preferences.get('location', [])
         dists = pref.get('pkmradius', {})
         if poke_id in dists:
             location_data[2] = dists[poke_id]
@@ -1208,13 +1182,13 @@ def filter_pokemon_for_user(pokemon, chat_id):
     return True
 
 
-def send_pokemon_notification(chat_id, pokemon):
+def send_pokemon_notification(pokemon, chat_id):
     pref = prefs.get(chat_id)
     lock = locks[chat_id]
     lock.acquire()
     try:
         encounter_id = pokemon.get_encounter_id()
-        pok_id = str(pokemon.get_pokemon_id())
+        poke_id = str(pokemon.get_pokemon_id())
         latitude = pokemon.get_latitude()
         longitude = pokemon.get_longitude()
         disappear_time = pokemon.get_disappear_time()
@@ -1227,14 +1201,16 @@ def send_pokemon_notification(chat_id, pokemon):
 
         lan = pref.get('language')
 
+        sent[chat_id][encounter_id] = disappear_time
+        messages_sent[chat_id][encounter_id] = list()
+
+        LOGGER.info('[%s] Sending pokemon notification. %s' % (chat_id, poke_id))
+
         delta = disappear_time - datetime.utcnow()
         deltaStr = '%02dm %02ds' % (int(delta.seconds / 60), int(delta.seconds % 60))
-        disappear_time_str = disappear_time.replace(tzinfo=timezone.utc).astimezone(
-            tz=None).strftime('%H:%M:%S')
+        disappear_time_str = disappear_time.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%H:%M:%S')
 
-        LOGGER.info('[%s] Sending one pokemon notification. %s' % (chat_id, pok_id))
-
-        title = pokemon_name[lan][pok_id]
+        title = pokemon_name[lan][poke_id]
 
         if gender == 1:
             title += ' \u2642'
@@ -1254,7 +1230,7 @@ def send_pokemon_notification(chat_id, pokemon):
 
         address = '💨 %s ⏱ %s' % (disappear_time_str, deltaStr)
 
-        location_data = pref.preferences.get('location')
+        location_data = pref.preferences.get('location', [])
         if location_data[0] is not None:
             if pref.get('walkdist'):
                 walkin_data = get_walking_data(location_data, latitude, longitude)
@@ -1279,16 +1255,13 @@ def send_pokemon_notification(chat_id, pokemon):
             move2Name = moveNames[str(move2)] if str(move2) in moveNames else '?'
             address += '\n⚔ %s / %s' % (move1Name, move2Name)
 
-        sent[chat_id][encounter_id] = disappear_time
-        messages_sent[chat_id][encounter_id] = list()
-
         if pref.get('maponly'):
             message = telegram_bot.sendVenue(chat_id, latitude, longitude, title, address)
             messages_sent[chat_id][encounter_id] += [message.message_id]
         else:
             if pref.get('stickers'):
                 message = telegram_bot.sendSticker(
-                    chat_id, get_pkm_sticker(pok_id), disable_notification=True)
+                    chat_id, get_pkm_sticker(poke_id), disable_notification=True)
                 messages_sent[chat_id][encounter_id] += [message.message_id]
 
             message = telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
@@ -1309,11 +1282,42 @@ def send_pokemon_notification(chat_id, pokemon):
     lock.release()
 
 
-def send_raid_notification(chat_id, raid):
+def filter_raid_for_user(raid, chat_id):
+    try:
+        pref = prefs.get(chat_id)
+        poke_id = str(raid.get_pokemon_id())
+
+        if int(poke_id) not in pref.get('pkmids', []):
+            # LOGGER.info('[%s] Not sending raid notification. Pokemon not in list. %s' % (chat_id,
+            #                                                                              poke_id))
+            return False
+
+        gym_id = raid.get_gym_id()
+        end = raid.get_end()
+        raid_id = str(gym_id) + str(end)
+        if raid_id in sent[chat_id]:
+            # LOGGER.info('[%s] Not sending raid notification. Already sent. %s' % (chat_id, poke_id))
+            return False
+
+        if (end - datetime.utcnow()).seconds <= 0:
+            # LOGGER.info('[%s] Not sending raid notification. Already ended. %s' % (chat_id, poke_id))
+            return False
+
+        location_data = pref.get('location', [])
+        if location_data[0] is not None and not raid.filter_by_location(location_data):
+            # LOGGER.info('[%s] Not sending raid notification. Too far away. %s' % (chat_id, poke_id))
+            return False
+
+    except Exception as e:
+        LOGGER.error('[%s] %s' % (chat_id, repr(e)))
+        return False
+
+    return True
+
+
+def send_raid_notification(raid, chat_id):
     pref = prefs.get(chat_id)
     lock = locks[chat_id]
-    LOGGER.info('[%s] Trying to send one raid notification. %s' % (chat_id, raid.get_pokemon_id()))
-
     lock.acquire()
     try:
         gym_id = raid.get_gym_id()
@@ -1321,7 +1325,7 @@ def send_raid_notification(chat_id, raid):
         latitude = raid.get_latitude()
         longitude = raid.get_longitude()
         end = raid.get_end()
-        pok_id = str(raid.get_pokemon_id())
+        poke_id = str(raid.get_pokemon_id())
         cp = raid.get_cp()
         move1 = raid.get_move1()
         move2 = raid.get_move2()
@@ -1329,6 +1333,12 @@ def send_raid_notification(chat_id, raid):
         raid_id = str(gym_id) + str(end)
 
         lan = pref.get('language')
+        location_data = pref.preferences.get('location', [])
+
+        sent[chat_id][raid_id] = end
+        messages_sent[chat_id][raid_id] = list()
+
+        LOGGER.info('[%s] Sending raid notification. %s' % (chat_id, poke_id))
 
         delta = end - datetime.utcnow()
         deltaStr = '%02dh %02dm' % (int(delta.seconds / 3600), int((delta.seconds / 60) % 60))
@@ -1338,30 +1348,11 @@ def send_raid_notification(chat_id, raid):
         disappear_time_str = end.replace(tzinfo=timezone.utc).astimezone(
             tz=None).strftime('%H:%M:%S')
 
-        if raid_id in sent[chat_id]:
-            LOGGER.info('[%s] Not sending raid notification. Already sent. %s' % (chat_id, pok_id))
-            lock.release()
-            return
-
-        if delta.seconds <= 0:
-            LOGGER.info('[%s] Not sending raid notification. Already ended. %s' % (chat_id, pok_id))
-            lock.release()
-            return
-
-        location_data = pref.preferences.get('location')
-
         dists = pref.get('raidradius', {})
-        if pok_id in dists:
-            location_data[2] = dists[pok_id]
+        if poke_id in dists:
+            location_data[2] = dists[poke_id]
 
-        if location_data[0] is not None and not raid.filter_by_location(location_data):
-            LOGGER.info('[%s] Not sending raid notification. Too far away. %s' % (chat_id, pok_id))
-            lock.release()
-            return
-
-        LOGGER.info('[%s] Sending one notification. %s' % (chat_id, pok_id))
-
-        title = '👹 ' + pokemon_name[lan][pok_id]
+        title = '👹 ' + pokemon_name[lan][poke_id]
 
         if cp is not None:
             title += ' ' + (_('%dCP') % cp)
@@ -1392,16 +1383,13 @@ def send_raid_notification(chat_id, raid):
             move2Name = moveNames[str(move2)] if str(move2) in moveNames else '?'
             address += '\n⚔ %s / %s' % (move1Name, move2Name)
 
-        sent[chat_id][raid_id] = end
-        messages_sent[chat_id][raid_id] = list()
-
         if pref.get('maponly'):
             message = telegram_bot.sendVenue(chat_id, latitude, longitude, title, address)
             messages_sent[chat_id][raid_id] += [message.message_id]
         else:
             if pref.get('stickers'):
                 message = telegram_bot.sendSticker(
-                    chat_id, get_pkm_sticker(pok_id), disable_notification=True)
+                    chat_id, get_pkm_sticker(poke_id), disable_notification=True)
                 messages_sent[chat_id][raid_id] += [message.message_id]
 
             message = telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
