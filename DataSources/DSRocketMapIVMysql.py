@@ -99,7 +99,6 @@ class DSRocketMapIVMysql():
         sql_query += ' AND (' + ' OR '.join(pokemon_query_parts) + ')'
         if not send_without:
             sql_query += ' AND individual_attack IS NOT NULL'
-        sql_query += ' ORDER BY pokemon_id ASC'
 
         return self.__execute_pokemon_query(sql_query)
 
@@ -113,7 +112,16 @@ class DSRocketMapIVMysql():
         sql_query += ' AND pokemon_id in (' + ','.join(map(str, ids)) + ')'
         if not send_without:
             sql_query += ' AND individual_attack IS NOT NULL'
-        sql_query += ' ORDER BY pokemon_id ASC'
+
+        return self.__execute_pokemon_query(sql_query)
+
+    def get_pokemon_by_time(self, timestamp):
+        sql_query = (
+            "SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
+            "individual_attack, individual_defense, individual_stamina, move_1, move_2, "
+            "weight, height, gender, form, cp, cp_multiplier "
+            "FROM pokemon WHERE last_modified > %s"
+            "AND disappear_time > UTC_TIMESTAMP()" % (timestamp))
 
         return self.__execute_pokemon_query(sql_query)
 

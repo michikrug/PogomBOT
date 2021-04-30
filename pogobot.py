@@ -19,20 +19,19 @@ import threading
 from datetime import datetime, timedelta, timezone
 from time import sleep
 
-from telegram import (Bot, InlineKeyboardButton, InlineKeyboardMarkup,
-                      ReplyKeyboardMarkup)
-from telegram.error import Unauthorized
-from telegram.ext import (CallbackQueryHandler, CommandHandler,
-                          ConversationHandler, Filters, Job, MessageHandler,
-                          RegexHandler, Updater)
-
-import DataSources
 import googlemaps
-import Preferences
-import Whitelist
 from geopy.distance import distance
 from geopy.geocoders import Nominatim
 from geopy.point import Point
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.error import Unauthorized
+from telegram.ext import (CallbackQueryHandler, CommandHandler,
+                          ConversationHandler, Filters, Job, MessageHandler,
+                          Updater)
+
+import DataSources
+import Preferences
+import Whitelist
 
 if sys.version_info[0] < 3:
     raise Exception('Must be using Python 3')
@@ -46,7 +45,6 @@ LOGGER = logging.getLogger(__name__)
 _ = gettext.gettext
 
 prefs = Preferences.UserPreferences()
-jobs = dict()
 geo_locator = Nominatim(user_agent="PoGoBot")
 telegram_bot = None
 gmaps_client = None
@@ -62,6 +60,8 @@ config = None
 sent = dict()
 locks = dict()
 messages_sent = dict()
+
+last_timestamp = datetime.utcnow()
 
 pokemon_name = dict()
 move_name = dict()
@@ -477,7 +477,7 @@ def cmd_start(update, context):
 
     if has_entries:
         pref.set('disabled', False)
-        add_job(update, context.job_queue)
+        register_client(update)
     else:
         cmd_help(update, context)
 
@@ -593,7 +593,7 @@ def cmd_add(update, context):
         context.bot.sendMessage(chat_id, text=usage_message)
         return
 
-    add_job(update, context.job_queue)
+    register_client(update)
     LOGGER.info('[%s@%s] Add pokemon' % (user_name, chat_id))
 
     try:
@@ -627,7 +627,7 @@ def cmd_add_by_rarity(update, context):
         context.bot.sendMessage(chat_id, text=usage_message)
         return
 
-    add_job(update, context.job_queue)
+    register_client(update)
     LOGGER.info('[%s@%s] Add pokemon by rarity' % (user_name, chat_id))
 
     try:
@@ -691,7 +691,7 @@ def cmd_add_raid_by_level(update, context):
         context.bot.sendMessage(chat_id, text=usage_message)
         return
 
-    add_job(update, context.job_queue)
+    register_client(update)
     LOGGER.info('[%s@%s] Add raid pokemon by level' % (user_name, chat_id))
 
     try:
@@ -730,7 +730,7 @@ def cmd_add_raid(update, context):
         context.bot.sendMessage(chat_id, text=usage_message)
         return
 
-    add_job(update, context.job_queue)
+    register_client(update)
     LOGGER.info('[%s@%s] Add raid' % (user_name, chat_id))
 
     try:
@@ -989,51 +989,31 @@ def handle_error(update, context):
     LOGGER.warning('Update "%s" caused error "%s"' % (update, context.error))
 
 
-def alarm(context):
-    chat_id = context.job.context[0]
-    LOGGER.info('[%s] Checking alarm' % (chat_id))
-    check_and_send(context.bot, chat_id)
-
-
 def cleanup(chat_id):
-    if chat_id not in jobs:
+    if chat_id not in locks:
         return
 
     pref = prefs.get(chat_id)
     pref.set('disabled', True)
 
-    job = jobs[chat_id]
-    job.schedule_removal()
-    del jobs[chat_id]
     del sent[chat_id]
     del locks[chat_id]
     del messages_sent[chat_id]
 
 
-def add_job(update, jobqueue):
+def register_client(update):
     chat_id = update.message.chat_id
     user_name = update.message.from_user.username
-    LOGGER.info('[%s@%s] Adding job' % (user_name, chat_id))
-    add_job_for_chat_id(chat_id, jobqueue)
+    LOGGER.info('[%s@%s] Registering Client' % (user_name, chat_id))
+    register_client_for_chat_id(chat_id)
 
 
-def add_job_for_chat_id(chat_id, jobqueue):
+def register_client_for_chat_id(chat_id):
     try:
-        if chat_id not in jobs:
-            job = Job(alarm, 30, repeat=True, context=(chat_id, 'Other'))
-            # Add to jobs
-            jobs[chat_id] = job
-            if not webhook_enabled:
-                LOGGER.info('Putting job')
-                jobqueue._put(job)
-
-            # User dependant
-            if chat_id not in sent:
-                sent[chat_id] = dict()
-            if chat_id not in locks:
-                locks[chat_id] = threading.Lock()
-            if chat_id not in messages_sent:
-                messages_sent[chat_id] = dict()
+        if chat_id not in locks:
+            locks[chat_id] = threading.Lock()
+            sent[chat_id] = dict()
+            messages_sent[chat_id] = dict()
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
@@ -1095,6 +1075,18 @@ def build_detailed_raid_list(chat_id):
             entry['lng_min'] = distance(kilometers=radius).destination(origin, 270).longitude
         raid_list.append(entry)
     return raid_list
+
+
+def get_pokemon_and_send():
+    global last_timestamp
+    LOGGER.info('[NEW] Checking pokemons')
+    allpokes = data_source.get_pokemon_by_time(last_timestamp)
+    last_timestamp = datetime.utcnow()
+    for chat_id in locks:
+        filteredpokes = []
+        for pokemon in allpokes:
+            if filter_pokemon_for_user(pokemon, chat_id):
+                filteredpokes.append(pokemon)
 
 
 def check_and_send(bot, chat_id):
@@ -1159,7 +1151,7 @@ def check_and_send(bot, chat_id):
 def find_users_by_poke_id(pokemon):
     poke_id = pokemon.get_pokemon_id()
     LOGGER.info('Checking pokemon %s for all users' % (poke_id))
-    for chat_id in jobs:
+    for chat_id in locks:
         if int(poke_id) in prefs.get(chat_id).get('pkmids', []):
             send_one_poke(chat_id, pokemon)
 
@@ -1167,9 +1159,99 @@ def find_users_by_poke_id(pokemon):
 def find_users_by_raid_id(raid):
     raid_id = raid.get_pokemon_id()
     LOGGER.info('Checking raid pokemon %s for all users' % (raid_id))
-    for chat_id in jobs:
+    for chat_id in locks:
         if int(raid_id) in prefs.get(chat_id).get('raidids', []):
             send_one_raid(chat_id, raid)
+
+
+def filter_pokemon_for_user(pokemon, chat_id):
+    try:
+        pref = prefs.get(chat_id)
+        poke_id = str(pokemon.get_pokemon_id())
+        if int(poke_id) not in pref.get('pkmids', []):
+            LOGGER.info('[%s] Not sending pokemon notification. Pokemon not in list. %s' % (chat_id,
+                                                                                            poke_id))
+            return False
+
+        encounter_id = pokemon.get_encounter_id()
+        if encounter_id in sent[chat_id]:
+            LOGGER.info('[%s] Not sending pokemon notification. Already sent. %s' % (chat_id,
+                                                                                     poke_id))
+            return False
+
+        disappear_time = pokemon.get_disappear_time()
+        if (disappear_time - datetime.utcnow()).seconds <= 0:
+            LOGGER.info('[%s] Not sending pokemon notification. Already disappeared. %s' % (chat_id,
+                                                                                            poke_id))
+            return False
+
+        iv = pokemon.get_ivs()
+        send_poke_without_iv = pref.get('sendwithout', True)
+        if iv is None and not send_poke_without_iv:
+            LOGGER.info(
+                '[%s] Not sending pokemon notification. Has no IVs. %s' % (chat_id, poke_id))
+            return False
+
+        location_data = pref.preferences.get('location')
+        dists = pref.get('pkmradius', {})
+        if poke_id in dists:
+            location_data[2] = dists[poke_id]
+
+        matchmode = pref.preferences.get('matchmode', 0)
+        matchmodes = pref.get('pkmmatchmode', {})
+        if poke_id in matchmodes:
+            matchmode = matchmodes[poke_id]
+
+        if matchmode is not None and matchmode < 2 and location_data[0] is not None and not pokemon.filter_by_location(location_data):
+            LOGGER.info('[%s] Not sending pokemon notification. Too far away. %s' % (chat_id,
+                                                                                     poke_id))
+            return False
+
+        cp = pokemon.get_cp()
+        level = pokemon.get_level()
+        miniv = pref.preferences.get('iv', 0)
+        mincp = pref.preferences.get('cp', 0)
+        minlevel = pref.preferences.get('level', 0)
+
+        minivs = pref.get('pkmiv', {})
+        if poke_id in minivs:
+            miniv = minivs[poke_id]
+
+        mincps = pref.get('pkmcp', {})
+        if poke_id in mincps:
+            mincp = mincps[poke_id]
+
+        minlevels = pref.get('pkmlevel', {})
+        if poke_id in minlevels:
+            minlevel = minlevels[poke_id]
+
+        if matchmode == 0 and iv is not None and iv < miniv:
+            LOGGER.info('[%s] Not sending pokemon notification. IV filter mismatch. %s' %
+                        (chat_id, poke_id))
+            return False
+
+        if matchmode == 0 and cp is not None and cp < mincp:
+            LOGGER.info('[%s] Not sending pokemon notification. CP filter mismatch. %s' %
+                        (chat_id, poke_id))
+            return False
+
+        if matchmode == 0 and level is not None and level < minlevel:
+            LOGGER.info('[%s] Not sending pokemon notification. Level filter mismatch. %s' %
+                        (chat_id, poke_id))
+            return False
+
+        if matchmode > 0 and (iv is not None and iv < miniv) and (cp is not None and
+                                                                  cp < mincp) and (level is not None and level < minlevel):
+            LOGGER.info(
+                '[%s] Not sending pokemon notification: IV/CP/Level filter mismatch. %s' %
+                (chat_id, poke_id))
+            return False
+
+    except Exception as e:
+        LOGGER.error('[%s] %s' % (chat_id, repr(e)))
+        return False
+
+    return True
 
 
 def send_one_poke(chat_id, pokemon):
@@ -1571,7 +1653,7 @@ def cb_raid_level(update, context):
     pref = prefs.get(query.message.chat_id)
     set_lang(pref.get('language'))
 
-    user_data['level'] = int(update.callback_query.data[10:])
+    context.user_data['level'] = int(update.callback_query.data[10:])
     query.answer()
     query.edit_message_text(_('*Raid level: %s*') % context.user_data['level'], parse_mode='Markdown')
     reply_keyboard = []
@@ -1628,7 +1710,7 @@ def cb_raid_gym(update, context):
     pref = prefs.get(query.message.chat_id)
     set_lang(pref.get('language'))
 
-    user_data['gym'] = update.callback_query.data[8:]
+    context.user_data['gym'] = update.callback_query.data[8:]
     query.answer()
     gyms = data_source.get_gyms_by_name(gym_name=context.user_data['gym'], use_id=True)
     query.edit_message_text(_('*Raid gym: %s*') % gyms[0].get_name(), parse_mode='Markdown')
@@ -1642,7 +1724,7 @@ def enter_raid_time(update, context):
     pref = prefs.get(update.message.chat_id)
     set_lang(pref.get('language'))
     try:
-        user_data['time'] = datetime.strptime(
+        context.user_data['time'] = datetime.strptime(
             datetime.now().strftime("%d %m %Y ") + update.message.text, "%d %m %Y %H:%M")
     except Exception as e:
         LOGGER.error(repr(e))
@@ -1723,15 +1805,15 @@ def main():
     dp = updater.dispatcher
 
     # on different commands - answer in Telegram
-    dp.add_handler(CommandHandler('start', cmd_start, pass_job_queue=True))
+    dp.add_handler(CommandHandler('start', cmd_start))
     dp.add_handler(CommandHandler('stop', cmd_stop))
     dp.add_handler(CommandHandler('help', cmd_help))
     dp.add_handler(CommandHandler('clear', cmd_clear))
-    dp.add_handler(CommandHandler('add', cmd_add, pass_args=True, pass_job_queue=True))
-    dp.add_handler(CommandHandler('addbyrarity', cmd_add_by_rarity, pass_args=True, pass_job_queue=True))
+    dp.add_handler(CommandHandler('add', cmd_add, pass_args=True))
+    dp.add_handler(CommandHandler('addbyrarity', cmd_add_by_rarity, pass_args=True))
     dp.add_handler(CommandHandler('remove', cmd_remove, pass_args=True))
-    dp.add_handler(CommandHandler('addraid', cmd_add_raid, pass_args=True, pass_job_queue=True))
-    dp.add_handler(CommandHandler('addraidbylevel', cmd_add_raid_by_level, pass_args=True, pass_job_queue=True))
+    dp.add_handler(CommandHandler('addraid', cmd_add_raid, pass_args=True))
+    dp.add_handler(CommandHandler('addraidbylevel', cmd_add_raid_by_level, pass_args=True))
     dp.add_handler(CommandHandler('removeraid', cmd_remove_raid, pass_args=True))
     dp.add_handler(CommandHandler('list', cmd_list))
     dp.add_handler(CommandHandler(['language', 'lang'], cmd_lang, pass_args=True))
@@ -1797,7 +1879,7 @@ def main():
 
     # Start the Bot
     updater.start_polling(bootstrap_retries=3, read_latency=5)
-    j = updater.job_queue
+    jobqueue = updater.job_queue
 
     LOGGER.info('Started!')
 
@@ -1809,7 +1891,9 @@ def main():
             pref = prefs.get(chat_id)
             pref.load()
             if not pref.get('disabled', False) and (pref.get('pkmids', []) or pref.get('raidids', [])):
-                add_job_for_chat_id(chat_id, j)
+                register_client_for_chat_id(chat_id)
+
+    jobqueue._put(Job(get_pokemon_and_send, 30, repeat=True))
 
     # Block until the you presses Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
