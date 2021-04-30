@@ -50,8 +50,6 @@ telegram_bot = None
 gmaps_client = None
 
 data_source = None
-webhook_enabled = False
-iv_available = False
 
 whitelist = None
 config = None
@@ -485,7 +483,7 @@ def cmd_start(update, context):
 def cmd_stop(update, context):
     if not default_cmd(update, context, 'stop', text='Bot was paused. Use /start to resume'):
         return
-    cleanup(update.message.chat_id)
+    unregister_client(update.message.chat_id)
 
 
 def cmd_clear(update, context):
@@ -494,7 +492,7 @@ def cmd_clear(update, context):
     chat_id = update.message.chat_id
     pref = prefs.get(chat_id)
     pref.reset_user()
-    cleanup(chat_id)
+    unregister_client(chat_id)
 
 
 def cmd_location(update, context):
@@ -989,12 +987,15 @@ def handle_error(update, context):
     LOGGER.warning('Update "%s" caused error "%s"' % (update, context.error))
 
 
-def cleanup(chat_id):
+def unregister_client(chat_id):
     if chat_id not in locks:
         return
 
     pref = prefs.get(chat_id)
     pref.set('disabled', True)
+
+    for lock in locks[chat_id]:
+        lock.release()
 
     del sent[chat_id]
     del locks[chat_id]
@@ -1142,7 +1143,7 @@ def check_and_send(bot, chat_id):
     except Unauthorized as e:
         LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
         pref.reset_user()
-        cleanup(chat_id)
+        unregister_client(chat_id)
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
@@ -1431,7 +1432,7 @@ def send_one_poke(chat_id, pokemon):
     except Unauthorized as e:
         LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
         pref.reset_user()
-        cleanup(chat_id)
+        unregister_client(chat_id)
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
@@ -1544,7 +1545,7 @@ def send_one_raid(chat_id, raid):
     except Unauthorized as e:
         LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
         pref.reset_user()
-        cleanup(chat_id)
+        unregister_client(chat_id)
 
     except Exception as e:
         LOGGER.error('[%s] %s' % (chat_id, repr(e)))
@@ -1762,22 +1763,13 @@ def main():
             read_move_names(file.split('.')[1])
 
     global data_source
-    global webhook_enabled
-    global iv_available
 
     db_type = config.get('DB_TYPE', None)
     scanner_name = config.get('SCANNER_NAME', None)
 
-    if db_type == 'mysql':
-        if scanner_name == 'rocketmap-iv':
-            iv_available = True
-            data_source = DataSources.DSRocketMapIVMysql(config.get('DB_CONNECT', None))
-    elif db_type == 'webhook':
-        webhook_enabled = True
-        if scanner_name == 'rocketmap-iv':
-            iv_available = True
-            data_source = DataSources.DSRocketMapIVWebhook(
-                config.get('DB_CONNECT', None), find_users_by_poke_id, find_users_by_raid_id)
+    if db_type == 'mysql' and scanner_name == 'rocketmap-iv':
+        data_source = DataSources.DSRocketMapIVMysql(config.get('DB_CONNECT', None))
+
     if not data_source:
         raise Exception('The combination SCANNER_NAME, DB_TYPE is not available: %s,%s' %
                         (scanner_name, db_type))
