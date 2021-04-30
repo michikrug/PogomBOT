@@ -59,7 +59,7 @@ sent = dict()
 locks = dict()
 messages_sent = dict()
 
-last_timestamp = datetime.now(timezone.utc)
+last_timestamp = datetime.utcnow()
 
 pokemon_name = dict()
 move_name = dict()
@@ -1021,12 +1021,12 @@ def unregister_client(chat_id):
     del messages_sent[chat_id]
 
 
-def get_pokemon_and_send():
+def get_pokemon_and_send(context):
     global last_timestamp
     try:
         LOGGER.info('[NEW] Checking pokemons')
         allpokes = data_source.get_pokemon_by_time(last_timestamp)
-        last_timestamp = datetime.now(timezone.utc)
+        last_timestamp = datetime.utcnow()
         for chat_id in locks:
             # check_and_send_raids(chat_id)
 
@@ -1047,7 +1047,7 @@ def get_pokemon_and_send():
             toDel = []
             for event_id in sent[chat_id]:
                 time = sent[chat_id][event_id]
-                if time < datetime.now(timezone.utc):
+                if time < datetime.utcnow():
                     toDel.append(event_id)
             for event_id in toDel:
                 del sent[chat_id][event_id]
@@ -1124,7 +1124,7 @@ def filter_pokemon_for_user(pokemon, chat_id):
             return False
 
         disappear_time = pokemon.get_disappear_time()
-        if (disappear_time - datetime.now(timezone.utc)).seconds <= 0:
+        if (disappear_time - datetime.utcnow()).seconds <= 0:
             LOGGER.info('[%s] Not sending pokemon notification. Already disappeared. %s' % (chat_id,
                                                                                             poke_id))
             return False
@@ -1220,7 +1220,7 @@ def send_pokemon_notification(chat_id, pokemon):
 
         lan = pref.get('language')
 
-        delta = disappear_time - datetime.now(timezone.utc)
+        delta = disappear_time - datetime.utcnow()
         deltaStr = '%02dm %02ds' % (int(delta.seconds / 60), int(delta.seconds % 60))
         disappear_time_str = disappear_time.replace(tzinfo=timezone.utc).astimezone(
             tz=None).strftime('%H:%M:%S')
@@ -1323,7 +1323,7 @@ def send_raid_notification(chat_id, raid):
 
         lan = pref.get('language')
 
-        delta = end - datetime.now(timezone.utc)
+        delta = end - datetime.utcnow()
         deltaStr = '%02dh %02dm' % (int(delta.seconds / 3600), int((delta.seconds / 60) % 60))
 
         start_time_str = (end - timedelta(minutes=45)).replace(tzinfo=timezone.utc).astimezone(
