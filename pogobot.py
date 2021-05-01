@@ -731,7 +731,7 @@ def cmd_add_raid(update, context):
         context.bot.sendMessage(chat_id, text=usage_message)
         return
 
-    register_client(update)
+    register_client(chat_id)
     LOGGER.info('[%s@%s] Add raid' % (user_name, chat_id))
 
     try:
