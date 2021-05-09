@@ -305,8 +305,7 @@ def default_settings_cmd(update, context, setting, data_type=None, valid_options
 
         if valid_options and parsed_value not in valid_options:
             context.bot.sendMessage(chat_id,
-                                    text=_(
-                                        'This is not a valid option for this setting. Valid options: *%s*') % (', '.join(list(map(str, valid_options)))),
+                                    text=_('This is not a valid option for this setting. Valid options: *%s*') % (', '.join(list(map(str, valid_options)))),
                                     parse_mode='Markdown')
         else:
             pref.set(setting, parsed_value)
@@ -314,9 +313,9 @@ def default_settings_cmd(update, context, setting, data_type=None, valid_options
                                     text=_('%s was set to *%s*') % (_(setting), parsed_value),
                                     parse_mode='Markdown')
 
-    except Exception as e:
+    except Exception as err:
         user_name = update.message.from_user.username
-        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
         context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/' + setting))
 
 
@@ -372,9 +371,9 @@ def default_pkm_settings_cmd(update, context, setting, data_type=None, valid_opt
 
         pref.set(setting, values)
 
-    except Exception as e:
+    except Exception as err:
         user_name = update.message.from_user.username
-        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
         context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/' + ('reset' if reset else '') + setting))
 
 
@@ -573,8 +572,8 @@ def cmd_find_gym(update, context):
         else:
             context.bot.sendMessage(chat_id, text=_('No gym with this name could be found'))
 
-    except Exception as e:
-        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
         context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/where'))
 
 
@@ -599,16 +598,16 @@ def cmd_add(update, context):
 
     try:
         search = pref.get('pkmids', [])
-        for x in context.args:
-            if int(x) >= min_pokemon_id and int(x) <= max_pokemon_id and int(
-                    x) not in search and int(x) not in pokemon_blacklist:
-                search.append(int(x))
+        for pkm_to_add in context.args:
+            pokemon_id = int(pkm_to_add)
+            if max_pokemon_id >= pokemon_id >= min_pokemon_id and pokemon_id not in search and pokemon_id not in pokemon_blacklist:
+                search.append(pokemon_id)
         search.sort()
         pref.set('pkmids', search)
         cmd_list(update, context)
 
-    except Exception as e:
-        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
         context.bot.sendMessage(chat_id, text=usage_message)
 
 
@@ -639,15 +638,16 @@ def cmd_add_by_rarity(update, context):
             return
 
         search = pref.get('pkmids', [])
-        for x in pokemon_rarity[rarity]:
-            if int(x) not in search and int(x) not in pokemon_blacklist:
-                search.append(int(x))
+        for pkm_to_add in pokemon_rarity[rarity]:
+            pokemon_id = int(pkm_to_add)
+            if pokemon_id not in search and pokemon_id not in pokemon_blacklist:
+                search.append(pokemon_id)
         search.sort()
         pref.set('pkmids', search)
         cmd_list(update, context)
 
-    except Exception as e:
-        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
         context.bot.sendMessage(chat_id, text=usage_message)
 
 
@@ -665,14 +665,15 @@ def cmd_remove(update, context):
 
     try:
         search = pref.get('pkmids', [])
-        for x in context.args:
-            if int(x) in search:
-                search.remove(int(x))
+        for pkm_to_remove in context.args:
+            pokemon_id = int(pkm_to_remove)
+            if pokemon_id in search:
+                search.remove(pokemon_id)
         pref.set('pkmids', search)
         cmd_list(update, context)
 
-    except Exception as e:
-        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
         context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/remove pokedexID'))
 
 
@@ -703,15 +704,16 @@ def cmd_add_raid_by_level(update, context):
             return
 
         search = pref.get('raidids', [])
-        for x in raid_levels[level]:
-            if int(x) not in search:
-                search.append(int(x))
+        for raid_to_add in raid_levels[level]:
+            raid_id = int(raid_to_add)
+            if raid_id not in search:
+                search.append(raid_id)
         search.sort()
         pref.set('raidids', search)
         cmd_list(update, context)
 
-    except Exception as e:
-        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
         context.bot.sendMessage(chat_id, text=usage_message)
 
 
@@ -736,15 +738,16 @@ def cmd_add_raid(update, context):
 
     try:
         search = pref.get('raidids', [])
-        for x in context.args:
-            if int(x) >= min_pokemon_id and int(x) <= max_pokemon_id and int(x) not in search:
-                search.append(int(x))
+        for raid_to_add in context.args:
+            raid_id = int(raid_to_add)
+            if max_pokemon_id >= raid_id >= min_pokemon_id and raid_id not in search:
+                search.append(raid_id)
         search.sort()
         pref.set('raidids', search)
         cmd_list(update, context)
 
-    except Exception as e:
-        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
         context.bot.sendMessage(chat_id, text=usage_message)
 
 
@@ -762,14 +765,15 @@ def cmd_remove_raid(update, context):
 
     try:
         search = pref.get('raidids', [])
-        for x in context.args:
-            if int(x) in search:
-                search.remove(int(x))
+        for raid_to_remove in context.args:
+            raid_id = int(raid_to_remove)
+            if raid_id in search:
+                search.remove(raid_id)
         pref.set('raidids', search)
         cmd_list(update, context)
 
-    except Exception as e:
-        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
         context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/removeraid pokedexID'))
 
 
@@ -831,8 +835,8 @@ def cmd_list(update, context):
 
         context.bot.sendMessage(chat_id, text=tmp, parse_mode='Markdown')
 
-    except Exception as e:
-        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
 
 
 def set_user_location(chat_id, latitude, longitude, radius):
@@ -878,8 +882,8 @@ def cmd_location_str(update, context):
                           pref.get('location')[2])
         send_current_location(context.bot, chat_id, True)
 
-    except Exception as e:
-        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
         context.bot.sendMessage(chat_id, text=_('The location was not found (or OpenStreetMap is down)'))
         return
 
@@ -908,8 +912,8 @@ def is_not_whitelisted(update, context, command):
         LOGGER.info('[%s@%s] User blocked (%s)' % (user_name, chat_id, command))
         try:
             context.bot.delete_message(chat_id=chat_id, message_id=message_id)
-        except Exception as e:
-            LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
+        except Exception as err:
+            LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
         return True
     return False
 
@@ -937,8 +941,8 @@ def cmd_add_to_whitelist(update, context):
         for x in context.args:
             whitelist.add_user(x)
         context.bot.sendMessage(chat_id, 'Added to whitelist.')
-    except Exception as e:
-        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
         context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wladd <username>') +
                                 _(' or ') + _('/wladd <username_1> <username_2>'))
 
@@ -967,8 +971,8 @@ def cmd_rem_from_whitelist(update, context):
             whitelist.rem_user(x)
         context.bot.sendMessage(chat_id, text=_('Removed from whitelist'))
 
-    except Exception as e:
-        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
         context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wlrem <username>') +
                                 _(' or ') + _('/wlrem <username_1> <username_2>'))
 
@@ -1001,8 +1005,8 @@ def register_client(chat_id):
             sent[chat_id] = dict()
             messages_sent[chat_id] = dict()
 
-    except Exception as e:
-        LOGGER.error('[%s] %s' % (chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s] %s' % (chat_id, repr(err)))
 
 
 def unregister_client(chat_id):
@@ -1053,8 +1057,8 @@ def get_pokemon_and_send(context):
                     del messages_sent[chat_id][event_id]
             lock.release()
 
-    except Exception as e:
-        LOGGER.error('[%s] %s' % (chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s] %s' % (chat_id, repr(err)))
 
 
 def get_raids_and_send(context):
@@ -1074,8 +1078,8 @@ def get_raids_and_send(context):
                     if chat_id not in locks:
                         break
 
-    except Exception as e:
-        LOGGER.error('[%s] %s' % (chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s] %s' % (chat_id, repr(err)))
 
 
 def filter_pokemon_for_user(pokemon, chat_id):
@@ -1171,8 +1175,8 @@ def filter_pokemon_for_user(pokemon, chat_id):
                         #    (chat_id, poke_id))
                         return False
 
-    except Exception as e:
-        LOGGER.error('[%s] %s' % (chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s] %s' % (chat_id, repr(err)))
         return False
 
     return True
@@ -1269,13 +1273,13 @@ def send_pokemon_notification(pokemon, chat_id):
 
         sleep(.25)
 
-    except Unauthorized as e:
-        LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
+    except Unauthorized as err:
+        LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(err)))
         pref.reset_user()
         unregister_client(chat_id)
 
-    except Exception as e:
-        LOGGER.error('[%s] %s' % (chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s] %s' % (chat_id, repr(err)))
 
     lock.release()
 
@@ -1306,8 +1310,8 @@ def filter_raid_for_user(raid, chat_id):
             # LOGGER.info('[%s] Not sending raid notification. Too far away. %s' % (chat_id, poke_id))
             return False
 
-    except Exception as e:
-        LOGGER.error('[%s] %s' % (chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s] %s' % (chat_id, repr(err)))
         return False
 
     return True
@@ -1399,13 +1403,13 @@ def send_raid_notification(raid, chat_id):
 
         sleep(.25)
 
-    except Unauthorized as e:
-        LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(e)))
+    except Unauthorized as err:
+        LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(err)))
         pref.reset_user()
         unregister_client(chat_id)
 
-    except Exception as e:
-        LOGGER.error('[%s] %s' % (chat_id, repr(e)))
+    except Exception as err:
+        LOGGER.error('[%s] %s' % (chat_id, repr(err)))
 
     lock.release()
 
@@ -1428,8 +1432,8 @@ def get_walking_data(user_location, lat, lng):
         data['walk_time'] = result.get('duration').get('text').replace(' hours', 'h').replace(
             ' hour', 'h').replace(' mins', 'm').replace(' min', 'm')
 
-    except Exception as e:
-        LOGGER.error('Encountered error while getting walking data (%s)' % (repr(e)))
+    except Exception as err:
+        LOGGER.error('Encountered error while getting walking data (%s)' % (repr(err)))
     return data
 
 
@@ -1526,8 +1530,8 @@ def enter_raid_time(update, context):
     try:
         context.user_data['time'] = datetime.strptime(
             datetime.now().strftime("%d %m %Y ") + update.message.text, "%d %m %Y %H:%M")
-    except Exception as e:
-        LOGGER.error(repr(e))
+    except Exception as err:
+        LOGGER.error(repr(err))
         update.message.reply_text(_('Please enter the start time of the raid (Format: hh:mm):'))
         return CHOOSE_TIME
     update.message.reply_text(_('*Raid start time: %s*') %
@@ -1558,8 +1562,8 @@ def read_config():
         with open(config_path, 'r', encoding='utf-8') as f:
             config = json.loads(f.read())
 
-    except Exception as e:
-        LOGGER.error('%s' % (repr(e)))
+    except Exception as err:
+        LOGGER.error('%s' % (repr(err)))
         config = {}
 
     report_config()
@@ -1591,8 +1595,8 @@ def read_pokemon_names(loc):
         with open(config_path, 'r', encoding='utf-8') as f:
             pokemon_name[loc] = json.loads(f.read())
 
-    except Exception as e:
-        LOGGER.error('%s' % (repr(e)))
+    except Exception as err:
+        LOGGER.error('%s' % (repr(err)))
 
 
 def read_move_names(loc):
@@ -1603,8 +1607,8 @@ def read_move_names(loc):
         with open(config_path, 'r', encoding='utf-8') as f:
             move_name[loc] = json.loads(f.read())
 
-    except Exception as e:
-        LOGGER.error('%s' % (repr(e)))
+    except Exception as err:
+        LOGGER.error('%s' % (repr(err)))
 
 
 def main():
