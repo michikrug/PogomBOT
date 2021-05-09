@@ -1,4 +1,4 @@
-geopy==2.0.0
-PyMySQL==0.10.1
-python_telegram_bot==12.8
-googlemaps==4.4.2
+geopy==2.1.0
+PyMySQL==1.0.2
+python_telegram_bot==13.5
+googlemaps==4.4.5
