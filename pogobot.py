@@ -1016,8 +1016,8 @@ def unregister_client(chat_id):
     pref = prefs.get(chat_id)
     pref.set('disabled', True)
 
-    for lock in locks[chat_id]:
-        lock.release()
+    lock = locks[chat_id]
+    lock.release()
 
     del sent[chat_id]
     del locks[chat_id]
@@ -1032,7 +1032,7 @@ def get_pokemon_and_send(context):
         last_timestamp_pokemon = datetime.utcnow()
         for chat_id in locks:
             pref = prefs.get(chat_id)
-            if not pref.get('pkmids', []):
+            if not pref.get('pkmids', []) or pref.get('disabled', False):
                 continue
 
             for pokemon in allpokes:
@@ -1050,11 +1050,11 @@ def get_pokemon_and_send(context):
                 if time < datetime.utcnow():
                     toDel.append(event_id)
             for event_id in toDel:
-                del sent[chat_id][event_id]
                 if pref.get('cleanup'):
-                    for messageId in messages_sent[chat_id][event_id]:
-                        telegram_bot.deleteMessage(chat_id, messageId)
-                    del messages_sent[chat_id][event_id]
+                    for message_id in messages_sent[chat_id][event_id]:
+                        telegram_bot.deleteMessage(chat_id, message_id)
+                del sent[chat_id][event_id]
+                del messages_sent[chat_id][event_id]
             lock.release()
 
     except Exception as err:
@@ -1069,7 +1069,7 @@ def get_raids_and_send(context):
         last_timestamp_raids = datetime.utcnow()
         for chat_id in locks:
             pref = prefs.get(chat_id)
-            if not pref.get('raidids', []):
+            if not pref.get('raidids', []) or pref.get('disabled', False):
                 continue
 
             for raid in allraids:
