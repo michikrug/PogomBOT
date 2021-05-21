@@ -504,7 +504,7 @@ def cmd_remove_location(update, context):
     set_user_location(update.effective_chat.id, None, None, 1)
 
 
-def print_gym(update, gym):
+def print_gym(update, context, gym):
     chat_id = update.effective_chat.id
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
@@ -513,7 +513,7 @@ def print_gym(update, gym):
         addr = '%f, %f' % (gym.get_latitude(), gym.get_longitude())
     else:
         addr = _('Distance: %.2fkm') % (gym.get_distance(user_location))
-    update.message.reply_venue(gym.get_latitude(), gym.get_longitude(), gym.get_name(), addr)
+    context.bot.sendVenue(chat_id, gym.get_latitude(), gym.get_longitude(), gym.get_name(), addr)
 
 
 def cb_find_gym(update, context):
@@ -521,7 +521,7 @@ def cb_find_gym(update, context):
     chat_id = query.message.chat_id
     gyms = data_source.get_gyms_by_name(gym_name=query.data[10:], use_id=True)
     if gyms:
-        print_gym(update, gyms[0])
+        print_gym(update, context, gyms[0])
     context.bot.delete_message(chat_id=chat_id, message_id=query.message.message_id)
     query.answer()
 
@@ -547,7 +547,7 @@ def cmd_find_gym(update, context):
         gyms = data_source.get_gyms_by_name(gym_name=gym_name)
 
         if len(gyms) == 1:
-            print_gym(update, gyms[0])
+            print_gym(update, context, gyms[0])
         elif len(gyms) > 1:
             keyboard = []
             for gym in gyms:
