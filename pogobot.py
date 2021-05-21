@@ -1027,12 +1027,12 @@ def get_pokemon_and_send(context):
             # Clean messages for already disappeared mons
             lock = locks[chat_id]
             lock.acquire()
-            toDel = []
+            to_delete = []
             for event_id in sent[chat_id]:
                 time = sent[chat_id][event_id]
                 if time < datetime.utcnow():
-                    toDel.append(event_id)
-            for event_id in toDel:
+                    to_delete.append(event_id)
+            for event_id in to_delete:
                 if pref.get('cleanup'):
                     for message_id in messages_sent[chat_id][event_id]:
                         telegram_bot.deleteMessage(chat_id, message_id)
@@ -1248,8 +1248,7 @@ def send_pokemon_notification(pokemon, chat_id):
             messages_sent[chat_id][encounter_id] += [message.message_id]
         else:
             if pref.get('stickers'):
-                message = telegram_bot.sendSticker(
-                    chat_id, get_pkm_sticker(poke_id), disable_notification=True)
+                message = telegram_bot.sendSticker(chat_id, get_pkm_sticker(poke_id), disable_notification=True)
                 messages_sent[chat_id][encounter_id] += [message.message_id]
 
             message = telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
@@ -1333,10 +1332,8 @@ def send_raid_notification(raid, chat_id):
         delta = end - datetime.utcnow()
         deltaStr = '%02dh %02dm' % (int(delta.seconds / 3600), int((delta.seconds / 60) % 60))
 
-        start_time_str = (end - timedelta(minutes=45)).replace(tzinfo=timezone.utc).astimezone(
-            tz=None).strftime('%H:%M:%S')
-        disappear_time_str = end.replace(tzinfo=timezone.utc).astimezone(
-            tz=None).strftime('%H:%M:%S')
+        start_time_str = (end - timedelta(minutes=45)).replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%H:%M:%S')
+        disappear_time_str = end.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%H:%M:%S')
 
         dists = pref.get('raidradius', {})
         if poke_id in dists:
@@ -1378,8 +1375,7 @@ def send_raid_notification(raid, chat_id):
             messages_sent[chat_id][raid_id] += [message.message_id]
         else:
             if pref.get('stickers'):
-                message = telegram_bot.sendSticker(
-                    chat_id, get_pkm_sticker(poke_id), disable_notification=True)
+                message = telegram_bot.sendSticker(chat_id, get_pkm_sticker(poke_id), disable_notification=True)
                 messages_sent[chat_id][raid_id] += [message.message_id]
 
             message = telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
@@ -1417,8 +1413,8 @@ def get_walking_data(user_location, lat, lng):
         result = gmaps_client.distance_matrix(origin, dest, mode='walking', units='metric')
         result = result.get('rows')[0].get('elements')[0]
         data['walk_dist'] = float(result.get('distance').get('text').replace(' km', ''))
-        data['walk_time'] = result.get('duration').get('text').replace(' hours', 'h').replace(
-            ' hour', 'h').replace(' mins', 'm').replace(' min', 'm')
+        data['walk_time'] = result.get('duration').get('text').replace(
+            ' hours', 'h').replace(' hour', 'h').replace(' mins', 'm').replace(' min', 'm')
 
     except Exception as err:
         LOGGER.error('Encountered error while getting walking data (%s)' % (repr(err)))
@@ -1470,8 +1466,7 @@ def cb_raid_pkm(update, context):
         context.user_data['pkm'] = None
         query.edit_message_text(_('*Raid boss: %s*') % _('Not hatched yet'), parse_mode='Markdown')
     else:
-        query.edit_message_text(_('*Raid boss: %s*') %
-                                pokemon_name[pref.get('language')][context.user_data['pkm']], parse_mode='Markdown')
+        query.edit_message_text(_('*Raid boss: %s*') % pokemon_name[pref.get('language')][context.user_data['pkm']], parse_mode='Markdown')
 
     query.answer()
     query.message.reply_text(_('Please enter the gym name:'))
