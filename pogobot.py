@@ -174,8 +174,8 @@ def set_lang(lang):
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
 def cmd_help(update, context):
-    chat_id = update.message.chat_id
-    user_name = update.message.from_user.username
+    chat_id = update.effective_chat.id
+    user_name = update.effective_chat.username
 
     if is_not_whitelisted(update, context, 'help'):
         return
@@ -235,7 +235,7 @@ def cmd_help(update, context):
         _("/maponly") + " - " + _("Defines if only a map should be sent (without an additional message/sticker)") + "\n\n" +\
         _("Hint: You can also set the scanning location by just sending a location marker")
 
-    context.bot.sendMessage(chat_id, text, parse_mode='Markdown')
+    update.message.reply_text(chat_id, text, parse_mode='Markdown')
 
 
 def send_current_value(bot, chat_id, name, value, pkm_id=None):
