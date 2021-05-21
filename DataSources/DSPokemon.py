@@ -14,7 +14,9 @@ class DSPokemon:
         self.iv_a = iv_a
         self.iv_d = iv_d
         self.iv_s = iv_s
-        self.ivs = round(float((iv_a + iv_d + iv_s) / 45 * 100), 1)
+        self.ivs = round(
+            float((iv_a + iv_d + iv_s) / 45 * 100), 1
+        ) if iv_a is not None and iv_d is not None and iv_s is not None else None
         self.move1 = move1
         self.move2 = move2
         self.weight = weight
