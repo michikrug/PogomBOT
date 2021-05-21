@@ -235,7 +235,7 @@ def cmd_help(update, context):
         _("/maponly") + " - " + _("Defines if only a map should be sent (without an additional message/sticker)") + "\n\n" +\
         _("Hint: You can also set the scanning location by just sending a location marker")
 
-    update.message.reply_text(chat_id, text, parse_mode='Markdown')
+    update.message.reply_text(text, parse_mode='Markdown')
 
 
 def send_current_value(bot, chat_id, name, value, pkm_id=None):
@@ -277,8 +277,8 @@ def default_cmd(update, context, cmd, text=None):
     if is_not_whitelisted(update, context, cmd):
         return False
 
-    chat_id = update.message.chat_id
-    user_name = update.message.from_user.username
+    chat_id = update.message.chat_id or update.edited_message.chat.id
+    user_name = update.message.from_user.username or update.edited_message.chat.username
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
 
@@ -294,7 +294,7 @@ def default_settings_cmd(update, context, setting, data_type=None, valid_options
     if not default_cmd(update, context, setting):
         return
 
-    chat_id = update.message.chat_id
+    chat_id = update.message.chat_id or update.edited_message.chat.id
     pref = prefs.get(chat_id)
 
     if len(context.args) < 1:
@@ -305,19 +305,15 @@ def default_settings_cmd(update, context, setting, data_type=None, valid_options
         parsed_value = parse_type(data_type, context.args[0].lower())
 
         if valid_options and parsed_value not in valid_options:
-            context.bot.sendMessage(chat_id,
-                                    text=_('This is not a valid option for this setting. Valid options: *%s*') % (', '.join(list(map(str, valid_options)))),
-                                    parse_mode='Markdown')
+            update.message.reply_text(text=_('This is not a valid option for this setting. Valid options: *%s*') % (', '.join(list(map(str, valid_options)))), parse_mode='Markdown')
         else:
             pref.set(setting, parsed_value)
-            context.bot.sendMessage(chat_id,
-                                    text=_('%s was set to *%s*') % (_(setting), parsed_value),
-                                    parse_mode='Markdown')
+            update.message.reply_text(text=_('%s was set to *%s*') % (_(setting), parsed_value), parse_mode='Markdown')
 
     except Exception as err:
-        user_name = update.message.from_user.username
+        user_name = update.message.from_user.username or update.edited_message.chat.username
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
-        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/' + setting))
+        update.message.reply_text(text=_('Usage:') + '\n' + _('/' + setting))
 
 
 def default_pkm_settings_cmd(update, context, setting, data_type=None, valid_options=None, reset=False):
@@ -326,7 +322,7 @@ def default_pkm_settings_cmd(update, context, setting, data_type=None, valid_opt
 
     args = context.args
 
-    chat_id = update.message.chat_id
+    chat_id = update.message.chat_id or update.edited_message.chat.id
 
     if len(args) < 1 or (reset and len(args) > 1) or (not reset and len(args) > 2):
         context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/' + ('reset' if reset else '') + setting))
@@ -373,7 +369,7 @@ def default_pkm_settings_cmd(update, context, setting, data_type=None, valid_opt
         pref.set(setting, values)
 
     except Exception as err:
-        user_name = update.message.from_user.username
+        user_name = update.message.from_user.username or update.edited_message.chat.username
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
         context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/' + ('reset' if reset else '') + setting))
 
