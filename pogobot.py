@@ -210,11 +210,12 @@ def cmd_help(update, context):
         _("/pkmlevel") + " - " + _("Sets the minimum level for a specific Pokémon") + "\n" +\
         _("/resetpkmlevel") + " - " + _("Resets the minimum level for a specific Pokémon") + "\n" +\
         _("/matchmode") + " - " + _("Sets the match mode (0) Distance AND IVs AND CP AND level / (1) Distance AND IVs OR CP OR level has to match / (2) Distance OR IVs OR CP OR level has to match") + "\n" +\
-        _("/pkmmatchmode") + " - " + _("Set the match mode for a specific Pokémon") + "n" +\
+        _("/pkmmatchmode") + " - " + _("Set the match mode for a specific Pokémon") + "\n" +\
         _("/resetpkmmatchmode") + " - " + _("Reset the match mode for a specific Pokémon") + "\n\n" +\
         _("/pkmradius") + " - " + _("Sets the search radius for a specific Pokémon in km") + "\n" +\
         _("/resetpkmradius") + " - " + _("Resets the search radius for a specific Pokémon") + "\n" +\
         _("/sendwithout") + " - " + _("Defines if Pokémon without IV/CP should be sent") + "\n\n" + \
+        _("/showivs") + " - " + _("Defines if Individual Values should be displayed") + "\n\n" + \
         _("*Raid filter*") + "\n" + \
         _("/newraid") + " - " + _("Adds a new Raid entry to the database") + "\n" + \
         _("/addraid pokedexID") + " - " + _("Adds Raid Pokémon with the given ID to the scanner") + "\n" + \
@@ -391,6 +392,10 @@ def cmd_map_only(update, context):
 
 def cmd_send_without(update, context):
     default_settings_cmd(update, context, 'sendwithout', 'bool')
+
+
+def cmd_show_ivs(update, context):
+    default_settings_cmd(update, context, 'showivs', 'bool')
 
 
 def cmd_walk_dist(update, context):
@@ -1192,6 +1197,9 @@ def send_pokemon_notification(pokemon, chat_id):
         latitude = pokemon.get_latitude()
         longitude = pokemon.get_longitude()
         disappear_time = pokemon.get_disappear_time()
+        iv_a = pokemon.get_iv_a()
+        iv_d = pokemon.get_iv_d()
+        iv_s = pokemon.get_iv_s()
         iv = pokemon.get_ivs()
         move1 = pokemon.get_move1()
         move2 = pokemon.get_move2()
@@ -1221,6 +1229,8 @@ def send_pokemon_notification(pokemon, chat_id):
 
         if iv is not None:
             title += ' %s%%' % iv
+            if pref.get('showivs', False):
+                title += ' (A%d | D%d | S%d)' % (iv_a, iv_d, iv_s)
 
         if cp is not None:
             title += ' ' + (_('%dCP') % cp)
@@ -1696,6 +1706,7 @@ def main():
     dp.add_handler(CommandHandler('resetpkmlevel', cmd_pkm_level_reset, pass_args=True))
     dp.add_handler(CommandHandler('resetpkmmatchmode', cmd_pkm_matchmode_reset, pass_args=True))
     dp.add_handler(CommandHandler('sendwithout', cmd_send_without, pass_args=True))
+    dp.add_handler(CommandHandler('showivs', cmd_show_ivs, pass_args=True))
     dp.add_handler(CommandHandler(['wo', 'where'], cmd_find_gym, pass_args=True))
 
     conv_handler = ConversationHandler(

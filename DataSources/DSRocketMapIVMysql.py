@@ -40,14 +40,11 @@ class DSRocketMapIVMysql():
                 cur.execute(sql_query)
                 rows = cur.fetchall()
                 for row in rows:
-                    ivs = round(
-                        float((int(row[6]) + int(row[7]) + int(row[8])) / 45 * 100), 1
-                    ) if row[6] is not None and row[7] is not None and row[8] is not None else None
-
                     poke_list.append(
                         DSPokemon(
                             strOrNone(row[0]), strOrNone(row[1]), intOrNone(row[2]),
-                            floatOrNone(row[3]), floatOrNone(row[4]), strptimeOrNone(row[5]), ivs,
+                            floatOrNone(row[3]), floatOrNone(row[4]), strptimeOrNone(row[5]),
+                            intOrNone(row[6]), intOrNone(row[7]), intOrNone(row[8]),
                             intOrNone(row[9]), intOrNone(row[10]), floatOrNone(row[11]),
                             floatOrNone(row[12]), intOrNone(row[13]), intOrNone(row[14]),
                             intOrNone(row[15]), floatOrNone(row[16])))

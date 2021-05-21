@@ -1,542 +1,577 @@
-# PogomBOT
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: 1.0\n"
-"POT-Creation-Date: 2018-04-10 14:46+0200\n"
-"Language-Team: EN <LL@li.org>\n"
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-05-21 11:17+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: pygettext.py 1.5\n"
-#: pogobot.py:180
+
+#: pogobot.py:188
 msgid "*The PoGo Chemnitz Bot knows the following commands:*"
 msgstr ""
 
-#: pogobot.py:181
+#: pogobot.py:189
 msgid "*General*"
 msgstr ""
 
-#: pogobot.py:182
+#: pogobot.py:190
 msgid "/start"
 msgstr ""
 
-#: pogobot.py:182
+#: pogobot.py:190
 msgid "Starts the bot (e.g. after pausing)"
 msgstr ""
 
-#: pogobot.py:183
+#: pogobot.py:191
 msgid "/stop"
 msgstr ""
 
-#: pogobot.py:183
+#: pogobot.py:191
 msgid "Pauses the bot (use /start to resume)"
 msgstr ""
 
-#: pogobot.py:184
+#: pogobot.py:192
 msgid "/list"
 msgstr ""
 
-#: pogobot.py:184
+#: pogobot.py:192
 msgid "Lists the watched Pokémon and Raid Pokémon"
 msgstr ""
 
-#: pogobot.py:185
+#: pogobot.py:193
 msgid "/language"
 msgstr ""
 
-#: pogobot.py:185
+#: pogobot.py:193
 msgid "Sets the language of the bot"
 msgstr ""
 
-#: pogobot.py:186
+#: pogobot.py:194
 msgid "/clear"
 msgstr ""
 
-#: pogobot.py:186
+#: pogobot.py:194
 msgid "Resets all your settings"
 msgstr ""
 
-#: pogobot.py:187
+#: pogobot.py:195
 msgid "/help"
 msgstr ""
 
-#: pogobot.py:187
+#: pogobot.py:195
 msgid "Shows a list of available commands"
 msgstr ""
 
-#: pogobot.py:188
-msgid "Searches for a gym by name and outputs its location"
-msgstr ""
-
-#: pogobot.py:188 pogobot.py:571
+#: pogobot.py:196 pogobot.py:582
 msgid "/where"
 msgstr ""
 
-#: pogobot.py:189
+#: pogobot.py:196
+msgid "Searches for a gym by name and outputs its location"
+msgstr ""
+
+#: pogobot.py:197
 msgid "*Pokémon filter*"
 msgstr ""
 
-#: pogobot.py:190
-msgid "Adds Pokémon with the given ID to the scanner"
-msgstr ""
-
-#: pogobot.py:190 pogobot.py:584
+#: pogobot.py:198 pogobot.py:595
 msgid "/add pokedexID"
 msgstr ""
 
-#: pogobot.py:191 pogobot.py:584
+#: pogobot.py:198
+msgid "Adds Pokémon with the given ID to the scanner"
+msgstr ""
+
+#: pogobot.py:199 pogobot.py:595
 msgid "/add pokedexID1 pokedexID2 ..."
 msgstr ""
 
-#: pogobot.py:192
-msgid "Adds Pokémon with the given rarity to scanner (1 very common - 5 ultrarare)"
-msgstr ""
-
-#: pogobot.py:192 pogobot.py:618
+#: pogobot.py:200 pogobot.py:629
 msgid "/addbyrarity 1-5"
 msgstr ""
 
-#: pogobot.py:193
-msgid "Removes Pokémon with the given ID from the scanner"
+#: pogobot.py:200
+msgid ""
+"Adds Pokémon with the given rarity to scanner (1 very common - 5 ultrarare)"
 msgstr ""
 
-#: pogobot.py:193 pogobot.py:669
+#: pogobot.py:201 pogobot.py:682
 msgid "/remove pokedexID"
 msgstr ""
 
-#: pogobot.py:194
+#: pogobot.py:201
+msgid "Removes Pokémon with the given ID from the scanner"
+msgstr ""
+
+#: pogobot.py:202
 msgid "/remove pokedexID1 pokedexID2 ..."
 msgstr ""
 
-#: pogobot.py:195
+#: pogobot.py:203
 msgid "/iv"
 msgstr ""
 
-#: pogobot.py:195
+#: pogobot.py:203
 msgid "Sets the minimum IVs given as percent"
 msgstr ""
 
-#: pogobot.py:196
+#: pogobot.py:204
 msgid "/cp"
 msgstr ""
 
-#: pogobot.py:196
+#: pogobot.py:204
 msgid "Sets the minimum CP"
 msgstr ""
 
-#: pogobot.py:197
+#: pogobot.py:205
 msgid "/level"
 msgstr ""
 
-#: pogobot.py:197
+#: pogobot.py:205
 msgid "Sets the minimum level"
 msgstr ""
 
-#: pogobot.py:198
+#: pogobot.py:206
 msgid "/pkmiv"
 msgstr ""
 
-#: pogobot.py:198
+#: pogobot.py:206
 msgid "Sets the minimum IVs for a specific Pokémon given as percent"
 msgstr ""
 
-#: pogobot.py:199
+#: pogobot.py:207
 msgid "/resetpkmiv"
 msgstr ""
 
-#: pogobot.py:199
+#: pogobot.py:207
 msgid "Resets the minimum IVs for a specific Pokémon"
 msgstr ""
 
-#: pogobot.py:200
+#: pogobot.py:208
 msgid "/pkmcp"
 msgstr ""
 
-#: pogobot.py:200
+#: pogobot.py:208
 msgid "Sets the minimum CP for a specific Pokémon"
 msgstr ""
 
-#: pogobot.py:201
+#: pogobot.py:209
 msgid "/resetpkmcp"
 msgstr ""
 
-#: pogobot.py:201
+#: pogobot.py:209
 msgid "Resets the minimum CP for a specific Pokémon"
 msgstr ""
 
-#: pogobot.py:202
+#: pogobot.py:210
 msgid "/pkmlevel"
 msgstr ""
 
-#: pogobot.py:202
+#: pogobot.py:210
 msgid "Sets the minimum level for a specific Pokémon"
 msgstr ""
 
-#: pogobot.py:203
+#: pogobot.py:211
 msgid "/resetpkmlevel"
 msgstr ""
 
-#: pogobot.py:203
+#: pogobot.py:211
 msgid "Resets the minimum level for a specific Pokémon"
 msgstr ""
 
-#: pogobot.py:204
+#: pogobot.py:212
 msgid "/matchmode"
 msgstr ""
 
-#: pogobot.py:204
-msgid "Sets the match mode (0) Distance AND IVs AND CP AND level / (1) Distance AND IVs OR CP OR level has to match / (2) Distance OR IVs OR CP OR level has to match"
+#: pogobot.py:212
+msgid ""
+"Sets the match mode (0) Distance AND IVs AND CP AND level / (1) Distance AND "
+"IVs OR CP OR level has to match / (2) Distance OR IVs OR CP OR level has to "
+"match"
 msgstr ""
 
-#: pogobot.py:205
+#: pogobot.py:213
 msgid "/pkmmatchmode"
 msgstr ""
 
-#: pogobot.py:205
+#: pogobot.py:213
 msgid "Set the match mode for a specific Pokémon"
 msgstr ""
 
-#: pogobot.py:206
+#: pogobot.py:214
 msgid "/resetpkmmatchmode"
 msgstr ""
 
-#: pogobot.py:206
+#: pogobot.py:214
 msgid "Reset the match mode for a specific Pokémon"
 msgstr ""
 
-#: pogobot.py:207
+#: pogobot.py:215
 msgid "/pkmradius"
 msgstr ""
 
-#: pogobot.py:207
+#: pogobot.py:215
 msgid "Sets the search radius for a specific Pokémon in km"
 msgstr ""
 
-#: pogobot.py:208
+#: pogobot.py:216
 msgid "/resetpkmradius"
 msgstr ""
 
-#: pogobot.py:208
+#: pogobot.py:216
 msgid "Resets the search radius for a specific Pokémon"
 msgstr ""
 
-#: pogobot.py:209
+#: pogobot.py:217
 msgid "/sendwithout"
 msgstr ""
 
-#: pogobot.py:209
+#: pogobot.py:217
 msgid "Defines if Pokémon without IV/CP should be sent"
 msgstr ""
 
-#: pogobot.py:210
+#: pogobot.py:218
+msgid "/showivs"
+msgstr ""
+
+#: pogobot.py:218
+msgid "Defines if Individual Values should be displayed"
+msgstr ""
+
+#: pogobot.py:219
 msgid "*Raid filter*"
 msgstr ""
 
-#: pogobot.py:211
+#: pogobot.py:220
 msgid "/newraid"
 msgstr ""
 
-#: pogobot.py:211
+#: pogobot.py:220
 msgid "Adds a new Raid entry to the database"
 msgstr ""
 
-#: pogobot.py:212
-msgid "Adds Raid Pokémon with the given ID to the scanner"
-msgstr ""
-
-#: pogobot.py:212 pogobot.py:721
+#: pogobot.py:221 pogobot.py:735
 msgid "/addraid pokedexID"
 msgstr ""
 
-#: pogobot.py:213 pogobot.py:721
+#: pogobot.py:221
+msgid "Adds Raid Pokémon with the given ID to the scanner"
+msgstr ""
+
+#: pogobot.py:222 pogobot.py:735
 msgid "/addraid pokedexID1 pokedexID2 ..."
 msgstr ""
 
-#: pogobot.py:214
-msgid "Adds Raid Pokémon with the given level to scanner (1-5)"
-msgstr ""
-
-#: pogobot.py:214 pogobot.py:682
+#: pogobot.py:223 pogobot.py:695
 msgid "/addraidbylevel 1-5"
 msgstr ""
 
-#: pogobot.py:215
-msgid "Removes Raid Pokémon with the given ID from the scanner"
+#: pogobot.py:223
+msgid "Adds Raid Pokémon with the given level to scanner (1-5)"
 msgstr ""
 
-#: pogobot.py:215 pogobot.py:766
+#: pogobot.py:224 pogobot.py:782
 msgid "/removeraid pokedexID"
 msgstr ""
 
-#: pogobot.py:216
+#: pogobot.py:224
+msgid "Removes Raid Pokémon with the given ID from the scanner"
+msgstr ""
+
+#: pogobot.py:225
 msgid "/removeraid pokedexID1 pokedexID2 ..."
 msgstr ""
 
-#: pogobot.py:217
+#: pogobot.py:226
 msgid "*Distance filter*"
 msgstr ""
 
-#: pogobot.py:218
+#: pogobot.py:227
 msgid "/location address"
 msgstr ""
 
-#: pogobot.py:218
+#: pogobot.py:227
 msgid "Sets the desired search location given as text"
 msgstr ""
 
-#: pogobot.py:219
+#: pogobot.py:228
 msgid "/radius km"
 msgstr ""
 
-#: pogobot.py:219
+#: pogobot.py:228
 msgid "Sets the search radius in km"
 msgstr ""
 
-#: pogobot.py:220
+#: pogobot.py:229
 msgid "/removelocation"
 msgstr ""
 
-#: pogobot.py:220
+#: pogobot.py:229
 msgid "Clears the search location and radius"
 msgstr ""
 
-#: pogobot.py:221
+#: pogobot.py:230
 msgid "/raidradius"
 msgstr ""
 
-#: pogobot.py:221
+#: pogobot.py:230
 msgid "Sets the search radius for a specific Raid Pokémon in km"
 msgstr ""
 
-#: pogobot.py:222
+#: pogobot.py:231
 msgid "/resetraidradius"
 msgstr ""
 
-#: pogobot.py:222
+#: pogobot.py:231
 msgid "Resets the search radius for a specific Raid Pokémon"
 msgstr ""
 
-#: pogobot.py:223
+#: pogobot.py:232
 msgid "*Notification settings*"
 msgstr ""
 
-#: pogobot.py:224
+#: pogobot.py:233
 msgid "/cleanup"
 msgstr ""
 
-#: pogobot.py:224
+#: pogobot.py:233
 msgid "Defines if messages of disappeared Pokémon should be deleted"
 msgstr ""
 
-#: pogobot.py:225
+#: pogobot.py:234
 msgid "/stickers"
 msgstr ""
 
-#: pogobot.py:225
+#: pogobot.py:234
 msgid "Defines if stickers should be sent"
 msgstr ""
 
-#: pogobot.py:226
+#: pogobot.py:235
 msgid "/maponly"
 msgstr ""
 
-#: pogobot.py:226
-msgid "Defines if only a map should be sent (without an additional message/sticker)"
+#: pogobot.py:235
+msgid ""
+"Defines if only a map should be sent (without an additional message/sticker)"
 msgstr ""
 
-#: pogobot.py:227
-msgid "Hint: You can also set the scanning location by just sending a location marker"
+#: pogobot.py:236
+msgid ""
+"Hint: You can also set the scanning location by just sending a location "
+"marker"
 msgstr ""
 
-#: pogobot.py:238
+#: pogobot.py:247
+#, python-format
 msgid "%s for %s is currently set to *%s*"
 msgstr ""
 
-#: pogobot.py:242
+#: pogobot.py:251
+#, python-format
 msgid "%s for %s is currently not set"
 msgstr ""
 
-#: pogobot.py:246
+#: pogobot.py:255
+#, python-format
 msgid "%s is currently set to *%s*"
 msgstr ""
 
-#: pogobot.py:300 pogobot.py:353
+#: pogobot.py:309 pogobot.py:359
+#, python-format
 msgid "This is not a valid option for this setting. Valid options: *%s*"
 msgstr ""
 
-#: pogobot.py:305
+#: pogobot.py:314
+#, python-format
 msgid "%s was set to *%s*"
 msgstr ""
 
-#: pogobot.py:311 pogobot.py:327 pogobot.py:372 pogobot.py:571 pogobot.py:584
-#: pogobot.py:618 pogobot.py:669 pogobot.py:682 pogobot.py:721 pogobot.py:766
-#: pogobot.py:924 pogobot.py:933 pogobot.py:951 pogobot.py:961
+#: pogobot.py:320 pogobot.py:332 pogobot.py:378 pogobot.py:582 pogobot.py:595
+#: pogobot.py:629 pogobot.py:682 pogobot.py:695 pogobot.py:735 pogobot.py:782
+#: pogobot.py:941 pogobot.py:951 pogobot.py:970 pogobot.py:981
 msgid "Usage:"
 msgstr ""
 
-#: pogobot.py:335
+#: pogobot.py:320 pogobot.py:332 pogobot.py:378
+msgid "/"
+msgstr ""
+
+#: pogobot.py:340
 msgid "The stated Pokémon is *blacklisted* and therefore can not be checked."
 msgstr ""
 
-#: pogobot.py:358
+#: pogobot.py:364
+#, python-format
 msgid "%s for %s was set to *%s*"
 msgstr ""
 
-#: pogobot.py:364
+#: pogobot.py:370
+#, python-format
 msgid "%s for %s was reset"
 msgstr ""
 
-#: pogobot.py:519
+#: pogobot.py:530
+#, python-format
 msgid "Distance: %.2fkm"
 msgstr ""
 
-#: pogobot.py:564
+#: pogobot.py:575
 msgid "Multiple gyms were found. Please choose one of the following:"
 msgstr ""
 
-#: pogobot.py:567
+#: pogobot.py:578
 msgid "No gym with this name could be found"
 msgstr ""
 
-#: pogobot.py:584 pogobot.py:721 pogobot.py:924 pogobot.py:933 pogobot.py:951
-#: pogobot.py:961
+#: pogobot.py:595 pogobot.py:735 pogobot.py:942 pogobot.py:952 pogobot.py:971
+#: pogobot.py:982
 msgid " or "
 msgstr ""
 
-#: pogobot.py:790
+#: pogobot.py:806
 msgid "*List of watched Pokémon:*"
 msgstr ""
 
-#: pogobot.py:792
+#: pogobot.py:808
+#, python-format
 msgid "*List of watched Pokémon within a radius of %.2fkm:*"
 msgstr ""
 
-#: pogobot.py:801 pogobot.py:1266 pogobot.py:1376
+#: pogobot.py:817 pogobot.py:1236 pogobot.py:1370
+#, python-format
 msgid "%dCP"
 msgstr ""
 
-#: pogobot.py:806
+#: pogobot.py:822
 msgid "AND"
 msgstr ""
 
-#: pogobot.py:808
+#: pogobot.py:824
 msgid "OR1"
 msgstr ""
 
-#: pogobot.py:810
+#: pogobot.py:826
 msgid "OR2"
 msgstr ""
 
-#: pogobot.py:814
+#: pogobot.py:830
 msgid "*List of watched Raid Pokémon:*"
 msgstr ""
 
-#: pogobot.py:816
+#: pogobot.py:832
+#, python-format
 msgid "*List of watched Raid Pokémon within a radius of %.2fkm:*"
 msgstr ""
 
-#: pogobot.py:844
+#: pogobot.py:860
 msgid "You have not supplied a scan location"
 msgstr ""
 
-#: pogobot.py:847
+#: pogobot.py:863
+#, python-format
 msgid "Setting new scan location with radius %.2fkm:"
 msgstr ""
 
-#: pogobot.py:849
+#: pogobot.py:865
+#, python-format
 msgid "This is your current scan location with radius %.2fkm:"
 msgstr ""
 
-#: pogobot.py:875
+#: pogobot.py:892
 msgid "The location was not found (or OpenStreetMap is down)"
 msgstr ""
 
-#: pogobot.py:917 pogobot.py:944
+#: pogobot.py:934 pogobot.py:963
 msgid "Whitelist is disabled"
 msgstr ""
 
-#: pogobot.py:924 pogobot.py:933
+#: pogobot.py:941 pogobot.py:951
 msgid "/wladd <username>"
 msgstr ""
 
-#: pogobot.py:924 pogobot.py:933
+#: pogobot.py:942 pogobot.py:952
 msgid "/wladd <username_1> <username_2>"
 msgstr ""
 
-#: pogobot.py:951 pogobot.py:961
+#: pogobot.py:970 pogobot.py:981
 msgid "/wlrem <username>"
 msgstr ""
 
-#: pogobot.py:951 pogobot.py:961
+#: pogobot.py:971 pogobot.py:982
 msgid "/wlrem <username_1> <username_2>"
 msgstr ""
 
-#: pogobot.py:957
+#: pogobot.py:977
 msgid "Removed from whitelist"
 msgstr ""
 
-#: pogobot.py:973
+#: pogobot.py:994
 msgid "Unfortunately, I do not understand this command"
 msgstr ""
 
-#: pogobot.py:1103
-msgid "Please check your settings!"
-msgstr ""
-
-#: pogobot.py:1103
-msgid "Your filter rules are matching too many Pokémon"
-msgstr ""
-
-#: pogobot.py:1519
+#: pogobot.py:1461
 msgid "Please choose the raid level:"
 msgstr ""
 
-#: pogobot.py:1530
+#: pogobot.py:1472
+#, python-format
 msgid "*Raid level: %s*"
 msgstr ""
 
-#: pogobot.py:1532 pogobot.py:1551
+#: pogobot.py:1474 pogobot.py:1493
 msgid "Not hatched yet"
 msgstr ""
 
-#: pogobot.py:1539
+#: pogobot.py:1481
 msgid "Please choose the raid boss:"
 msgstr ""
 
-#: pogobot.py:1551 pogobot.py:1553
+#: pogobot.py:1493 pogobot.py:1495
+#, python-format
 msgid "*Raid boss: %s*"
 msgstr ""
 
-#: pogobot.py:1556
+#: pogobot.py:1499
 msgid "Please enter the gym name:"
 msgstr ""
 
-#: pogobot.py:1572
+#: pogobot.py:1515
 msgid "Please select the matching gym:"
 msgstr ""
 
-#: pogobot.py:1575
+#: pogobot.py:1518
 msgid "No gym with this name could be found. Please try again."
 msgstr ""
 
-#: pogobot.py:1587
+#: pogobot.py:1530
+#, python-format
 msgid "*Raid gym: %s*"
 msgstr ""
 
-#: pogobot.py:1588 pogobot.py:1602
+#: pogobot.py:1531 pogobot.py:1545
 msgid "Please enter the start time of the raid (Format: hh:mm):"
 msgstr ""
 
-#: pogobot.py:1604
+#: pogobot.py:1547
+#, python-format
 msgid "*Raid start time: %s*"
 msgstr ""
 
-#: pogobot.py:1605
+#: pogobot.py:1549
 msgid "Thanks!"
 msgstr ""
 
-#: pogobot.py:1618
+#: pogobot.py:1562
 msgid "Alright. See you later."
 msgstr ""
-

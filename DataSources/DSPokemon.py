@@ -4,14 +4,17 @@ from geopy.distance import distance
 class DSPokemon:
 
     def __init__(self, encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time,
-                 ivs, move1, move2, weight, height, gender, form, cp, cp_multiplier):
+                 iv_a, iv_d, iv_s, move1, move2, weight, height, gender, form, cp, cp_multiplier):
         self.encounter_id = encounter_id
         self.spawnpoint_id = spawnpoint_id
         self.pokemon_id = pokemon_id
         self.latitude = latitude
         self.longitude = longitude
         self.disappear_time = disappear_time
-        self.ivs = ivs
+        self.iv_a = iv_a
+        self.iv_d = iv_d
+        self.iv_s = iv_s
+        self.ivs = round(float((iv_a + iv_d + iv_s) / 45 * 100), 1)
         self.move1 = move1
         self.move2 = move2
         self.weight = weight
@@ -39,6 +42,15 @@ class DSPokemon:
 
     def get_disappear_time(self):
         return self.disappear_time
+
+    def get_iv_a(self):
+        return self.iv_a
+
+    def get_iv_d(self):
+        return self.iv_d
+
+    def get_iv_s(self):
+        return self.iv_s
 
     def get_ivs(self):
         return self.ivs
