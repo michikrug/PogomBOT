@@ -238,22 +238,17 @@ def cmd_help(update, context):
     update.message.reply_text(text, parse_mode='Markdown')
 
 
-def send_current_value(bot, chat_id, name, value, pkm_id=None):
+def send_current_value(update, name, value, pkm_id=None):
     if pkm_id:
+        chat_id = update.effective_chat.id
         pref = prefs.get(chat_id)
         pkm_name = pokemon_name[pref.get('language')][str(pkm_id)]
         if value:
-            bot.sendMessage(chat_id,
-                            text=_('%s for %s is currently set to *%s*') % (name, pkm_name, value),
-                            parse_mode='Markdown')
+            update.message.reply_text(text=_('%s for %s is currently set to *%s*') % (name, pkm_name, value), parse_mode='Markdown')
         else:
-            bot.sendMessage(chat_id,
-                            text=_('%s for %s is currently not set') % (name, pkm_name),
-                            parse_mode='Markdown')
+            update.message.reply_text(text=_('%s for %s is currently not set') % (name, pkm_name), parse_mode='Markdown')
     else:
-        bot.sendMessage(chat_id,
-                        text=_('%s is currently set to *%s*') % (name, value),
-                        parse_mode='Markdown')
+        update.message.reply_text(text=_('%s is currently set to *%s*') % (name, value), parse_mode='Markdown')
 
 
 def parse_type(data_type, value):
@@ -277,15 +272,15 @@ def default_cmd(update, context, cmd, text=None):
     if is_not_whitelisted(update, context, cmd):
         return False
 
-    chat_id = update.message.chat_id or update.edited_message.chat.id
-    user_name = update.message.from_user.username or update.edited_message.chat.username
+    chat_id = update.effective_chat.id
+    user_name = update.effective_chat.username
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
 
     LOGGER.info('[%s@%s] %s' % (user_name, chat_id, cmd))
 
     if text:
-        context.bot.sendMessage(chat_id, text=_(text), parse_mode='Markdown')
+        update.message.reply_text(text=_(text), parse_mode='Markdown')
 
     return True
 
@@ -294,24 +289,25 @@ def default_settings_cmd(update, context, setting, data_type=None, valid_options
     if not default_cmd(update, context, setting):
         return
 
-    chat_id = update.message.chat_id or update.edited_message.chat.id
+    chat_id = update.effective_chat.id
     pref = prefs.get(chat_id)
 
     if len(context.args) < 1:
-        send_current_value(context.bot, chat_id, _(setting), pref.get(setting))
+        send_current_value(update, _(setting), pref.get(setting))
         return
 
     try:
         parsed_value = parse_type(data_type, context.args[0].lower())
 
         if valid_options and parsed_value not in valid_options:
-            update.message.reply_text(text=_('This is not a valid option for this setting. Valid options: *%s*') % (', '.join(list(map(str, valid_options)))), parse_mode='Markdown')
+            update.message.reply_text(text=_('This is not a valid option for this setting. Valid options: *%s*') %
+                                      (', '.join(list(map(str, valid_options)))), parse_mode='Markdown')
         else:
             pref.set(setting, parsed_value)
             update.message.reply_text(text=_('%s was set to *%s*') % (_(setting), parsed_value), parse_mode='Markdown')
 
     except Exception as err:
-        user_name = update.message.from_user.username or update.edited_message.chat.username
+        user_name = update.effective_chat.username
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
         update.message.reply_text(text=_('Usage:') + '\n' + _('/' + setting))
 
@@ -322,19 +318,17 @@ def default_pkm_settings_cmd(update, context, setting, data_type=None, valid_opt
 
     args = context.args
 
-    chat_id = update.message.chat_id or update.edited_message.chat.id
+    chat_id = update.effective_chat.id
 
     if len(args) < 1 or (reset and len(args) > 1) or (not reset and len(args) > 2):
-        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/' + ('reset' if reset else '') + setting))
+        update.message.reply_text(text=_('Usage:') + '\n' + _('/' + ('reset' if reset else '') + setting))
         return
 
     pkm_id = str(args[0])
 
     if int(pkm_id) < min_pokemon_id or int(pkm_id) > max_pokemon_id or int(
             pkm_id) in pokemon_blacklist:
-        context.bot.sendMessage(chat_id,
-                                text=_('The stated Pokémon is *blacklisted* and therefore can not be checked.'),
-                                parse_mode='Markdown')
+        update.message.reply_text(text=_('The stated Pokémon is *blacklisted* and therefore can not be checked.'), parse_mode='Markdown')
         return
 
     pref = prefs.get(chat_id)
@@ -343,35 +337,29 @@ def default_pkm_settings_cmd(update, context, setting, data_type=None, valid_opt
     pkm_pref = values[pkm_id] if pkm_id in values else None
 
     if not reset and len(args) < 2:
-        send_current_value(context.bot, chat_id, _(setting), pkm_pref, pkm_id)
+        send_current_value(update, _(setting), pkm_pref, pkm_id)
         return
 
     try:
         if not reset:
             parsed_value = parse_type(data_type, args[1].lower())
             if valid_options and parsed_value not in valid_options:
-                context.bot.sendMessage(chat_id,
-                                        text=_(
-                                            'This is not a valid option for this setting. Valid options: *%s*') % (', '.join(list(map(str, valid_options)))),
-                                        parse_mode='Markdown')
+                update.message.reply_text(text=_('This is not a valid option for this setting. Valid options: *%s*') %
+                                          (', '.join(list(map(str, valid_options)))), parse_mode='Markdown')
             else:
                 values[pkm_id] = parsed_value
-                context.bot.sendMessage(chat_id,
-                                        text=_('%s for %s was set to *%s*') % (_(setting), pkm_name, parsed_value),
-                                        parse_mode='Markdown')
+                update.message.reply_text(text=_('%s for %s was set to *%s*') % (_(setting), pkm_name, parsed_value), parse_mode='Markdown')
         else:
             if pkm_id in values:
                 del values[pkm_id]
-            context.bot.sendMessage(chat_id,
-                                    text=_('%s for %s was reset') % (_(setting), pkm_name),
-                                    parse_mode='Markdown')
+            update.message.reply_text(text=_('%s for %s was reset') % (_(setting), pkm_name), parse_mode='Markdown')
 
         pref.set(setting, values)
 
     except Exception as err:
-        user_name = update.message.from_user.username or update.edited_message.chat.username
+        user_name = update.effective_chat.username
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
-        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/' + ('reset' if reset else '') + setting))
+        update.message.reply_text(text=_('Usage:') + '\n' + _('/' + ('reset' if reset else '') + setting))
 
 
 def cmd_stickers(update, context):
@@ -467,7 +455,7 @@ def cmd_raid_radius_reset(update, context):
 
 
 def cmd_start(update, context):
-    chat_id = update.message.chat_id
+    chat_id = update.effective_chat.id
     pref = prefs.get(chat_id)
     has_entries = pref.get('pkmids', []) or pref.get('raidids', [])
 
@@ -486,20 +474,20 @@ def cmd_start(update, context):
 def cmd_stop(update, context):
     if not default_cmd(update, context, 'stop', text='Bot was paused. Use /start to resume'):
         return
-    unregister_client(update.message.chat_id)
+    unregister_client(update.effective_chat.id)
 
 
 def cmd_clear(update, context):
     if not default_cmd(update, context, 'clear', text='Your settings were successfully reset'):
         return
-    chat_id = update.message.chat_id
+    chat_id = update.effective_chat.id
     pref = prefs.get(chat_id)
     pref.reset_user()
     unregister_client(chat_id)
 
 
 def cmd_location(update, context):
-    chat_id = update.message.chat_id
+    chat_id = update.effective_chat.id
     if chat_id < 0 or not default_cmd(update, context, 'location'):
         return
 
@@ -507,16 +495,17 @@ def cmd_location(update, context):
     user_location = update.message.location
     set_user_location(chat_id, user_location.latitude, user_location.longitude,
                       pref.get('location')[2])
-    send_current_location(context.bot, chat_id, True)
+    send_current_location(update, True)
 
 
 def cmd_remove_location(update, context):
     if not default_cmd(update, context, 'removelocation', text='Your scan location has been removed'):
         return
-    set_user_location(update.message.chat_id, None, None, 1)
+    set_user_location(update.effective_chat.id, None, None, 1)
 
 
-def print_gym(bot, chat_id, gym):
+def print_gym(update, gym):
+    chat_id = update.effective_chat.id
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
     user_location = pref.get('location', [])
@@ -524,7 +513,7 @@ def print_gym(bot, chat_id, gym):
         addr = '%f, %f' % (gym.get_latitude(), gym.get_longitude())
     else:
         addr = _('Distance: %.2fkm') % (gym.get_distance(user_location))
-    bot.sendVenue(chat_id, gym.get_latitude(), gym.get_longitude(), gym.get_name(), addr)
+    update.message.reply_venue(gym.get_latitude(), gym.get_longitude(), gym.get_name(), addr)
 
 
 def cb_find_gym(update, context):
@@ -532,14 +521,14 @@ def cb_find_gym(update, context):
     chat_id = query.message.chat_id
     gyms = data_source.get_gyms_by_name(gym_name=query.data[10:], use_id=True)
     if gyms:
-        print_gym(context.bot, chat_id, gyms[0])
+        print_gym(update, gyms[0])
     context.bot.delete_message(chat_id=chat_id, message_id=query.message.message_id)
     query.answer()
 
 
 def cmd_find_gym(update, context):
-    chat_id = update.message.chat_id
-    user_name = update.message.from_user.username
+    chat_id = update.effective_chat.id
+    user_name = update.effective_chat.username
 
     if chat_id < 0:
         set_lang(config.get('DEFAULT_LANG', 'en'))
@@ -558,7 +547,7 @@ def cmd_find_gym(update, context):
         gyms = data_source.get_gyms_by_name(gym_name=gym_name)
 
         if len(gyms) == 1:
-            print_gym(context.bot, chat_id, gyms[0])
+            print_gym(update, gyms[0])
         elif len(gyms) > 1:
             keyboard = []
             for gym in gyms:
@@ -567,23 +556,22 @@ def cmd_find_gym(update, context):
                         gym.get_name(), callback_data='gymsearch_' + gym.get_gym_id())
                 ])
 
-            update.message.reply_text(
-                _('Multiple gyms were found. Please choose one of the following:'),
-                reply_markup=InlineKeyboardMarkup(keyboard))
+            update.message.reply_text(_('Multiple gyms were found. Please choose one of the following:'),
+                                      reply_markup=InlineKeyboardMarkup(keyboard))
         else:
-            context.bot.sendMessage(chat_id, text=_('No gym with this name could be found'))
+            update.message.reply_text(text=_('No gym with this name could be found'))
 
     except Exception as err:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
-        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/where'))
+        update.message.reply_text(text=_('Usage:') + '\n' + _('/where'))
 
 
 def cmd_add(update, context):
-    chat_id = update.message.chat_id
-    user_name = update.message.from_user.username
-
     if is_not_whitelisted(update, context, 'add'):
         return
+
+    chat_id = update.effective_chat.id
+    user_name = update.effective_chat.username
 
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
@@ -591,7 +579,7 @@ def cmd_add(update, context):
     usage_message = _('Usage:') + '\n' + _('/add pokedexID') + _(' or ') + _('/add pokedexID1 pokedexID2 ...')
 
     if len(context.args) < 1:
-        context.bot.sendMessage(chat_id, text=usage_message)
+        update.message.reply_text(text=usage_message)
         return
 
     register_client(chat_id)
@@ -609,15 +597,15 @@ def cmd_add(update, context):
 
     except Exception as err:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
-        context.bot.sendMessage(chat_id, text=usage_message)
+        update.message.reply_text(text=usage_message)
 
 
 def cmd_add_by_rarity(update, context):
-    chat_id = update.message.chat_id
-    user_name = update.message.from_user.username
-
     if is_not_whitelisted(update, context, 'addByRarity'):
         return
+
+    chat_id = update.effective_chat.id
+    user_name = update.effective_chat.username
 
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
@@ -625,7 +613,7 @@ def cmd_add_by_rarity(update, context):
     usage_message = _('Usage:') + '\n' + _('/addbyrarity 1-5')
 
     if len(context.args) < 1:
-        context.bot.sendMessage(chat_id, text=usage_message)
+        update.message.reply_text(text=usage_message)
         return
 
     register_client(chat_id)
@@ -635,7 +623,7 @@ def cmd_add_by_rarity(update, context):
         rarity = int(context.args[0])
 
         if rarity < 1 or rarity > 5:
-            context.bot.sendMessage(chat_id, text=usage_message)
+            update.message.reply_text(text=usage_message)
             return
 
         search = pref.get('pkmids', [])
@@ -649,15 +637,15 @@ def cmd_add_by_rarity(update, context):
 
     except Exception as err:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
-        context.bot.sendMessage(chat_id, text=usage_message)
+        update.message.reply_text(text=usage_message)
 
 
 def cmd_remove(update, context):
-    chat_id = update.message.chat_id
-    user_name = update.message.from_user.username
-
     if is_not_whitelisted(update, context, 'remove'):
         return
+
+    chat_id = update.effective_chat.id
+    user_name = update.effective_chat.username
 
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
@@ -675,15 +663,15 @@ def cmd_remove(update, context):
 
     except Exception as err:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
-        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/remove pokedexID'))
+        update.message.reply_text(text=_('Usage:') + '\n' + _('/remove pokedexID'))
 
 
 def cmd_add_raid_by_level(update, context):
-    chat_id = update.message.chat_id
-    user_name = update.message.from_user.username
-
     if is_not_whitelisted(update, context, 'addraidbylevel'):
         return
+
+    chat_id = update.effective_chat.id
+    user_name = update.effective_chat.username
 
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
@@ -691,7 +679,7 @@ def cmd_add_raid_by_level(update, context):
     usage_message = _('Usage:') + '\n' + _('/addraidbylevel 1-5')
 
     if len(context.args) < 1:
-        context.bot.sendMessage(chat_id, text=usage_message)
+        update.message.reply_text(text=usage_message)
         return
 
     register_client(chat_id)
@@ -701,7 +689,7 @@ def cmd_add_raid_by_level(update, context):
         level = int(context.args[0])
 
         if level < 1 or level > 5:
-            context.bot.sendMessage(chat_id, text=usage_message)
+            update.message.reply_text(text=usage_message)
             return
 
         search = pref.get('raidids', [])
@@ -715,15 +703,15 @@ def cmd_add_raid_by_level(update, context):
 
     except Exception as err:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
-        context.bot.sendMessage(chat_id, text=usage_message)
+        update.message.reply_text(text=usage_message)
 
 
 def cmd_add_raid(update, context):
-    chat_id = update.message.chat_id
-    user_name = update.message.from_user.username
-
     if is_not_whitelisted(update, context, 'addraid'):
         return
+
+    chat_id = update.effective_chat.id
+    user_name = update.effective_chat.username
 
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
@@ -731,7 +719,7 @@ def cmd_add_raid(update, context):
     usage_message = _('Usage:') + '\n' + _('/addraid pokedexID') + _(' or ') + _('/addraid pokedexID1 pokedexID2 ...')
 
     if len(context.args) < 1:
-        context.bot.sendMessage(chat_id, text=usage_message)
+        update.message.reply_text(text=usage_message)
         return
 
     register_client(chat_id)
@@ -749,15 +737,15 @@ def cmd_add_raid(update, context):
 
     except Exception as err:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
-        context.bot.sendMessage(chat_id, text=usage_message)
+        update.message.reply_text(text=usage_message)
 
 
 def cmd_remove_raid(update, context):
-    chat_id = update.message.chat_id
-    user_name = update.message.from_user.username
-
     if is_not_whitelisted(update, context, 'removeraid'):
         return
+
+    chat_id = update.effective_chat.id
+    user_name = update.effective_chat.username
 
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
@@ -775,15 +763,15 @@ def cmd_remove_raid(update, context):
 
     except Exception as err:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
-        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/removeraid pokedexID'))
+        update.message.reply_text(text=_('Usage:') + '\n' + _('/removeraid pokedexID'))
 
 
 def cmd_list(update, context):
-    chat_id = update.message.chat_id
-    user_name = update.message.from_user.username
-
     if is_not_whitelisted(update, context, 'list'):
         return
+
+    chat_id = update.effective_chat.id
+    user_name = update.effective_chat.username
 
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
@@ -834,7 +822,7 @@ def cmd_list(update, context):
                 tmp += ' %.2fkm' % (raid_dists[pkm_id])
             tmp += '\n'
 
-        context.bot.sendMessage(chat_id, text=tmp, parse_mode='Markdown')
+        update.message.reply_text(text=tmp, parse_mode='Markdown')
 
     except Exception as err:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
@@ -847,68 +835,66 @@ def set_user_location(chat_id, latitude, longitude, radius):
     pref.set('location', [latitude, longitude, radius])
 
 
-def send_current_location(bot, chat_id, set_new=False):
+def send_current_location(update, set_new=False):
+    chat_id = update.effective_chat.id
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
 
     user_location = pref.get('location', [])
     if user_location[0] is None:
-        bot.sendMessage(chat_id, text=_('You have not supplied a scan location'))
+        update.message.reply_text(text=_('You have not supplied a scan location'))
     else:
         if set_new:
-            bot.sendMessage(chat_id, text=_('Setting new scan location with radius %.2fkm:') % (user_location[2]))
+            update.message.reply_text(text=_('Setting new scan location with radius %.2fkm:') % (user_location[2]))
         else:
-            bot.sendMessage(chat_id, text=_('This is your current scan location with radius %.2fkm:') %
-                            (user_location[2]))
-        bot.sendLocation(chat_id, user_location[0], user_location[1], disable_notification=True)
+            update.message.reply_text(text=_('This is your current scan location with radius %.2fkm:') % (user_location[2]))
+        update.message.reply_location(user_location[0], user_location[1], disable_notification=True)
 
 
 def cmd_location_str(update, context):
-    chat_id = update.message.chat_id
-    user_name = update.message.from_user.username
-
     if is_not_whitelisted(update, context, 'location_str'):
         return
+
+    chat_id = update.effective_chat.id
+    user_name = update.effective_chat.username
 
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
 
     if len(context.args) < 1:
-        send_current_location(context.bot, chat_id)
+        send_current_location(update)
         return
 
     try:
         user_location = geo_locator.geocode(' '.join(context.args))
-        set_user_location(chat_id, user_location.latitude, user_location.longitude,
-                          pref.get('location')[2])
-        send_current_location(context.bot, chat_id, True)
+        set_user_location(chat_id, user_location.latitude, user_location.longitude, pref.get('location')[2])
+        send_current_location(update, True)
 
     except Exception as err:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
-        context.bot.sendMessage(chat_id, text=_('The location was not found (or OpenStreetMap is down)'))
+        update.message.reply_text(text=_('The location was not found (or OpenStreetMap is down)'))
         return
 
 
 def cmd_radius(update, context):
-    chat_id = update.message.chat_id
-
     if is_not_whitelisted(update, context, 'radius'):
         return
 
     if len(context.args) < 1:
-        send_current_location(context.bot, chat_id)
+        send_current_location(update)
         return
 
+    chat_id = update.effective_chat.id
     pref = prefs.get(chat_id)
     user_location = pref.get('location', [])
     set_user_location(chat_id, user_location[0], user_location[1], float(context.args[0]))
-    send_current_location(context.bot, chat_id, True)
+    send_current_location(update, True)
 
 
 def is_not_whitelisted(update, context, command):
-    chat_id = update.message.chat_id
+    chat_id = update.effective_chat.id
     message_id = update.message.message_id
-    user_name = update.message.from_user.username
+    user_name = update.effective_chat.username
     if chat_id < 0 or not whitelist.is_whitelisted(user_name):
         LOGGER.info('[%s@%s] User blocked (%s)' % (user_name, chat_id, command))
         try:
@@ -920,74 +906,70 @@ def is_not_whitelisted(update, context, command):
 
 
 def cmd_add_to_whitelist(update, context):
-    chat_id = update.message.chat_id
-    user_name = update.message.from_user.username
+    chat_id = update.effective_chat.id
+    user_name = update.effective_chat.username
 
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
 
     if not whitelist.is_whitelist_enabled():
-        context.bot.sendMessage(chat_id, text=_('Whitelist is disabled'))
+        update.message.reply_text(text=_('Whitelist is disabled'))
         return
     if not whitelist.is_admin(user_name):
         LOGGER.info('[%s@%s] User blocked (addToWhitelist)' % (user_name, chat_id))
         return
 
     if len(context.args) < 1:
-        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wladd <username>') +
-                                _(' or ') + _('/wladd <username_1> <username_2>'))
+        update.message.reply_text(text=_('Usage:') + '\n' + _('/wladd <username>') +
+                                  _(' or ') + _('/wladd <username_1> <username_2>'))
         return
 
     try:
         for x in context.args:
             whitelist.add_user(x)
-        context.bot.sendMessage(chat_id, 'Added to whitelist.')
+        update.message.reply_text('Added to whitelist.')
     except Exception as err:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
-        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wladd <username>') +
-                                _(' or ') + _('/wladd <username_1> <username_2>'))
+        update.message.reply_text(text=_('Usage:') + '\n' + _('/wladd <username>') + _(' or ') + _('/wladd <username_1> <username_2>'))
 
 
 def cmd_rem_from_whitelist(update, context):
-    chat_id = update.message.chat_id
-    user_name = update.message.from_user.username
+    chat_id = update.effective_chat.id
+    user_name = update.effective_chat.username
 
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
 
     if not whitelist.is_whitelist_enabled():
-        context.bot.sendMessage(chat_id, text=_('Whitelist is disabled'))
+        update.message.reply_text(text=_('Whitelist is disabled'))
         return
     if not whitelist.is_admin(user_name):
         LOGGER.info('[%s@%s] User blocked (remFromWhitelist)' % (user_name, chat_id))
         return
 
     if len(context.args) < 1:
-        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wlrem <username>') +
-                                _(' or ') + _('/wlrem <username_1> <username_2>'))
+        update.message.reply_text(text=_('Usage:') + '\n' + _('/wlrem <username>') + _(' or ') + _('/wlrem <username_1> <username_2>'))
         return
 
     try:
         for x in context.args:
             whitelist.rem_user(x)
-        context.bot.sendMessage(chat_id, text=_('Removed from whitelist'))
+        update.message.reply_text(text=_('Removed from whitelist'))
 
     except Exception as err:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
-        context.bot.sendMessage(chat_id, text=_('Usage:') + '\n' + _('/wlrem <username>') +
-                                _(' or ') + _('/wlrem <username_1> <username_2>'))
+        update.message.reply_text(text=_('Usage:') + '\n' + _('/wlrem <username>') + _(' or ') + _('/wlrem <username_1> <username_2>'))
 
 
 def cmd_unknown(update, context):
-    chat_id = update.message.chat_id
-
     if is_not_whitelisted(update, context, 'unknown'):
         return
 
+    chat_id = update.effective_chat.id
     pref = prefs.get(chat_id)
     set_lang(pref.get('language'))
 
-    context.bot.sendMessage(chat_id, text=_('Unfortunately, I do not understand this command'))
+    update.message.reply_text(text=_('Unfortunately, I do not understand this command'))
 
 
 ####################################################################################################
@@ -1499,7 +1481,7 @@ def cb_raid_pkm(update, context):
 def enter_raid_gym_search(update, context):
     if update.message.text == 'Abbruch' or update.message.text == 'Cancel':
         return enter_raid_cancel(update, context, context.user_data)
-    pref = prefs.get(update.message.chat_id)
+    pref = prefs.get(update.effective_chat.id)
     set_lang(pref.get('language'))
     gyms = data_source.get_gyms_by_name(gym_name=update.message.text)
     if len(gyms) >= 1:
@@ -1531,7 +1513,7 @@ def cb_raid_gym(update, context):
 def enter_raid_time(update, context):
     if update.message.text == 'Abbruch' or update.message.text == 'Cancel':
         return enter_raid_cancel(update, context, context.user_data)
-    pref = prefs.get(update.message.chat_id)
+    pref = prefs.get(update.effective_chat.id)
     set_lang(pref.get('language'))
     try:
         context.user_data['time'] = datetime.strptime(
@@ -1542,7 +1524,7 @@ def enter_raid_time(update, context):
         return CHOOSE_TIME
     update.message.reply_text(_('*Raid start time: %s*') %
                               context.user_data['time'].strftime("%H:%M am %d.%m.%Y"), parse_mode='Markdown')
-    context.bot.sendMessage(update.message.chat_id, text=_('Thanks!'))
+    update.message.reply_text(text=_('Thanks!'))
 
     data_source.add_new_raid(context.user_data['gym'], context.user_data['level'], context.user_data['time'].astimezone(
         timezone.utc), context.user_data['pkm'])
@@ -1552,7 +1534,7 @@ def enter_raid_time(update, context):
 
 
 def enter_raid_cancel(update, context):
-    pref = prefs.get(update.message.chat_id)
+    pref = prefs.get(update.effective_chat.id)
     set_lang(pref.get('language'))
     context.user_data.clear()
     update.message.reply_text(_('Alright. See you later.'))
