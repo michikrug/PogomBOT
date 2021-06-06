@@ -1752,8 +1752,10 @@ def main():
     jobqueue._put(Job(get_pokemon_and_send, 30, repeat=True))
     jobqueue._put(Job(get_raids_and_send, 60, repeat=True))
 
-    worker_thread = Thread(target=message_queue_worker, args=(message_queue, ))
-    worker_thread.start()
+    worker1_thread = Thread(target=message_queue_worker, args=(message_queue, ))
+    worker1_thread.start()
+    worker2_thread = Thread(target=message_queue_worker, args=(message_queue, ))
+    worker2_thread.start()
 
     # Block until the you presses Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
