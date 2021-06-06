@@ -1019,17 +1019,16 @@ def get_pokemon_and_send(context):
         LOGGER.info('[NEW] Checking pokemons. Got %s results to filter.' % (len(allpokes)))
         last_timestamp_pokemon = datetime.utcnow()
         for chat_id in locks:
-            count = 0
             pref = prefs.get(chat_id)
             if not pref.get('pkmids', []) or pref.get('disabled', False):
                 continue
 
+            count = 0
             for pokemon in allpokes:
                 if filter_pokemon_for_user(pokemon, chat_id):
-                    count = count + 1
+                    LOGGER.info('[%s] Enqueuing pokemon notification. %s' % (chat_id, str(pokemon.get_pokemon_id())))
                     message_queue.put((pokemon, chat_id))
-                    LOGGER.info('[NEW] Enqueuing pokemon notification for %s.' % (chat_id))
-                    # send_pokemon_notification(pokemon, chat_id)
+                    count = count + 1
                     if chat_id not in locks or count > 10:
                         break
 
