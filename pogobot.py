@@ -58,9 +58,8 @@ message_queue = Queue()
 _sentinel = 'EXIT'
 
 # User dependant - dont add
-sent = dict()
+sent_events = dict()
 locks = dict()
-messages_sent = dict()
 
 last_timestamp_pokemon = datetime.utcnow()
 last_timestamp_raids = datetime.utcnow()
@@ -990,8 +989,7 @@ def register_client(chat_id):
         LOGGER.info('[%s] Registering Client' % (chat_id))
         if chat_id not in locks:
             locks[chat_id] = threading.Lock()
-            sent[chat_id] = dict()
-            messages_sent[chat_id] = dict()
+            sent_events[chat_id] = dict()
 
     except Exception as err:
         LOGGER.error('[%s] %s' % (chat_id, repr(err)))
@@ -1007,9 +1005,8 @@ def unregister_client(chat_id):
     lock = locks[chat_id]
     lock.release()
 
-    del sent[chat_id]
+    del sent_events[chat_id]
     del locks[chat_id]
-    del messages_sent[chat_id]
 
 
 def get_pokemon_and_send(context):
@@ -1036,16 +1033,14 @@ def get_pokemon_and_send(context):
             lock = locks[chat_id]
             lock.acquire()
             to_delete = []
-            for event_id in sent[chat_id]:
-                time = sent[chat_id][event_id]
-                if time < datetime.utcnow():
+            for event_id in sent_events[chat_id]:
+                if sent_events[chat_id][event_id]['time'] < datetime.utcnow():
                     to_delete.append(event_id)
             for event_id in to_delete:
                 if pref.get('cleanup'):
-                    for message_id in messages_sent[chat_id][event_id]:
+                    for message_id in sent_events[chat_id][event_id]['messages']:
                         telegram_bot.deleteMessage(chat_id, message_id)
-                del sent[chat_id][event_id]
-                del messages_sent[chat_id][event_id]
+                del sent_events[chat_id][event_id]
             lock.release()
 
     except Exception as err:
@@ -1083,7 +1078,7 @@ def filter_pokemon_for_user(pokemon, chat_id):
             return False
 
         encounter_id = pokemon.get_encounter_id()
-        if encounter_id in sent[chat_id]:
+        if encounter_id in sent_events[chat_id]:
             # LOGGER.info('[%s] Not sending pokemon notification. Already sent. %s' % (chat_id,
             #                                                                         poke_id))
             return False
@@ -1195,9 +1190,6 @@ def send_pokemon_notification(pokemon, chat_id):
 
         lan = pref.get('language')
 
-        sent[chat_id][encounter_id] = disappear_time
-        messages_sent[chat_id][encounter_id] = list()
-
         LOGGER.info('[%s] Sending pokemon notification. %s' % (chat_id, poke_id))
 
         delta = disappear_time - datetime.utcnow()
@@ -1251,20 +1243,24 @@ def send_pokemon_notification(pokemon, chat_id):
             move2Name = moveNames[str(move2)] if str(move2) in moveNames else '?'
             address += '\n⚔ %s / %s' % (move1Name, move2Name)
 
+        sent_messages = list()
+
         if pref.get('maponly'):
             message = telegram_bot.sendVenue(chat_id, latitude, longitude, title, address)
-            messages_sent[chat_id][encounter_id] += [message.message_id]
+            sent_messages += [message.message_id]
         else:
             if pref.get('stickers'):
                 message = telegram_bot.sendSticker(chat_id, get_pkm_sticker(poke_id), disable_notification=True)
-                messages_sent[chat_id][encounter_id] += [message.message_id]
+                sent_messages += [message.message_id]
 
             message = telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
-            messages_sent[chat_id][encounter_id] += [message.message_id]
+            sent_messages += [message.message_id]
 
             message = telegram_bot.sendMessage(
                 chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
-            messages_sent[chat_id][encounter_id] += [message.message_id]
+            sent_messages += [message.message_id]
+
+        sent_events[chat_id][encounter_id] = { 'time': disappear_time, 'messages': sent_messages }
 
         sleep(.05)
 
@@ -1292,7 +1288,7 @@ def filter_raid_for_user(raid, chat_id):
         gym_id = raid.get_gym_id()
         end = raid.get_end()
         raid_id = str(gym_id) + str(end)
-        if raid_id in sent[chat_id]:
+        if raid_id in sent_events[chat_id]:
             # LOGGER.info('[%s] Not sending raid notification. Already sent. %s' % (chat_id, poke_id))
             return False
 
@@ -1327,13 +1323,8 @@ def send_raid_notification(raid, chat_id):
         move1 = raid.get_move1()
         move2 = raid.get_move2()
 
-        raid_id = str(gym_id) + str(end)
-
         lan = pref.get('language')
         location_data = pref.preferences.get('location', [])
-
-        sent[chat_id][raid_id] = end
-        messages_sent[chat_id][raid_id] = list()
 
         LOGGER.info('[%s] Sending raid notification. %s' % (chat_id, poke_id))
 
@@ -1378,20 +1369,25 @@ def send_raid_notification(raid, chat_id):
             move2Name = moveNames[str(move2)] if str(move2) in moveNames else '?'
             address += '\n⚔ %s / %s' % (move1Name, move2Name)
 
+        sent_messages = list()
+
         if pref.get('maponly'):
             message = telegram_bot.sendVenue(chat_id, latitude, longitude, title, address)
-            messages_sent[chat_id][raid_id] += [message.message_id]
+            sent_messages += [message.message_id]
         else:
             if pref.get('stickers'):
                 message = telegram_bot.sendSticker(chat_id, get_pkm_sticker(poke_id), disable_notification=True)
-                messages_sent[chat_id][raid_id] += [message.message_id]
+                sent_messages += [message.message_id]
 
             message = telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
-            messages_sent[chat_id][raid_id] += [message.message_id]
+            sent_messages += [message.message_id]
 
             message = telegram_bot.sendMessage(
                 chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
-            messages_sent[chat_id][raid_id] += [message.message_id]
+            sent_messages += [message.message_id]
+
+        raid_id = str(gym_id) + str(end)
+        sent_events[chat_id][raid_id] = { 'time': end, 'message': sent_messages }
 
         sleep(.1)
 
@@ -1749,6 +1745,13 @@ def main():
             if not pref.get('disabled', False) and (pref.get('pkmids', []) or pref.get('raidids', [])):
                 register_client(chat_id)
 
+    global sent_events
+    try:
+        with open('sent_events.json', 'r', encoding='utf-8') as f:
+            sent_events = json.load(f)
+    except Exception as e:
+        LOGGER.error('Could not load sent.json' % (e))
+
     jobqueue = updater.job_queue
     jobqueue._put(Job(get_pokemon_and_send, 30, repeat=True))
     jobqueue._put(Job(get_raids_and_send, 60, repeat=True))
@@ -1763,6 +1766,11 @@ def main():
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
     message_queue.put(_sentinel)
+
+    # persist sent on exit
+    fd = open('json', 'w', encoding='utf-8')
+    json.dump(sent_events, fd, separators=(',', ':'))
+    fd.close()
 
 
 if __name__ == '__main__':
