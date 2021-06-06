@@ -1642,7 +1642,7 @@ def main():
 
     # ask it to the bot father in telegram
     token = config.get('TELEGRAM_TOKEN', None)
-    updater = Updater(token, use_context=True)
+    updater = Updater(token=token, use_context=True, request_kwargs={'con_pool_size':5})
 
     global telegram_bot
     telegram_bot = Bot(token)
