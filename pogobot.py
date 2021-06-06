@@ -1014,14 +1014,16 @@ def get_pokemon_and_send(context):
         LOGGER.info('[NEW] Checking pokemons. Got %s results to filter.' % (len(allpokes)))
         last_timestamp_pokemon = datetime.utcnow()
         for chat_id in locks:
+            count = 0
             pref = prefs.get(chat_id)
             if not pref.get('pkmids', []) or pref.get('disabled', False):
                 continue
 
             for pokemon in allpokes:
                 if filter_pokemon_for_user(pokemon, chat_id):
+                    count = count + 1
                     send_pokemon_notification(pokemon, chat_id)
-                    if chat_id not in locks:
+                    if chat_id not in locks or count > 10:
                         break
 
             # Clean messages for already disappeared mons
