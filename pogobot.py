@@ -17,6 +17,8 @@ import os
 import sys
 import threading
 from datetime import datetime, timedelta, timezone
+from queue import Queue
+from threading import Thread
 from time import sleep
 
 import googlemaps
@@ -51,6 +53,9 @@ data_source = None
 
 whitelist = None
 config = None
+
+message_queue = Queue()
+_sentinel = 'EXIT'
 
 # User dependant - dont add
 sent = dict()
@@ -1022,7 +1027,9 @@ def get_pokemon_and_send(context):
             for pokemon in allpokes:
                 if filter_pokemon_for_user(pokemon, chat_id):
                     count = count + 1
-                    send_pokemon_notification(pokemon, chat_id)
+                    message_queue.put((pokemon, chat_id))
+                    LOGGER.info('[NEW] Enqueuing pokemon notification for %s.' % (chat_id))
+                    # send_pokemon_notification(pokemon, chat_id)
                     if chat_id not in locks or count > 10:
                         break
 
@@ -1260,7 +1267,7 @@ def send_pokemon_notification(pokemon, chat_id):
                 chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
             messages_sent[chat_id][encounter_id] += [message.message_id]
 
-        sleep(.25)
+        sleep(.05)
 
     except Unauthorized as err:
         LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(err)))
@@ -1595,6 +1602,16 @@ def read_move_names(loc):
     except Exception as err:
         LOGGER.error('%s' % (repr(err)))
 
+def message_queue_worker(q):
+    while True:
+        data = q.get()
+        if data is _sentinel:
+            q.task_done()
+            q.put(_sentinel)
+            break
+        pokemon, chat_id = data
+        send_pokemon_notification(pokemon, chat_id)
+        q.task_done()
 
 def main():
     LOGGER.info('Starting...')
@@ -1735,11 +1752,14 @@ def main():
     jobqueue._put(Job(get_pokemon_and_send, 30, repeat=True))
     jobqueue._put(Job(get_raids_and_send, 60, repeat=True))
 
+    worker_thread = Thread(target=message_queue_worker, args=(message_queue, ))
+    worker_thread.start()
+
     # Block until the you presses Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
-
+    message_queue.put(_sentinel)
 
 if __name__ == '__main__':
     main()
