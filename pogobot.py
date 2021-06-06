@@ -1394,7 +1394,7 @@ def send_raid_notification(raid, chat_id):
                 chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
             messages_sent[chat_id][raid_id] += [message.message_id]
 
-        sleep(.25)
+        sleep(.1)
 
     except Unauthorized as err:
         LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(err)))
@@ -1642,10 +1642,10 @@ def main():
 
     # ask it to the bot father in telegram
     token = config.get('TELEGRAM_TOKEN', None)
-    updater = Updater(token=token, use_context=True, request_kwargs={'con_pool_size':5})
+    updater = Updater(token=token, use_context=True, request_kwargs={'con_pool_size': 5})
 
     global telegram_bot
-    telegram_bot = Bot(token)
+    telegram_bot = updater.bot
     LOGGER.info('BotName: <%s>' % (telegram_bot.name))
 
     # Get the Google Maps API
@@ -1735,7 +1735,6 @@ def main():
 
     # Start the Bot
     updater.start_polling(bootstrap_retries=3, read_latency=5)
-    jobqueue = updater.job_queue
 
     LOGGER.info('Started!')
 
@@ -1749,6 +1748,7 @@ def main():
             if not pref.get('disabled', False) and (pref.get('pkmids', []) or pref.get('raidids', [])):
                 register_client(chat_id)
 
+    jobqueue = updater.job_queue
     jobqueue._put(Job(get_pokemon_and_send, 30, repeat=True))
     jobqueue._put(Job(get_raids_and_send, 60, repeat=True))
 
