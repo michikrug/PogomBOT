@@ -23,7 +23,7 @@ from time import sleep
 
 import googlemaps
 from geopy.geocoders import Nominatim
-from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import Unauthorized
 from telegram.ext import (CallbackQueryHandler, CommandHandler,
                           ConversationHandler, Filters, Job, MessageHandler,
@@ -1602,6 +1602,7 @@ def read_move_names(loc):
     except Exception as err:
         LOGGER.error('%s' % (repr(err)))
 
+
 def message_queue_worker(q):
     while True:
         data = q.get()
@@ -1612,6 +1613,7 @@ def message_queue_worker(q):
         pokemon, chat_id = data
         send_pokemon_notification(pokemon, chat_id)
         q.task_done()
+
 
 def main():
     LOGGER.info('Starting...')
@@ -1762,6 +1764,7 @@ def main():
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
     message_queue.put(_sentinel)
+
 
 if __name__ == '__main__':
     main()
