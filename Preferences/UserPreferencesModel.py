@@ -55,7 +55,7 @@ class UserPreferencesModel(object):
         self.__preferences = self.__default_dict()
         # load existing or create file
         self.__load_or_create()
-        LOGGER.info('[%s] Created new / loaded preferences.' % self.chat_id)
+        # LOGGER.info('[%s] Created new / loaded preferences.' % self.chat_id)
 
     @staticmethod
     def __get_default_dir():
@@ -104,7 +104,7 @@ class UserPreferencesModel(object):
         fullpath = self.fullpath
         if os.path.isfile(fullpath):
             # The user has a preference file
-            LOGGER.info('[%s] loadUserConfig.' % self.chat_id)
+            # LOGGER.info('[%s] loadUserConfig.' % self.chat_id)
             try:
                 with open(fullpath, 'r', encoding='utf-8') as f:
                     preferences = json.load(f)

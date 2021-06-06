@@ -31,8 +31,8 @@ class UserPreferences:
         if result is None:
             LOGGER.error('Failed due to configuration file not set.')
             return None
-        if not result:
-            LOGGER.info('Adding user %s.', chat_id)
+        # if not result:
+        #     LOGGER.info('Adding user %s.', chat_id)
         return self.__users[chat_id]
 
     def rem(self, chat_id):
