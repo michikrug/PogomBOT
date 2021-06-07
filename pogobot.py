@@ -1750,7 +1750,7 @@ def main():
         with open('sent_events.json', 'r', encoding='utf-8') as f:
             sent_events = json.load(f)
     except Exception as e:
-        LOGGER.error('Could not load sent.json')
+        LOGGER.error('Could not load sent_events.json')
 
     jobqueue = updater.job_queue
     jobqueue._put(Job(get_pokemon_and_send, 30, repeat=True))
