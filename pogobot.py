@@ -21,6 +21,8 @@ from queue import Queue
 from threading import Thread
 from time import sleep
 
+from prometheus_client import start_http_server, Summary, Gauge, Counter
+
 import googlemaps
 from geopy.geocoders import Nominatim
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -61,7 +63,7 @@ _sentinel = 'EXIT'
 sent_events = dict()
 locks = dict()
 
-last_timestamp_pokemon = datetime.utcnow()
+LAST_TIMESTAMP_POKEMON = datetime.utcnow()
 last_timestamp_raids = datetime.utcnow()
 
 pokemon_name = dict()
@@ -159,6 +161,12 @@ CHOOSE_LEVEL, CHOOSE_PKM, CHOOSE_GYM, CHOOSE_GYM_SEARCH, CHOOSE_TIME = range(5)
 
 sticker_url = binascii.unhexlify(
     '68747470733a2f2f6d6f6e73746572696d616765732e746b2f76312e352f').decode('utf-8')
+
+JOB_TIME = Summary('job_processing_seconds', 'Time spent processing job')
+USERS_REGISTERED = Gauge('users_registered', 'Number of currently registered users')
+ITEMS_ENQUEUED = Gauge('items_enqueued', 'Number of currently enqueued notifications')
+ITEMS_SENT = Counter('items_sent', 'Number of notifications sent')
+ITEMS_FOUND = Gauge('items_found', 'Number of items found to be processed')
 
 
 def get_pkm_sticker(pkm_id):
@@ -990,6 +998,7 @@ def register_client(chat_id):
         if chat_id not in locks:
             locks[chat_id] = threading.Lock()
             sent_events[chat_id] = dict()
+            USERS_REGISTERED.inc()
 
     except Exception as err:
         LOGGER.error('[%s] %s' % (chat_id, repr(err)))
@@ -1008,13 +1017,17 @@ def unregister_client(chat_id):
     del sent_events[chat_id]
     del locks[chat_id]
 
+    USERS_REGISTERED.dec()
 
+
+@JOB_TIME.time()
 def get_pokemon_and_send(context):
-    global last_timestamp_pokemon
+    global LAST_TIMESTAMP_POKEMON
     try:
-        allpokes = data_source.get_pokemon_by_time(last_timestamp_pokemon)
+        allpokes = data_source.get_pokemon_by_time(LAST_TIMESTAMP_POKEMON)
+        ITEMS_FOUND.set(len(allpokes))
         LOGGER.info('[NEW] Checking pokemons. Got %s results to filter.' % (len(allpokes)))
-        last_timestamp_pokemon = datetime.utcnow()
+        LAST_TIMESTAMP_POKEMON = datetime.utcnow()
         for chat_id in locks:
             pref = prefs.get(chat_id)
             if not pref.get('pkmids', []) or pref.get('disabled', False):
@@ -1025,6 +1038,7 @@ def get_pokemon_and_send(context):
                 if filter_pokemon_for_user(pokemon, chat_id):
                     LOGGER.info('[%s] Enqueuing pokemon notification. %s' % (chat_id, str(pokemon.get_pokemon_id())))
                     message_queue.put((pokemon, chat_id))
+                    ITEMS_ENQUEUED.inc()
                     count = count + 1
                     if chat_id not in locks or count > 10:
                         break
@@ -1260,8 +1274,9 @@ def send_pokemon_notification(pokemon, chat_id):
                 chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
             sent_messages += [message.message_id]
 
-        sent_events[chat_id][encounter_id] = { 'time': disappear_time, 'messages': sent_messages }
+        sent_events[chat_id][encounter_id] = {'time': disappear_time, 'messages': sent_messages}
 
+        ITEMS_SENT.inc()
         sleep(.05)
 
     except Unauthorized as err:
@@ -1387,8 +1402,9 @@ def send_raid_notification(raid, chat_id):
             sent_messages += [message.message_id]
 
         raid_id = str(gym_id) + str(end)
-        sent_events[chat_id][raid_id] = { 'time': end, 'message': sent_messages }
+        sent_events[chat_id][raid_id] = {'time': end, 'message': sent_messages}
 
+        ITEMS_SENT.inc()
         sleep(.1)
 
     except Unauthorized as err:
@@ -1607,6 +1623,7 @@ def message_queue_worker(q):
             break
         pokemon, chat_id = data
         send_pokemon_notification(pokemon, chat_id)
+        ITEMS_ENQUEUED.dec()
         q.task_done()
 
 
@@ -1774,4 +1791,5 @@ def main():
 
 
 if __name__ == '__main__':
+    start_http_server(8008)
     main()
