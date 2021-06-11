@@ -1627,6 +1627,19 @@ def message_queue_worker(q):
         q.task_done()
 
 
+def default(obj):
+    if isinstance(obj, datetime):
+        return {'_isoformat': obj.isoformat()}
+    return super().default(obj)
+
+
+def object_hook(obj):
+    _isoformat = obj.get('_isoformat')
+    if _isoformat is not None:
+        return datetime.fromisoformat(_isoformat)
+    return obj
+
+
 def main():
     LOGGER.info('Starting...')
     read_config()
@@ -1765,7 +1778,7 @@ def main():
     global sent_events
     try:
         with open('sent_events.json', 'r', encoding='utf-8') as f:
-            sent_events = json.load(f)
+            sent_events = json.load(f, object_hook=object_hook)
     except Exception as e:
         LOGGER.error('Could not load sent_events.json')
 
@@ -1786,7 +1799,7 @@ def main():
 
     # persist sent on exit
     fd = open('json', 'w', encoding='utf-8')
-    json.dump(sent_events, fd, separators=(',', ':'))
+    json.dump(sent_events, fd, separators=(',', ':'), default=default)
     fd.close()
 
 
