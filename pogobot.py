@@ -1771,7 +1771,6 @@ def main():
         if fnmatch.fnmatch(file, '*.json'):
             chat_id = int(file.split('.')[0])
             pref = prefs.get(chat_id)
-            # pref.load()
             if not pref.get('disabled', False) and (pref.get('pkmids', []) or pref.get('raidids', [])):
                 register_client(chat_id)
 
@@ -1783,8 +1782,8 @@ def main():
         LOGGER.error('Could not load sent_events.json')
 
     jobqueue = updater.job_queue
-    jobqueue._put(Job(get_pokemon_and_send, 30, repeat=True))
-    jobqueue._put(Job(get_raids_and_send, 60, repeat=True))
+    jobqueue.run_repeating(get_pokemon_and_send, 30)
+    jobqueue.run_repeating(get_raids_and_send, 55)
 
     worker1_thread = Thread(target=message_queue_worker, args=(message_queue, ))
     worker1_thread.start()
