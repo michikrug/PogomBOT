@@ -20,6 +20,7 @@ from datetime import datetime, timedelta, timezone
 from queue import Queue
 from threading import Thread
 from time import sleep
+import signal
 
 from prometheus_client import start_http_server, Summary, Gauge, Counter
 
@@ -1640,6 +1641,16 @@ def object_hook(obj):
     return obj
 
 
+def handler_stop_signals(signum, frame):
+    message_queue.put(_sentinel)
+
+    # persist sent on exit
+    fd = open('json', 'w', encoding='utf-8')
+    json.dump(sent_events, fd, separators=(',', ':'), default=default)
+    fd.close()
+    sys.exit(0)
+
+
 def main():
     LOGGER.info('Starting...')
     read_config()
@@ -1794,14 +1805,10 @@ def main():
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
-    message_queue.put(_sentinel)
-
-    # persist sent on exit
-    fd = open('json', 'w', encoding='utf-8')
-    json.dump(sent_events, fd, separators=(',', ':'), default=default)
-    fd.close()
 
 
 if __name__ == '__main__':
+    signal.signal(signal.SIGINT, handler_stop_signals)
+    signal.signal(signal.SIGTERM, handler_stop_signals)
     start_http_server(8008)
     main()
