@@ -20,12 +20,10 @@ from datetime import datetime, timedelta, timezone
 from queue import Queue
 from threading import Thread
 from time import sleep
-import signal
-
-from prometheus_client import start_http_server, Summary, Gauge, Counter
 
 import googlemaps
 from geopy.geocoders import Nominatim
+from prometheus_client import Counter, Gauge, Summary, start_http_server
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import Unauthorized
 from telegram.ext import (CallbackQueryHandler, CommandHandler,
@@ -1641,16 +1639,6 @@ def object_hook(obj):
     return obj
 
 
-def handler_stop_signals(signum, frame):
-    message_queue.put(_sentinel)
-
-    # persist sent on exit
-    fd = open('json', 'w', encoding='utf-8')
-    json.dump(sent_events, fd, separators=(',', ':'), default=default)
-    fd.close()
-    sys.exit(0)
-
-
 def main():
     LOGGER.info('Starting...')
     read_config()
@@ -1806,9 +1794,14 @@ def main():
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
 
+    message_queue.put(_sentinel)
+
+    # persist sent on exit
+    fd = open('sent_events.json', 'w', encoding='utf-8')
+    json.dump(sent_events, fd, separators=(',', ':'), default=default)
+    fd.close()
+
 
 if __name__ == '__main__':
-    signal.signal(signal.SIGINT, handler_stop_signals)
-    signal.signal(signal.SIGTERM, handler_stop_signals)
     start_http_server(8008)
     main()
