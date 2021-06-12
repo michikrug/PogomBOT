@@ -1402,7 +1402,7 @@ def send_raid_notification(raid, chat_id):
             sent_messages += [message.message_id]
 
         raid_id = str(gym_id) + str(end)
-        sent_events[chat_id][raid_id] = {'time': end, 'message': sent_messages}
+        sent_events[chat_id][raid_id] = {'time': end, 'messages': sent_messages}
 
         ITEMS_SENT.inc()
         sleep(.1)
