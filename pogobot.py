@@ -16,7 +16,7 @@ import logging
 import os
 import sys
 import threading
-from datetime import datetime, timedelta, timezone, date
+from datetime import date, datetime, timedelta, timezone
 from queue import Queue
 from threading import Thread
 from time import sleep
@@ -1042,7 +1042,15 @@ def get_pokemon_and_send(context):
                     if chat_id not in locks or count > 10:
                         break
 
-            # Clean messages for already disappeared mons
+    except Exception as err:
+        LOGGER.error('[%s] %s' % (chat_id, repr(err)))
+
+
+def cleanup_messages(context):
+    # Clean messages for already disappeared mons / raids
+    try:
+        for chat_id in locks:
+            pref = prefs.get(chat_id)
             lock = locks[chat_id]
             lock.acquire()
             to_delete = []
@@ -1055,9 +1063,9 @@ def get_pokemon_and_send(context):
                         telegram_bot.deleteMessage(chat_id, message_id)
                 del sent_events[chat_id][event_id]
             lock.release()
-
     except Exception as err:
         LOGGER.error('[%s] %s' % (chat_id, repr(err)))
+        lock.release()
 
 
 def get_raids_and_send(context):
@@ -1636,6 +1644,8 @@ def object_hook(obj):
     _isoformat = obj.get('_isoformat')
     if _isoformat is not None:
         return date.fromisoformat(_isoformat)
+    if obj.isnumeric():
+        return int(obj)
     return obj
 
 
@@ -1783,6 +1793,7 @@ def main():
     jobqueue = updater.job_queue
     jobqueue.run_repeating(get_pokemon_and_send, 30)
     jobqueue.run_repeating(get_raids_and_send, 55)
+    jobqueue.run_repeating(cleanup_messages, 72)
 
     worker1_thread = Thread(target=message_queue_worker, args=(message_queue, ))
     worker1_thread.start()
