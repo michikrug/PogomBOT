@@ -16,7 +16,7 @@ import logging
 import os
 import sys
 import threading
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 from queue import Queue
 from threading import Thread
 from time import sleep
@@ -1635,7 +1635,7 @@ def default(obj):
 def object_hook(obj):
     _isoformat = obj.get('_isoformat')
     if _isoformat is not None:
-        return datetime.fromisoformat(_isoformat)
+        return date.fromisoformat(_isoformat)
     return obj
 
 
