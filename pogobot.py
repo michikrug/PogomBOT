@@ -1644,7 +1644,7 @@ def object_hook(obj):
     _isoformat = obj.get('_isoformat')
     if _isoformat is not None:
         return date.fromisoformat(_isoformat)
-    if obj.isnumeric():
+    if type(obj) == str and obj.isnumeric():
         return int(obj)
     return obj
 
@@ -1788,7 +1788,7 @@ def main():
         with open('sent_events.json', 'r', encoding='utf-8') as f:
             sent_events = json.load(f, object_hook=object_hook)
     except Exception as e:
-        LOGGER.error('Could not load sent_events.json')
+        LOGGER.error('Could not load sent_events.json - %s', (e))
 
     jobqueue = updater.job_queue
     jobqueue.run_repeating(get_pokemon_and_send, 30)
