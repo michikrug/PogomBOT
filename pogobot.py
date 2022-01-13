@@ -1648,6 +1648,8 @@ def object_hook(obj):
     _isoformat = obj.get('_isoformat')
     if _isoformat is not None:
         return datetime.fromisoformat(_isoformat)
+    if isinstance(obj, dict):
+        return {int(k) if isinstance(k, str) and k.isnumeric() else k:(int(v) if isinstance(v, str) and v.isnumeric() else v) for k,v in obj.items()}
     return obj
 
 
