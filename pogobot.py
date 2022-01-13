@@ -16,7 +16,7 @@ import logging
 import os
 import sys
 import threading
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from queue import Queue
 from threading import Thread
 from time import sleep
@@ -1641,13 +1641,13 @@ def message_queue_worker(q):
 def default(obj):
     if isinstance(obj, datetime):
         return {'_isoformat': obj.isoformat()}
-    return super().default(obj)
+    raise TypeError("Type %s not serializable" % type(obj))
 
 
 def object_hook(obj):
     _isoformat = obj.get('_isoformat')
     if _isoformat is not None:
-        return date.fromisoformat(_isoformat)
+        return datetime.fromisoformat(_isoformat)
     if isinstance(obj, dict):
         return {int(k): (int(v) if type(v) == str and v.isnumeric() else v) for k, v in obj.items()}
     return obj
