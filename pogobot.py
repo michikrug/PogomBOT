@@ -276,10 +276,7 @@ def parse_type(data_type, value):
     if data_type == 'str':
         return str(value)
     if data_type == 'float':
-        val = float(value)
-        if val < 0.1:
-            val = 0.1
-        return val
+        return max(float(value), 0.1)
     return value
 
 
@@ -1287,6 +1284,8 @@ def send_pokemon_notification(pokemon, chat_id):
 
         sent_events[chat_id][encounter_id] = {'time': disappear_time, 'messages': sent_messages}
 
+        lock.release()
+
         ITEMS_SENT.inc()
         sleep(.05)
 
@@ -1297,8 +1296,7 @@ def send_pokemon_notification(pokemon, chat_id):
 
     except Exception as err:
         LOGGER.error('[%s] %s' % (chat_id, repr(err)))
-
-    lock.release()
+        lock.release()
 
 
 def filter_raid_for_user(raid, chat_id):
