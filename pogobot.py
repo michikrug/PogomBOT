@@ -231,6 +231,7 @@ def cmd_help(update, context):
         _("/resetpkmradius") + " - " + _("Resets the search radius for a specific Pokémon") + "\n" +\
         _("/sendwithout") + " - " + _("Defines if Pokémon without IV/CP should be sent") + "\n\n" + \
         _("/showivs") + " - " + _("Defines if Individual Values should be displayed") + "\n\n" + \
+        _("/perfect") + " - " + _("Defines if perfect Pokémon within the radius should be sent") + "\n\n" + \
         _("*Raid filter*") + "\n" + \
         _("/newraid") + " - " + _("Adds a new Raid entry to the database") + "\n" + \
         _("/addraid pokedexID") + " - " + _("Adds Raid Pokémon with the given ID to the scanner") + "\n" + \
@@ -388,6 +389,10 @@ def cmd_map_only(update, context):
 
 def cmd_send_without(update, context):
     default_settings_cmd(update, context, 'sendwithout', 'bool')
+
+
+def cmd_perfect(update, context):
+    default_settings_cmd(update, context, 'perfect', 'bool')
 
 
 def cmd_show_ivs(update, context):
@@ -1094,10 +1099,8 @@ def filter_pokemon_for_user(pokemon, chat_id):
     try:
         pref = prefs.get(chat_id)
         poke_id = str(pokemon.get_pokemon_id())
-        if int(poke_id) not in pref.get('pkmids', []):
-            # LOGGER.info('[%s] Not sending pokemon notification. Pokemon not in list. %s' % (chat_id,
-            #                                                                                poke_id))
-            return False
+        iv = pokemon.get_ivs()
+        location_data = pref.preferences.get('location', [])
 
         encounter_id = pokemon.get_encounter_id()
         if encounter_id in sent_events[chat_id]:
@@ -1105,20 +1108,25 @@ def filter_pokemon_for_user(pokemon, chat_id):
             #                                                                         poke_id))
             return False
 
+        if pref.preferences.get('perfect', False) and iv is not None and iv == 100 and location_data[0] is not None and pokemon.filter_by_location(location_data):
+            return True
+
+        if int(poke_id) not in pref.get('pkmids', []):
+            # LOGGER.info('[%s] Not sending pokemon notification. Pokemon not in list. %s' % (chat_id,
+            #                                                                                poke_id))
+            return False
+
         disappear_time = pokemon.get_disappear_time()
-        if (disappear_time - datetime.utcnow()).seconds <= 0:
+        if (disappear_time - datetime.utcnow()).seconds <= 60:
             # LOGGER.info('[%s] Not sending pokemon notification. Already disappeared. %s' % (chat_id,
             #                                                                                poke_id))
             return False
 
-        iv = pokemon.get_ivs()
-        send_poke_without_iv = pref.get('sendwithout', True)
-        if iv is None and not send_poke_without_iv:
+        if iv is None and not pref.get('sendwithout', True):
             # LOGGER.info(
             #    '[%s] Not sending pokemon notification. Has no IVs. %s' % (chat_id, poke_id))
             return False
 
-        location_data = pref.preferences.get('location', [])
         dists = pref.get('pkmradius', {})
         if poke_id in dists:
             location_data[2] = dists[poke_id]
@@ -1736,6 +1744,7 @@ def main():
     dp.add_handler(CommandHandler('resetpkmlevel', cmd_pkm_level_reset, pass_args=True))
     dp.add_handler(CommandHandler('resetpkmmatchmode', cmd_pkm_matchmode_reset, pass_args=True))
     dp.add_handler(CommandHandler('sendwithout', cmd_send_without, pass_args=True))
+    dp.add_handler(CommandHandler('perfect', cmd_perfect, pass_args=True))
     dp.add_handler(CommandHandler('showivs', cmd_show_ivs, pass_args=True))
     dp.add_handler(CommandHandler(['wo', 'where'], cmd_find_gym, pass_args=True))
 

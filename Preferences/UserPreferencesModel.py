@@ -38,6 +38,7 @@ class UserPreferencesModel(object):
             walkdist=self.loadedconfig.get('WALK_DIST', False),
             sendwithout=self.loadedconfig.get('SEND_POKEMON_WITHOUT_IV', True),
             showivs=False,
+            perfect=False,
             iv=0,
             cp=0,
             level=0,

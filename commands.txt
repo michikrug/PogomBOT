@@ -12,6 +12,7 @@ list - Zeigt eine Liste mit den überwachten Pokémon und Raid-Pokémon
 location - Setzt die Suchposition gegeben als Text
 maponly - Legt fest, ob nur eine Karte gesendet werden soll (ohne zusätzliche Nachricht/Sticker)
 matchmode - Legt den Übereinstimmungs-Modus fest (0) Entfernung UND IV- UND WP-Wert UND Level / (1) Entfernung UND IV- ODER WP-Wert ODER Level muss übereinstimmen / (2) Entfernung ODER IV- ODER WP-Wert ODER Level muss übereinstimmen
+perfect - Legt fest, ob perfekte Pokemon im Radius gesendet werden sollen
 pkmiv - Setzt den Minimal-IV-Wert für ein bestimmtes Pokémon in Prozent
 pkmlevel - Setzt das Minimal-Level für ein bestimmtes Pokémon
 pkmmatchmode - Legt den Übereinstimmungs-Modus für ein bestimmtes Pokémon festn/resetpkmmatchmode pokedexID - Setzt den Übereinstimmungs-Modus für ein bestimmtes Pokémon zurück
