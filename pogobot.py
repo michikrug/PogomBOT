@@ -1066,7 +1066,10 @@ def cleanup_messages(context):
             for event_id in to_delete:
                 if pref.get('cleanup'):
                     for message_id in sent_events[chat_id][event_id]['messages']:
-                        telegram_bot.deleteMessage(chat_id, message_id)
+                        try:
+                            telegram_bot.deleteMessage(chat_id, message_id)
+                        except Exception as err:
+                            LOGGER.error('[%s] %s' % (chat_id, repr(err)))
                 del sent_events[chat_id][event_id]
             lock.release()
     except Exception as err:
