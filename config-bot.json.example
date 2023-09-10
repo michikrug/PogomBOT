@@ -8,6 +8,5 @@
 	"DEFAULT_LANG": "en",
 	"SEND_MAP_ONLY": false,
 	"SEND_POKEMON_WITHOUT_IV": true,
-	"STICKERS": true,
-	"WALK_DIST": false
+	"STICKERS": true
 }

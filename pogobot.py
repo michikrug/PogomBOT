@@ -21,7 +21,6 @@ from queue import Queue
 from threading import Thread
 from time import sleep
 
-import googlemaps
 from backports.datetime_fromisoformat import MonkeyPatch
 from geopy.geocoders import Nominatim
 from prometheus_client import Counter, Gauge, Summary, start_http_server
@@ -52,7 +51,6 @@ _ = gettext.gettext
 prefs = Preferences.UserPreferences()
 geo_locator = Nominatim(user_agent="PoGoBot")
 telegram_bot = None
-gmaps_client = None
 
 data_source = None
 
@@ -393,10 +391,6 @@ def cmd_perfect(update, context):
 
 def cmd_show_ivs(update, context):
     default_settings_cmd(update, context, 'showivs', 'bool')
-
-
-def cmd_walk_dist(update, context):
-    default_settings_cmd(update, context, 'walkdist', 'bool')
 
 
 def cmd_lang(update, context):
@@ -1252,19 +1246,11 @@ def send_pokemon_notification(pokemon, chat_id):
 
         location_data = pref.preferences.get('location', [])
         if location_data[0] is not None:
-            if pref.get('walkdist'):
-                walkin_data = get_walking_data(location_data, latitude, longitude)
-                if walkin_data['walk_dist'] < 1:
-                    title += ' 📍%dm' % int(1000 * walkin_data['walk_dist'])
-                else:
-                    title += ' 📍%.2fkm' % walkin_data['walk_dist']
-                address += ' 🚶%s' % walkin_data['walk_time']
+            dist = round(pokemon.get_distance(location_data), 2)
+            if dist < 1:
+                title += ' 📍%dm' % int(1000 * dist)
             else:
-                dist = round(pokemon.get_distance(location_data), 2)
-                if dist < 1:
-                    title += ' 📍%dm' % int(1000 * dist)
-                else:
-                    title += ' 📍%.2fkm' % dist
+                title += ' 📍%.2fkm' % dist
 
         if move1 is not None and move2 is not None:
             moveNames = move_name['en']
@@ -1380,19 +1366,11 @@ def send_raid_notification(raid, chat_id):
         address = '📍 %s\n🥚 %s 💨 %s ⏱ %s' % (name, start_time_str, disappear_time_str, deltaStr)
 
         if location_data[0] is not None:
-            if pref.get('walkdist'):
-                walkin_data = get_walking_data(location_data, latitude, longitude)
-                if walkin_data['walk_dist'] < 1:
-                    title += ' 📍%dm' % int(1000 * walkin_data['walk_dist'])
-                else:
-                    title += ' 📍%.2fkm' % walkin_data['walk_dist']
-                address += ' 🚶%s' % walkin_data['walk_time']
+            dist = round(raid.get_distance(location_data), 2)
+            if dist < 1:
+                title += ' 📍%dm' % int(1000 * dist)
             else:
-                dist = round(raid.get_distance(location_data), 2)
-                if dist < 1:
-                    title += ' 📍%dm' % int(1000 * dist)
-                else:
-                    title += ' 📍%.2fkm' % dist
+                title += ' 📍%.2fkm' % dist
 
         if move1 is not None and move2 is not None:
             moveNames = move_name['en']
@@ -1435,30 +1413,6 @@ def send_raid_notification(raid, chat_id):
         LOGGER.error('[%s] %s' % (chat_id, repr(err)))
 
     lock.release()
-
-
-# Returns a set with walking dist and walking duration via Google Distance Matrix API
-def get_walking_data(user_location, lat, lng):
-    data = {'walk_dist': 'unknown', 'walk_time': 'unknown'}
-    if gmaps_client is None:
-        LOGGER.error('Google Maps Client not available. Unable to get walking data')
-        return data
-    if user_location[0] is None:
-        LOGGER.error('No location has been set. Unable to get walking data')
-        return data
-    origin = '{},{}'.format(user_location[0], user_location[1])
-    dest = '{},{}'.format(lat, lng)
-    try:
-        result = gmaps_client.distance_matrix(origin, dest, mode='walking', units='metric')
-        result = result.get('rows')[0].get('elements')[0]
-        data['walk_dist'] = float(result.get('distance').get('text').replace(' km', ''))
-        data['walk_time'] = result.get('duration').get('text').replace(
-            ' hours', 'h').replace(' hour', 'h').replace(' mins', 'm').replace(' min', 'm')
-
-    except Exception as err:
-        LOGGER.error('Encountered error while getting walking data (%s)' % (repr(err)))
-    return data
-
 
 def enter_raid_level(update, context):
     default_cmd(update, context, 'enter_raid_level')
@@ -1696,12 +1650,6 @@ def main():
     telegram_bot = updater.bot
     LOGGER.info('BotName: <%s>' % (telegram_bot.name))
 
-    # Get the Google Maps API
-    google_key = config.get('GMAPS_KEY', None)
-    global gmaps_client
-    gmaps_client = googlemaps.Client(
-        key=google_key, timeout=3, retry_timeout=4) if google_key is not None else None
-
     set_lang(config.get('DEFAULT_LANG', 'en'))
 
     # Get the dispatcher to register handlers
@@ -1728,7 +1676,6 @@ def main():
     dp.add_handler(CommandHandler('stickers', cmd_stickers, pass_args=True))
     dp.add_handler(CommandHandler('cleanup', cmd_cleanup, pass_args=True))
     dp.add_handler(CommandHandler('maponly', cmd_map_only, pass_args=True))
-    dp.add_handler(CommandHandler('walkdist', cmd_walk_dist, pass_args=True))
     dp.add_handler(CommandHandler('pkmradius', cmd_pkm_radius, pass_args=True))
     dp.add_handler(CommandHandler('resetpkmradius', cmd_pkm_radius_reset, pass_args=True))
     dp.add_handler(CommandHandler('raidradius', cmd_raid_radius, pass_args=True))

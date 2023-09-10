@@ -15,7 +15,6 @@ for file in os.listdir(user_directory):
                 new_preferences['location'] = old_preferences.get('location')
                 new_preferences['stickers'] = old_preferences.get('stickers')
                 new_preferences['maponly'] = old_preferences.get('only_map')
-                new_preferences['walkdist'] = old_preferences.get('walk_dist')
                 new_preferences['sendwithout'] = old_preferences.get('send_without')
                 new_preferences['iv'] = old_preferences.get('miniv')
                 new_preferences['cp'] = old_preferences.get('mincp')

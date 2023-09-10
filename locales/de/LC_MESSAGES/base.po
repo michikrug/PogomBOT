@@ -583,12 +583,6 @@ msgstr "%s wurde auf %s gesetzt"
 msgid "\"Send Pokémon without IV/CP\""
 msgstr "\"Pokémon ohne IV/WP-Werte senden\""
 
-msgid "\"Show walking distance/time\""
-msgstr "\"Zeige Laufdistanz und -zeit\""
-
-msgid "/walkdist"
-msgstr "/walkdist true/false"
-
 msgid "Your settings were successfully reset"
 msgstr "Deine Einstellungen wurden erfolgreich zurückgesetzt"
 
@@ -645,9 +639,6 @@ msgstr "\"Nur Karte anzeigen\""
 
 msgid "sendwithout"
 msgstr "\"Pokémon ohne IV/WP-Werte senden\""
-
-msgid "walkdist"
-msgstr "\"Zeige Laufdistanz und -zeit\""
 
 msgid "language"
 msgstr "Die Sprache"

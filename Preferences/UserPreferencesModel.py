@@ -35,7 +35,6 @@ class UserPreferencesModel(object):
             stickers=self.loadedconfig.get('STICKERS', True),
             cleanup=self.loadedconfig.get('CLEANUP', False),
             maponly=self.loadedconfig.get('SEND_MAP_ONLY', False),
-            walkdist=self.loadedconfig.get('WALK_DIST', False),
             sendwithout=self.loadedconfig.get('SEND_POKEMON_WITHOUT_IV', True),
             showivs=False,
             perfect=False,

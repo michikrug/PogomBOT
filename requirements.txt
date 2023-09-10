@@ -1,5 +1,4 @@
 geopy==2.2.0
-googlemaps==4.5.3
 prometheus-client==0.12.0
 PyMySQL==1.0.2
 python_telegram_bot==13.10
