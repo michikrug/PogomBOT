@@ -1101,6 +1101,9 @@ def filter_pokemon_for_user(pokemon, chat_id):
         iv = pokemon.get_ivs()
         location_data = pref.preferences.get('location', [])
 
+        if chat_id not in sent_events:
+            sent_events[chat_id] = dict()
+
         encounter_id = pokemon.get_encounter_id()
         if encounter_id in sent_events[chat_id]:
             # LOGGER.info('[%s] Not sending pokemon notification. Already sent. %s' % (chat_id,
