@@ -8,7 +8,6 @@
 
 # /* cSpell:disable */
 
-import binascii
 import fnmatch
 import gettext
 import json
