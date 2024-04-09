@@ -20,7 +20,8 @@ from queue import Queue
 from threading import Thread
 from time import sleep
 
-from backports.datetime_fromisoformat import MonkeyPatch
+if sys.version_info[0] < 3.11:
+    from backports.datetime_fromisoformat import MonkeyPatch
 from geopy.geocoders import Nominatim
 from prometheus_client import Counter, Gauge, Summary, start_http_server
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -33,8 +34,8 @@ import DataSources
 import Preferences
 import Whitelist
 
-MonkeyPatch.patch_fromisoformat()
-
+if sys.version_info[0] < 3.11:
+    MonkeyPatch.patch_fromisoformat()
 
 if sys.version_info[0] < 3:
     raise Exception('Must be using Python 3')
