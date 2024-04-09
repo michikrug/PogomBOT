@@ -1553,7 +1553,6 @@ def report_config():
     tmp = tmp[2:]
     LOGGER.info('LIST_OF_ADMINS: <%s>' % (tmp))
     LOGGER.info('TELEGRAM_TOKEN: <%s>' % (config.get('TELEGRAM_TOKEN', None)))
-    LOGGER.info('GMAPS_KEY: <%s>' % (config.get('GMAPS_KEY', None)))
     LOGGER.info('SCANNER_NAME: <%s>' % (config.get('SCANNER_NAME', None)))
     LOGGER.info('DB_TYPE: <%s>' % (config.get('DB_TYPE', None)))
     LOGGER.info('DB_CONNECT: <%s>' % (config.get('DB_CONNECT', None)))
