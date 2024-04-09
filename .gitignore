@@ -5,4 +5,5 @@ __pycache__/
 config-bot.json
 data/userdata/**
 !data/userdata/.gitkeep
+.venv/
 env/

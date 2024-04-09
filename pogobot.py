@@ -30,7 +30,7 @@ from prometheus_client import Counter, Gauge, Summary, start_http_server
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import Forbidden
 from telegram.ext import (CallbackQueryHandler, CommandHandler,
-                          ConversationHandler, Filters, MessageHandler,
+                          ConversationHandler, filters, MessageHandler,
                           Updater)
 
 import DataSources
@@ -64,8 +64,8 @@ _sentinel = 'EXIT'
 sent_events = dict()
 locks = dict()
 
-LAST_TIMESTAMP_POKEMON = datetime.utcnow()
-last_timestamp_raids = datetime.utcnow()
+LAST_TIMESTAMP_POKEMON = datetime.now(timezone.utc)
+last_timestamp_raids = datetime.now(timezone.utc)
 
 pokemon_name = dict()
 move_name = dict()
@@ -1022,7 +1022,7 @@ def get_pokemon_and_send(context):
         allpokes = data_source.get_pokemon_by_time(LAST_TIMESTAMP_POKEMON)
         ITEMS_FOUND.set(len(allpokes))
         LOGGER.info('[NEW] Checking pokemons. Got %s results to filter.' % (len(allpokes)))
-        LAST_TIMESTAMP_POKEMON = datetime.utcnow()
+        LAST_TIMESTAMP_POKEMON = datetime.now(timezone.utc)
         for chat_id in locks:
             pref = prefs.get(chat_id)
             if not pref.get('pkmids', []) or pref.get('disabled', False):
@@ -1051,7 +1051,7 @@ def cleanup_messages(context):
             lock.acquire()
             to_delete = []
             for event_id in sent_events[chat_id]:
-                if sent_events[chat_id][event_id]['time'] < datetime.utcnow():
+                if sent_events[chat_id][event_id]['time'] < datetime.now(timezone.utc):
                     to_delete.append(event_id)
             for event_id in to_delete:
                 if pref.get('cleanup'):
@@ -1072,7 +1072,7 @@ def get_raids_and_send(context):
     try:
         allraids = data_source.get_raids_by_time(last_timestamp_raids)
         LOGGER.info('[NEW] Checking raids. Got %s results to filter.' % (len(allraids)))
-        last_timestamp_raids = datetime.utcnow()
+        last_timestamp_raids = datetime.now(timezone.utc)
         for chat_id in locks:
             pref = prefs.get(chat_id)
             if not pref.get('raidids', []) or pref.get('disabled', False):
@@ -1113,7 +1113,7 @@ def filter_pokemon_for_user(pokemon, chat_id):
             return False
 
         disappear_time = pokemon.get_disappear_time()
-        if (disappear_time - datetime.utcnow()).seconds <= 60:
+        if (disappear_time - datetime.now(timezone.utc)).seconds <= 60:
             # LOGGER.info('[%s] Not sending pokemon notification. Already disappeared. %s' % (chat_id,
             #                                                                                poke_id))
             return False
@@ -1218,7 +1218,7 @@ def send_pokemon_notification(pokemon, chat_id):
 
         LOGGER.info('[%s] Sending pokemon notification. %s' % (chat_id, poke_id))
 
-        delta = disappear_time - datetime.utcnow()
+        delta = disappear_time - datetime.now(timezone.utc)
         deltaStr = '%02dm %02ds' % (int(delta.seconds / 60), int(delta.seconds % 60))
         disappear_time_str = disappear_time.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%H:%M:%S')
 
@@ -1312,7 +1312,7 @@ def filter_raid_for_user(raid, chat_id):
             # LOGGER.info('[%s] Not sending raid notification. Already sent. %s' % (chat_id, poke_id))
             return False
 
-        if (end - datetime.utcnow()).seconds <= 0:
+        if (end - datetime.now(timezone.utc)).seconds <= 0:
             # LOGGER.info('[%s] Not sending raid notification. Already ended. %s' % (chat_id, poke_id))
             return False
 
@@ -1348,7 +1348,7 @@ def send_raid_notification(raid, chat_id):
 
         LOGGER.info('[%s] Sending raid notification. %s' % (chat_id, poke_id))
 
-        delta = end - datetime.utcnow()
+        delta = end - datetime.now(timezone.utc)
         deltaStr = '%02dh %02dm' % (int(delta.seconds / 3600), int((delta.seconds / 60) % 60))
 
         start_time_str = (end - timedelta(minutes=45)).replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%H:%M:%S')
@@ -1708,17 +1708,17 @@ def main():
             CHOOSE_PKM: [
                 CallbackQueryHandler(cb_raid_pkm, pattern='^raidpkm_(.*)$', pass_user_data=True)
             ],
-            CHOOSE_GYM: [MessageHandler(Filters.text, enter_raid_gym_search, pass_user_data=True)],
+            CHOOSE_GYM: [MessageHandler(filters.TEXT, enter_raid_gym_search, pass_user_data=True)],
             CHOOSE_GYM_SEARCH: [
                 CallbackQueryHandler(cb_raid_gym, pattern='^raidgym_(.*)$', pass_user_data=True)
             ],
-            CHOOSE_TIME: [MessageHandler(Filters.text, enter_raid_time, pass_user_data=True)]
+            CHOOSE_TIME: [MessageHandler(filters.TEXT, enter_raid_time, pass_user_data=True)]
         },
         fallbacks=[CommandHandler(['Cancel', 'cancel', 'Abbruch', 'abbruch'], enter_raid_cancel, pass_user_data=True)])
     dp.add_handler(conv_handler)
 
-    dp.add_handler(MessageHandler(Filters.location, cmd_location))
-    dp.add_handler(MessageHandler(Filters.command, cmd_unknown))
+    dp.add_handler(MessageHandler(filters.LOCATION, cmd_location))
+    dp.add_handler(MessageHandler(filters.COMMAND, cmd_unknown))
 
     dp.add_handler(CallbackQueryHandler(cb_find_gym, pattern='^gymsearch_(.*)$'))
 
