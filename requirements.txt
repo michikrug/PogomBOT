@@ -1,5 +1,5 @@
 geopy==2.4.1
 prometheus-client==0.20.0
 pymysql==1.1.0
-python-telegram-bot==21.0.1
+python-telegram-bot[job-queue]==21.0.1
 backports-datetime-fromisoformat==2.0.1; python_version < '3.11'

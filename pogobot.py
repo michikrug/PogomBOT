@@ -27,11 +27,10 @@ if sys.version_info[1] < 11:
     from backports.datetime_fromisoformat import MonkeyPatch
 from geopy.geocoders import Nominatim
 from prometheus_client import Counter, Gauge, Summary, start_http_server
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.error import Forbidden
-from telegram.ext import (CallbackQueryHandler, CommandHandler,
-                          ConversationHandler, filters, MessageHandler,
-                          Updater)
+from telegram.ext import (Application, CallbackQueryHandler, CommandHandler,
+                          ConversationHandler, MessageHandler, filters)
 
 import DataSources
 import Preferences
@@ -50,7 +49,6 @@ _ = gettext.gettext
 
 prefs = Preferences.UserPreferences()
 geo_locator = Nominatim(user_agent="PoGoBot")
-telegram_bot = None
 
 data_source = None
 
@@ -1032,7 +1030,7 @@ def get_pokemon_and_send(context):
             for pokemon in allpokes:
                 if filter_pokemon_for_user(pokemon, chat_id):
                     LOGGER.info('[%s] Enqueuing pokemon notification. %s' % (chat_id, str(pokemon.get_pokemon_id())))
-                    message_queue.put((pokemon, chat_id))
+                    message_queue.put((pokemon, chat_id, context))
                     ITEMS_ENQUEUED.inc()
                     count = count + 1
                     if chat_id not in locks or count > 10:
@@ -1057,7 +1055,7 @@ def cleanup_messages(context):
                 if pref.get('cleanup'):
                     for message_id in sent_events[chat_id][event_id]['messages']:
                         try:
-                            telegram_bot.deleteMessage(chat_id, message_id)
+                            context.bot.deleteMessage(chat_id, message_id)
                         except Exception as err:
                             LOGGER.error('[%s] %s' % (chat_id, repr(err)))
                 del sent_events[chat_id][event_id]
@@ -1080,7 +1078,7 @@ def get_raids_and_send(context):
 
             for raid in allraids:
                 if filter_raid_for_user(raid, chat_id):
-                    send_raid_notification(raid, chat_id)
+                    send_raid_notification(raid, chat_id, context)
                     if chat_id not in locks:
                         break
 
@@ -1194,7 +1192,7 @@ def filter_pokemon_for_user(pokemon, chat_id):
     return True
 
 
-def send_pokemon_notification(pokemon, chat_id):
+def send_pokemon_notification(pokemon, chat_id, context):
     pref = prefs.get(chat_id)
     lock = locks[chat_id]
     lock.acquire()
@@ -1264,17 +1262,17 @@ def send_pokemon_notification(pokemon, chat_id):
         sent_messages = list()
 
         if pref.get('maponly'):
-            message = telegram_bot.sendVenue(chat_id, latitude, longitude, title, address)
+            message = context.bot.sendVenue(chat_id, latitude, longitude, title, address)
             sent_messages += [message.message_id]
         else:
             if pref.get('stickers'):
-                message = telegram_bot.sendSticker(chat_id, get_pkm_sticker(poke_id), disable_notification=True)
+                message = context.bot.sendSticker(chat_id, get_pkm_sticker(poke_id), disable_notification=True)
                 sent_messages += [message.message_id]
 
-            message = telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
+            message = context.bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
             sent_messages += [message.message_id]
 
-            message = telegram_bot.sendMessage(
+            message = context.bot.sendMessage(
                 chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
             sent_messages += [message.message_id]
 
@@ -1328,7 +1326,7 @@ def filter_raid_for_user(raid, chat_id):
     return True
 
 
-def send_raid_notification(raid, chat_id):
+def send_raid_notification(raid, chat_id, context):
     pref = prefs.get(chat_id)
     lock = locks[chat_id]
     lock.acquire()
@@ -1384,17 +1382,17 @@ def send_raid_notification(raid, chat_id):
         sent_messages = list()
 
         if pref.get('maponly'):
-            message = telegram_bot.sendVenue(chat_id, latitude, longitude, title, address)
+            message = context.bot.sendVenue(chat_id, latitude, longitude, title, address)
             sent_messages += [message.message_id]
         else:
             if pref.get('stickers'):
-                message = telegram_bot.sendSticker(chat_id, get_pkm_sticker(poke_id), disable_notification=True)
+                message = context.bot.sendSticker(chat_id, get_pkm_sticker(poke_id), disable_notification=True)
                 sent_messages += [message.message_id]
 
-            message = telegram_bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
+            message = context.bot.sendLocation(chat_id, latitude, longitude, disable_notification=True)
             sent_messages += [message.message_id]
 
-            message = telegram_bot.sendMessage(
+            message = context.bot.sendMessage(
                 chat_id, text='<b>%s</b> \n%s' % (title, address), parse_mode='HTML')
             sent_messages += [message.message_id]
 
@@ -1593,8 +1591,8 @@ def message_queue_worker(q):
             q.task_done()
             q.put(_sentinel)
             break
-        pokemon, chat_id = data
-        send_pokemon_notification(pokemon, chat_id)
+        pokemon, chat_id, context = data
+        send_pokemon_notification(pokemon, chat_id, context)
         ITEMS_ENQUEUED.dec()
         q.task_done()
 
@@ -1643,93 +1641,85 @@ def main():
 
     # ask it to the bot father in telegram
     token = config.get('TELEGRAM_TOKEN', None)
-    updater = Updater(token=token, use_context=True, request_kwargs={'con_pool_size': 5})
 
-    global telegram_bot
-    telegram_bot = updater.bot
-    LOGGER.info('BotName: <%s>' % (telegram_bot.name))
+    application = Application.builder().token(token).build()
 
     set_lang(config.get('DEFAULT_LANG', 'en'))
 
-    # Get the dispatcher to register handlers
-    dp = updater.dispatcher
-
     # on different commands - answer in Telegram
-    dp.add_handler(CommandHandler('start', cmd_start))
-    dp.add_handler(CommandHandler('stop', cmd_stop))
-    dp.add_handler(CommandHandler('help', cmd_help))
-    dp.add_handler(CommandHandler('clear', cmd_clear))
-    dp.add_handler(CommandHandler('add', cmd_add, pass_args=True))
-    dp.add_handler(CommandHandler('addbyrarity', cmd_add_by_rarity, pass_args=True))
-    dp.add_handler(CommandHandler('remove', cmd_remove, pass_args=True))
-    dp.add_handler(CommandHandler('addraid', cmd_add_raid, pass_args=True))
-    dp.add_handler(CommandHandler('addraidbylevel', cmd_add_raid_by_level, pass_args=True))
-    dp.add_handler(CommandHandler('removeraid', cmd_remove_raid, pass_args=True))
-    dp.add_handler(CommandHandler('list', cmd_list))
-    dp.add_handler(CommandHandler(['language', 'lang'], cmd_lang, pass_args=True))
-    dp.add_handler(CommandHandler('radius', cmd_radius, pass_args=True))
-    dp.add_handler(CommandHandler('location', cmd_location_str, pass_args=True))
-    dp.add_handler(CommandHandler('removelocation', cmd_remove_location))
-    dp.add_handler(CommandHandler('wladd', cmd_add_to_whitelist, pass_args=True))
-    dp.add_handler(CommandHandler('wlrem', cmd_rem_from_whitelist, pass_args=True))
-    dp.add_handler(CommandHandler('stickers', cmd_stickers, pass_args=True))
-    dp.add_handler(CommandHandler('cleanup', cmd_cleanup, pass_args=True))
-    dp.add_handler(CommandHandler('maponly', cmd_map_only, pass_args=True))
-    dp.add_handler(CommandHandler('pkmradius', cmd_pkm_radius, pass_args=True))
-    dp.add_handler(CommandHandler('resetpkmradius', cmd_pkm_radius_reset, pass_args=True))
-    dp.add_handler(CommandHandler('raidradius', cmd_raid_radius, pass_args=True))
-    dp.add_handler(CommandHandler('resetraidradius', cmd_raid_radius_reset, pass_args=True))
-    dp.add_handler(CommandHandler('iv', cmd_iv, pass_args=True))
-    dp.add_handler(CommandHandler(['cp', 'wp'], cmd_cp, pass_args=True))
-    dp.add_handler(CommandHandler('level', cmd_level, pass_args=True))
-    dp.add_handler(CommandHandler('matchmode', cmd_matchmode, pass_args=True))
-    dp.add_handler(CommandHandler('pkmiv', cmd_pkm_iv, pass_args=True))
-    dp.add_handler(CommandHandler(['pkmcp', 'pkmwp'], cmd_pkm_cp, pass_args=True))
-    dp.add_handler(CommandHandler('pkmlevel', cmd_pkm_level, pass_args=True))
-    dp.add_handler(CommandHandler('pkmmatchmode', cmd_pkm_matchmode, pass_args=True))
-    dp.add_handler(CommandHandler('resetpkmiv', cmd_pkm_iv_reset, pass_args=True))
-    dp.add_handler(CommandHandler(['resetpkmcp', 'resetpkmwp'], cmd_pkm_cp_reset, pass_args=True))
-    dp.add_handler(CommandHandler('resetpkmlevel', cmd_pkm_level_reset, pass_args=True))
-    dp.add_handler(CommandHandler('resetpkmmatchmode', cmd_pkm_matchmode_reset, pass_args=True))
-    dp.add_handler(CommandHandler('sendwithout', cmd_send_without, pass_args=True))
-    dp.add_handler(CommandHandler('perfect', cmd_perfect, pass_args=True))
-    dp.add_handler(CommandHandler('showivs', cmd_show_ivs, pass_args=True))
-    dp.add_handler(CommandHandler(['wo', 'where'], cmd_find_gym, pass_args=True))
+    application.add_handler(CommandHandler('start', cmd_start))
+    application.add_handler(CommandHandler('stop', cmd_stop))
+    application.add_handler(CommandHandler('help', cmd_help))
+    application.add_handler(CommandHandler('clear', cmd_clear))
+    application.add_handler(CommandHandler('add', cmd_add))
+    application.add_handler(CommandHandler('addbyrarity', cmd_add_by_rarity))
+    application.add_handler(CommandHandler('remove', cmd_remove))
+    application.add_handler(CommandHandler('addraid', cmd_add_raid))
+    application.add_handler(CommandHandler('addraidbylevel', cmd_add_raid_by_level))
+    application.add_handler(CommandHandler('removeraid', cmd_remove_raid))
+    application.add_handler(CommandHandler('list', cmd_list))
+    application.add_handler(CommandHandler(['language', 'lang'], cmd_lang))
+    application.add_handler(CommandHandler('radius', cmd_radius))
+    application.add_handler(CommandHandler('location', cmd_location_str))
+    application.add_handler(CommandHandler('removelocation', cmd_remove_location))
+    application.add_handler(CommandHandler('wladd', cmd_add_to_whitelist))
+    application.add_handler(CommandHandler('wlrem', cmd_rem_from_whitelist))
+    application.add_handler(CommandHandler('stickers', cmd_stickers))
+    application.add_handler(CommandHandler('cleanup', cmd_cleanup))
+    application.add_handler(CommandHandler('maponly', cmd_map_only))
+    application.add_handler(CommandHandler('pkmradius', cmd_pkm_radius))
+    application.add_handler(CommandHandler('resetpkmradius', cmd_pkm_radius_reset))
+    application.add_handler(CommandHandler('raidradius', cmd_raid_radius))
+    application.add_handler(CommandHandler('resetraidradius', cmd_raid_radius_reset))
+    application.add_handler(CommandHandler('iv', cmd_iv))
+    application.add_handler(CommandHandler(['cp', 'wp'], cmd_cp))
+    application.add_handler(CommandHandler('level', cmd_level))
+    application.add_handler(CommandHandler('matchmode', cmd_matchmode))
+    application.add_handler(CommandHandler('pkmiv', cmd_pkm_iv))
+    application.add_handler(CommandHandler(['pkmcp', 'pkmwp'], cmd_pkm_cp))
+    application.add_handler(CommandHandler('pkmlevel', cmd_pkm_level))
+    application.add_handler(CommandHandler('pkmmatchmode', cmd_pkm_matchmode))
+    application.add_handler(CommandHandler('resetpkmiv', cmd_pkm_iv_reset))
+    application.add_handler(CommandHandler(['resetpkmcp', 'resetpkmwp'], cmd_pkm_cp_reset))
+    application.add_handler(CommandHandler('resetpkmlevel', cmd_pkm_level_reset))
+    application.add_handler(CommandHandler('resetpkmmatchmode', cmd_pkm_matchmode_reset))
+    application.add_handler(CommandHandler('sendwithout', cmd_send_without))
+    application.add_handler(CommandHandler('perfect', cmd_perfect))
+    application.add_handler(CommandHandler('showivs', cmd_show_ivs))
+    application.add_handler(CommandHandler(['wo', 'where'], cmd_find_gym))
 
     conv_handler = ConversationHandler(
         entry_points=[
-            CommandHandler(['newraid', 'neuerraid'], enter_raid_level, pass_user_data=True)
+            CommandHandler(['newraid', 'neuerraid'], enter_raid_level)
         ],
         states={
             CHOOSE_LEVEL: [
                 CallbackQueryHandler(
-                    cb_raid_level, pattern='^raidlevel_(.*)$', pass_user_data=True)
+                    cb_raid_level, pattern='^raidlevel_(.*)$')
             ],
             CHOOSE_PKM: [
-                CallbackQueryHandler(cb_raid_pkm, pattern='^raidpkm_(.*)$', pass_user_data=True)
+                CallbackQueryHandler(cb_raid_pkm, pattern='^raidpkm_(.*)$')
             ],
-            CHOOSE_GYM: [MessageHandler(filters.TEXT, enter_raid_gym_search, pass_user_data=True)],
+            CHOOSE_GYM: [MessageHandler(filters.TEXT, enter_raid_gym_search)],
             CHOOSE_GYM_SEARCH: [
-                CallbackQueryHandler(cb_raid_gym, pattern='^raidgym_(.*)$', pass_user_data=True)
+                CallbackQueryHandler(cb_raid_gym, pattern='^raidgym_(.*)$')
             ],
-            CHOOSE_TIME: [MessageHandler(filters.TEXT, enter_raid_time, pass_user_data=True)]
+            CHOOSE_TIME: [MessageHandler(filters.TEXT, enter_raid_time)]
         },
-        fallbacks=[CommandHandler(['Cancel', 'cancel', 'Abbruch', 'abbruch'], enter_raid_cancel, pass_user_data=True)])
-    dp.add_handler(conv_handler)
+        fallbacks=[CommandHandler(['Cancel', 'cancel', 'Abbruch', 'abbruch'], enter_raid_cancel)])
+    application.add_handler(conv_handler)
 
-    dp.add_handler(MessageHandler(filters.LOCATION, cmd_location))
-    dp.add_handler(MessageHandler(filters.COMMAND, cmd_unknown))
+    application.add_handler(MessageHandler(filters.LOCATION, cmd_location))
+    application.add_handler(MessageHandler(filters.COMMAND, cmd_unknown))
 
-    dp.add_handler(CallbackQueryHandler(cb_find_gym, pattern='^gymsearch_(.*)$'))
+    application.add_handler(CallbackQueryHandler(cb_find_gym, pattern='^gymsearch_(.*)$'))
 
     # log all errors
-    dp.add_error_handler(handle_error)
+    application.add_error_handler(handle_error)
 
     # add the configuration to the preferences
     prefs.add_config(config)
 
-    # Start the Bot
-    updater.start_polling(bootstrap_retries=3, read_latency=5)
 
     LOGGER.info('Started!')
 
@@ -1749,22 +1739,20 @@ def main():
     except Exception as e:
         LOGGER.error('Could not load sent_events.json - %s', (e))
 
-    jobqueue = updater.job_queue
-    jobqueue.run_repeating(get_pokemon_and_send, 30)
-    jobqueue.run_repeating(get_raids_and_send, 55)
-    jobqueue.run_repeating(cleanup_messages, 72)
+    job_queue = application.job_queue
+    job_queue.run_repeating(get_pokemon_and_send, 30)
+    job_queue.run_repeating(get_raids_and_send, 55)
+    job_queue.run_repeating(cleanup_messages, 72)
 
     worker1_thread = Thread(target=message_queue_worker, args=(message_queue, ))
     worker1_thread.start()
     worker2_thread = Thread(target=message_queue_worker, args=(message_queue, ))
     worker2_thread.start()
 
-    # Block until the you presses Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT. This should be used most of the time, since
-    # start_polling() is non-blocking and will stop the bot gracefully.
-    updater.idle()
-
     message_queue.put(_sentinel)
+
+    # Start the Bot
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
 
     # persist sent on exit
     fd = open('data/sent_events.json', 'w', encoding='utf-8')
