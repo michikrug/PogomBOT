@@ -28,7 +28,7 @@ if sys.version_info[1] < 11:
 from geopy.geocoders import Nominatim
 from prometheus_client import Counter, Gauge, Summary, start_http_server
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.error import Unauthorized
+from telegram.error import Forbidden
 from telegram.ext import (CallbackQueryHandler, CommandHandler,
                           ConversationHandler, Filters, MessageHandler,
                           Updater)
@@ -1285,7 +1285,7 @@ def send_pokemon_notification(pokemon, chat_id):
         ITEMS_SENT.inc()
         sleep(.05)
 
-    except Unauthorized as err:
+    except Forbidden as err:
         LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(err)))
         pref.reset_user()
         unregister_client(chat_id)
@@ -1404,7 +1404,7 @@ def send_raid_notification(raid, chat_id):
         ITEMS_SENT.inc()
         sleep(.1)
 
-    except Unauthorized as err:
+    except Forbidden as err:
         LOGGER.error('[%s] %s - Will remove user for now' % (chat_id, repr(err)))
         pref.reset_user()
         unregister_client(chat_id)
