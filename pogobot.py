@@ -1734,7 +1734,7 @@ def main():
     LOGGER.info('Started!')
 
     # Send restart notification to all known users
-    userdirectory = 'userdata/'
+    userdirectory = 'data/userdata/'
     for file in os.listdir(userdirectory):
         if fnmatch.fnmatch(file, '*.json'):
             chat_id = int(file.split('.')[0])
@@ -1744,7 +1744,7 @@ def main():
 
     global sent_events
     try:
-        with open('sent_events.json', 'r', encoding='utf-8') as f:
+        with open('data/sent_events.json', 'r', encoding='utf-8') as f:
             sent_events = json.load(f, object_hook=object_hook)
     except Exception as e:
         LOGGER.error('Could not load sent_events.json - %s', (e))
@@ -1767,7 +1767,7 @@ def main():
     message_queue.put(_sentinel)
 
     # persist sent on exit
-    fd = open('sent_events.json', 'w', encoding='utf-8')
+    fd = open('data/sent_events.json', 'w', encoding='utf-8')
     json.dump(sent_events, fd, separators=(',', ':'), default=default)
     fd.close()
 

@@ -3,7 +3,7 @@ import json
 import os
 import sys
 
-user_directory = os.path.join(os.path.dirname(sys.argv[0]), '../userdata')
+user_directory = os.path.join(os.path.dirname(sys.argv[0]), '../data/userdata')
 
 for file in os.listdir(user_directory):
     if fnmatch.fnmatch(file, '*.json'):

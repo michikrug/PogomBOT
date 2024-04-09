@@ -3,6 +3,6 @@
 *.pyc
 __pycache__/
 config-bot.json
-userdata/**
-!userdata/.gitkeep
+data/userdata/**
+!data/userdata/.gitkeep
 env/

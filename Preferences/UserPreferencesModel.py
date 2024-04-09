@@ -59,7 +59,7 @@ class UserPreferencesModel(object):
 
     @staticmethod
     def __get_default_dir():
-        user_path = os.path.join(os.path.dirname(sys.argv[0]), "userdata")
+        user_path = os.path.join(os.path.dirname(sys.argv[0]), "data/userdata")
         try:
             os.makedirs(user_path)
         except OSError as e:
