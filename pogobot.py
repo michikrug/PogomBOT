@@ -1050,7 +1050,7 @@ def cleanup_messages(context):
             lock.acquire()
             to_delete = []
             for event_id in sent_events[chat_id]:
-                if sent_events[chat_id][event_id]['time'] < datetime.now(timezone.utc):
+                if sent_events[chat_id][event_id]['time'].replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
                     to_delete.append(event_id)
             for event_id in to_delete:
                 if pref.get('cleanup'):
