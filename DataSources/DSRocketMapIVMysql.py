@@ -1,6 +1,6 @@
 import logging
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pymysql
 
@@ -144,12 +144,12 @@ class DSRocketMapIVMysql():
                     sql_query,
                     (gym_id,
                      level,
-                     datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+                     datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
                      start.strftime('%Y-%m-%d %H:%M:%S'),
                      end.strftime('%Y-%m-%d %H:%M:%S'),
                      pokemon_id,
-                     datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')))
-                cur.execute(sql_query2, (datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), gym_id))
+                     datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')))
+                cur.execute(sql_query2, (datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'), gym_id))
             self.con.commit()
 
         except pymysql.err.OperationalError as err:

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def strOrNone(data):
@@ -18,4 +18,4 @@ def strptimeOrNone(data):
 
 
 def utcfromtimestampOrNone(data):
-    return datetime.utcfromtimestamp(data) if data is not None else None
+    return datetime.fromtimestamp(data, timezone.utc) if data is not None else None
