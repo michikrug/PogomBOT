@@ -1219,7 +1219,7 @@ def send_pokemon_notification(pokemon, chat_id):
 
         delta = disappear_time - datetime.now(timezone.utc)
         deltaStr = '%02dm %02ds' % (int(delta.seconds / 60), int(delta.seconds % 60))
-        disappear_time_str = disappear_time.replace(tzinfo=timezone.utc).astimezone().strftime('%H:%M:%S')
+        disappear_time_str = disappear_time.astimezone().strftime('%H:%M:%S')
 
         title = pokemon_name[lan][poke_id]
 
@@ -1351,7 +1351,7 @@ def send_raid_notification(raid, chat_id):
         deltaStr = '%02dh %02dm' % (int(delta.seconds / 3600), int((delta.seconds / 60) % 60))
 
         start_time_str = (end - timedelta(minutes=45)).replace(tzinfo=timezone.utc).astimezone().strftime('%H:%M:%S')
-        disappear_time_str = end.replace(tzinfo=timezone.utc).astimezone().strftime('%H:%M:%S')
+        disappear_time_str = end.astimezone().strftime('%H:%M:%S')
 
         dists = pref.get('raidradius', {})
         if poke_id in dists:

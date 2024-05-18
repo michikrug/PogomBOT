@@ -14,7 +14,7 @@ def floatOrNone(data):
 
 
 def strptimeOrNone(data):
-    return datetime.strptime(str(data)[0:19], "%Y-%m-%d %H:%M:%S") if data is not None else None
+    return datetime.strptime(str(data)[0:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc) if data is not None else None
 
 
 def utcfromtimestampOrNone(data):
