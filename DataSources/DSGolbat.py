@@ -118,7 +118,7 @@ class DSGolbat():
         gym_list = []
         try:
             with self.con.cursor() as cur:
-                cur.execute(sql_query, (gym_name,))
+                cur.execute(sql_query)
                 rows = cur.fetchall()
                 for row in rows:
                     gym_list.append(
