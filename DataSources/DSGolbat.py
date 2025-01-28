@@ -1,6 +1,5 @@
 import logging
 import re
-from datetime import datetime, timedelta, timezone
 
 import pymysql
 
@@ -32,7 +31,7 @@ class DSGolbat():
             "atk_iv, def_iv, sta_iv, move_1, move_2, "
             "weight, height, gender, form, cp, level, iv "
             "FROM pokemon WHERE iv IS NOT NULL AND changed >= %s "
-            "AND expire_timestamp > UTC_TIMESTAMP()" % timestamp)
+            "AND expire_timestamp > UNIX_TIMESTAMP()" % timestamp)
 
         poke_list = []
         try:
@@ -69,7 +68,7 @@ class DSGolbat():
                      "raid_pokemon_id, raid_pokemon_cp, raid_pokemon_move_1, raid_pokemon_move_2 "
                      "FROM gym "
                      "WHERE last_modified_timestamp >= %s "
-                     "AND raid_end_timestamp > UTC_TIMESTAMP()" % timestamp)
+                     "AND raid_end_timestamp > UNIX_TIMESTAMP()" % timestamp)
 
         raid_list = []
         try:
