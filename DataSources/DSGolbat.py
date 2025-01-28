@@ -107,18 +107,16 @@ class DSGolbat():
         return raid_list
 
     def get_gyms_by_name(self, gym_name, use_id=False):
-        sql_query = ("SELECT id, name, lat, lon FROM gym WHERE name LIKE %(gym_name)s", {
-                'gym_name': '%' + gym_name + '%'
-            })
+        sql_query = "SELECT id, name, lat, lon FROM gym WHERE name LIKE %(gym_name)s"
+        args = {'gym_name': '%' + gym_name + '%'}
         if use_id:
-            sql_query = ("SELECT id, name, lat, lon FROM gym WHERE id=%(gym_id)s", {
-                'gym_id': gym_name
-            })            
+            sql_query = "SELECT id, name, lat, lon FROM gym WHERE id=%(gym_id)s"
+            args = {'gym_id': gym_name}
 
         gym_list = []
         try:
             with self.con.cursor() as cur:
-                cur.execute(sql_query)
+                cur.execute(sql_query, args)
                 rows = cur.fetchall()
                 for row in rows:
                     gym_list.append(
