@@ -64,8 +64,8 @@ _sentinel = 'EXIT'
 sent_events = dict()
 locks = dict()
 
-LAST_TIMESTAMP_POKEMON = datetime.now(timezone.utc)
-last_timestamp_raids = datetime.now(timezone.utc)
+LAST_TIMESTAMP_POKEMON = datetime.now(timezone.utc).timestamp()
+last_timestamp_raids = datetime.now(timezone.utc).timestamp()
 
 pokemon_name = dict()
 move_name = dict()
@@ -859,7 +859,7 @@ def get_pokemon_and_send(context):
         allpokes = data_source.get_pokemon_by_time(LAST_TIMESTAMP_POKEMON)
         ITEMS_FOUND.set(len(allpokes))
         LOGGER.info('[NEW] Checking pokemons. Got %s results to filter.' % (len(allpokes)))
-        LAST_TIMESTAMP_POKEMON = datetime.now(timezone.utc)
+        LAST_TIMESTAMP_POKEMON = datetime.now(timezone.utc).timestamp()
         for chat_id in locks:
             pref = prefs.get(chat_id)
             if not pref.get('pkmids', []) or pref.get('disabled', False):
@@ -909,7 +909,7 @@ def get_raids_and_send(context):
     try:
         allraids = data_source.get_raids_by_time(last_timestamp_raids)
         LOGGER.info('[NEW] Checking raids. Got %s results to filter.' % (len(allraids)))
-        last_timestamp_raids = datetime.now(timezone.utc)
+        last_timestamp_raids = datetime.now(timezone.utc).timestamp()
         for chat_id in locks:
             pref = prefs.get(chat_id)
             if not pref.get('raidids', []) or pref.get('disabled', False):
