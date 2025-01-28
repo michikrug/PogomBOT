@@ -88,7 +88,7 @@ ITEMS_FOUND = Gauge('items_found', 'Number of items found to be processed')
 
 
 def get_pkm_sticker(pkm_id):
-    return 'https://raw.githubusercontent.com/nileplumb/PkmnHomeIcons/master/UICONS/pokemon/%s.png' % (pkm_id)
+    return 'https://raw.githubusercontent.com/WatWowMap/wwm-uicons-webp/main/pokemon/%s.webp' % (pkm_id)
 
 def set_lang(lang):
     global _
