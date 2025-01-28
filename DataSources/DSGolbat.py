@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 import pymysql
 
-from .Conversion import floatOrNone, intOrNone, strOrNone, strptimeOrNone
+from .Conversion import floatOrNone, intOrNone, strOrNone, utcfromtimestampOrNone
 from .DSGym import DSGym
 from .DSPokemon import DSPokemon
 from .DSRaid import DSRaid
@@ -12,7 +12,7 @@ from .DSRaid import DSRaid
 LOGGER = logging.getLogger(__name__)
 
 
-class DSRocketMapIVMysql():
+class DSGolbat():
 
     def __init__(self, connectString):
         # open the database
@@ -28,11 +28,11 @@ class DSRocketMapIVMysql():
 
     def get_pokemon_by_time(self, timestamp):
         sql_query = (
-            "SELECT encounter_id, spawnpoint_id, pokemon_id, latitude, longitude, disappear_time, "
-            "individual_attack, individual_defense, individual_stamina, move_1, move_2, "
-            "weight, height, gender, form, cp, cp_multiplier "
-            "FROM pokemon WHERE last_modified >= '%s' "
-            "AND disappear_time > UTC_TIMESTAMP()" % (timestamp.strftime('%Y-%m-%d %H:%M:%S')))
+            "SELECT id, spawn_id, pokemon_id, lat, lon, expire_timestamp, "
+            "atk_iv, def_iv, sta_iv, move_1, move_2, "
+            "weight, height, gender, form, cp, level, iv "
+            "FROM pokemon WHERE iv IS NOT NULL AND changed >= %s "
+            "AND expire_timestamp > UTC_TIMESTAMP()" % timestamp)
 
         poke_list = []
         try:
@@ -43,11 +43,11 @@ class DSRocketMapIVMysql():
                     poke_list.append(
                         DSPokemon(
                             strOrNone(row[0]), strOrNone(row[1]), intOrNone(row[2]),
-                            floatOrNone(row[3]), floatOrNone(row[4]), strptimeOrNone(row[5]),
+                            floatOrNone(row[3]), floatOrNone(row[4]), utcfromtimestampOrNone(row[5]),
                             intOrNone(row[6]), intOrNone(row[7]), intOrNone(row[8]),
                             intOrNone(row[9]), intOrNone(row[10]), floatOrNone(row[11]),
                             floatOrNone(row[12]), intOrNone(row[13]), intOrNone(row[14]),
-                            intOrNone(row[15]), floatOrNone(row[16])))
+                            intOrNone(row[15]), intOrNone(row[16]), floatOrNone(row[17])))
 
         except pymysql.err.OperationalError as err:
             if err.args[0] == 2006:
@@ -64,12 +64,12 @@ class DSRocketMapIVMysql():
         return poke_list
 
     def get_raids_by_time(self, timestamp):
-        sql_query = ("SELECT raid.gym_id, name, latitude, longitude, "
-                     "start, end, pokemon_id, cp, move_1, move_2 "
-                     "FROM raid JOIN gym ON gym.gym_id=raid.gym_id "
-                     "JOIN gymdetails ON gym.gym_id=gymdetails.gym_id "
-                     "WHERE raid.last_scanned >= '%s' "
-                     "AND end > UTC_TIMESTAMP()" % (timestamp.strftime('%Y-%m-%d %H:%M:%S')))
+        sql_query = ("SELECT id, name, lat, lon, "
+                     "raid_battle_timestamp, raid_end_timestamp, "
+                     "raid_pokemon_id, raid_pokemon_cp, raid_pokemon_move_1, raid_pokemon_move_2 "
+                     "FROM gym "
+                     "WHERE last_modified_timestamp >= %s "
+                     "AND raid_end_timestamp > UTC_TIMESTAMP()" % timestamp)
 
         raid_list = []
         try:
@@ -79,10 +79,18 @@ class DSRocketMapIVMysql():
                 for row in rows:
                     raid_list.append(
                         DSRaid(
-                            strOrNone(row[0]), strOrNone(row[1]), floatOrNone(row[2]),
-                            floatOrNone(row[3]), strptimeOrNone(row[4]), strptimeOrNone(row[5]),
-                            intOrNone(row[6]), intOrNone(row[7]), intOrNone(row[8]),
-                            intOrNone(row[9])))
+                            strOrNone(row[0]),
+                            strOrNone(row[1]),
+                            floatOrNone(row[2]),
+                            floatOrNone(row[3]),
+                            utcfromtimestampOrNone(row[4]),
+                            utcfromtimestampOrNone(row[5]),
+                            intOrNone(row[6]),
+                            intOrNone(row[7]),
+                            intOrNone(row[8]),
+                            intOrNone(row[9])
+                        )
+                    )
 
         except pymysql.err.OperationalError as err:
             if err.args[0] == 2006:
@@ -99,14 +107,13 @@ class DSRocketMapIVMysql():
         return raid_list
 
     def get_gyms_by_name(self, gym_name, use_id=False):
-        sql_query = ("SELECT gym.gym_id, name, latitude, longitude "
-                     "FROM gym JOIN gymdetails "
-                     "ON gym.gym_id=gymdetails.gym_id WHERE ")
+        sql_query = ("SELECT id, name, lat, lon FROM gym WHERE name LIKE %(gym_name)s", {
+                'gym_name': '%' + gym_name + '%'
+            })
         if use_id:
-            sql_query += "gym.gym_id=%s"
-        else:
-            sql_query += "name LIKE %s"
-            gym_name = '%' + gym_name + '%'
+            sql_query = ("SELECT id, name, lat, lon FROM gym WHERE id=%(gym_id)s", {
+                'gym_id': gym_name
+            })            
 
         gym_list = []
         try:
@@ -115,7 +122,13 @@ class DSRocketMapIVMysql():
                 rows = cur.fetchall()
                 for row in rows:
                     gym_list.append(
-                        DSGym(strOrNone(row[0]), strOrNone(row[1]), floatOrNone(row[2]), floatOrNone(row[3])))
+                        DSGym(
+                            strOrNone(row[0]),
+                            strOrNone(row[1]),
+                            floatOrNone(row[2]),
+                            floatOrNone(row[3])
+                        )
+                    )
 
         except pymysql.err.OperationalError as err:
             if err.args[0] == 2006:
@@ -130,39 +143,6 @@ class DSRocketMapIVMysql():
             LOGGER.error('get_gyms_by_name: %s' % (repr(err)))
 
         return gym_list
-
-    def add_new_raid(self, gym_id, level, start, pokemon_id):
-        end = start + timedelta(minutes=45)
-        sql_query = (
-            "REPLACE INTO `raid` (`gym_id`, `level`, `spawn`, `start`, `end`, `pokemon_id`, `last_scanned`) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s)")
-        sql_query2 = ("UPDATE `gym` SET `last_scanned`=%s WHERE `gym_id`=%s")
-
-        try:
-            with self.con.cursor() as cur:
-                cur.execute(
-                    sql_query,
-                    (gym_id,
-                     level,
-                     datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
-                     start.strftime('%Y-%m-%d %H:%M:%S'),
-                     end.strftime('%Y-%m-%d %H:%M:%S'),
-                     pokemon_id,
-                     datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')))
-                cur.execute(sql_query2, (datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'), gym_id))
-            self.con.commit()
-
-        except pymysql.err.OperationalError as err:
-            if err.args[0] == 2006:
-                self.__reconnect()
-            else:
-                LOGGER.error('add_new_raid: %s' % (repr(err)))
-
-        except pymysql.err.InterfaceError:
-            self.__reconnect()
-
-        except Exception as err:
-            LOGGER.error('add_new_raid: %s' % (repr(err)))
 
     def __connect(self):
         self.con = pymysql.connect(

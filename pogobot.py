@@ -26,10 +26,11 @@ from prometheus_client import Counter, Gauge, Summary, start_http_server
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import Unauthorized
 from telegram.ext import (CallbackQueryHandler, CommandHandler,
-                          ConversationHandler, Filters, MessageHandler,
+                          Filters, MessageHandler,
                           Updater)
 
 import DataSources
+import DataSources.DSGolbat
 import Preferences
 import Whitelist
 
@@ -77,86 +78,6 @@ pokemon_blacklist = [
     167, 177, 183, 194, 198, 220
 ]
 
-pokemon_rarity = [[],
-                  ["7", "16", "19", "41", "133", "161", "163", "165", "167", "170", "177", "183", "187", "194", "198", "216", "220"],
-                  ["1", "7", "10", "17", "21", "23", "25", "29", "32", "35", "43", "46", "48", "58", "60", "69", "84", "92", "96", "98",
-                   "120", "127", "129", "147", "152", "155", "158", "162", "164", "166", "168", "171", "178", "184", "185", "188", "190",
-                   "191", "200", "206", "209", "211", "215", "223", "228"],
-                  ["2", "4", "8", "11", "14", "15", "18", "20", "22", "27", "37", "39", "42", "47", "49", "50", "52", "54", "56", "61", "63",
-                   "66", "70", "72", "74", "77", "79", "81", "86", "90", "93", "95", "97", "100", "102", "104", "107", "108", "109", "111",
-                   "114", "116", "118", "123", "124", "125", "126", "128", "138", "140", "143", "153", "156", "159", "169", "185", "193",
-                   "195", "202", "203", "204", "207", "213", "218", "221", "231", "234"],
-                  ["3", "5", "6", "9", "12", "24", "30", "31", "33", "34", "36", "44", "53", "55", "57", "59", "64", "67", "73", "75", "78",
-                   "80", "85", "88", "99", "103", "105", "106", "110", "112", "113", "117", "119", "121", "122", "131", "134", "135", "137",
-                   "142", "148", "149", "179", "180", "189", "205", "210", "217", "219", "224", "226", "227", "246", "247"],
-                  ["26", "28", "38", "40", "45", "51", "62", "65", "68", "71", "76", "82", "83", "87", "89", "91", "94", "101", "115", "130",
-                   "132", "136", "139", "141", "144", "145", "146", "149", "150", "151", "154", "157", "160", "172", "173", "174", "175",
-                   "176", "181", "182", "186", "192", "196", "197", "199", "201", "208", "210", "212", "214", "222", "225", "229", "230",
-                   "232", "233", "235", "236", "237", "238", "239", "240", "241", "242", "243", "244", "245", "248", "249", "250", "251"],
-                  ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22",
-                   "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43",
-                   "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64",
-                   "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85",
-                   "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99", "100", "101", "102", "103", "104", "105",
-                   "106", "107", "108", "109", "110", "111", "112", "113", "114", "115", "116", "117", "118", "119", "120", "121", "122", "123",
-                   "124", "125", "126", "127", "128", "129", "130", "131", "132", "133", "134", "135", "136", "137", "138", "139", "140", "141",
-                   "142", "143", "144", "145", "146", "147", "148", "149", "150", "151"],
-                  ["152", "153", "154", "155", "156", "157", "158", "159", "160", "161", "162", "163", "164", "165", "166", "167", "168", "169",
-                   "170", "171", "172", "173", "174", "175", "176", "177", "178", "179", "180", "181", "182", "183", "184", "185", "186", "187",
-                   "188", "189", "190", "191", "192", "193", "194", "195", "196", "197", "198", "199", "200", "201", "202", "203", "204", "205",
-                   "206", "207", "208", "209", "210", "211", "212", "213", "214", "215", "216", "217", "218", "219", "220", "221", "222", "223",
-                   "224", "225", "226", "227", "228", "229", "230", "231", "232", "233", "234", "235", "236", "237", "238", "239", "240", "241",
-                   "242", "243", "244", "245", "246", "247", "248", "249", "250", "251"],
-                  ["252", "253", "254", "255", "256", "257", "258", "259", "260", "261", "262", "263", "264", "265", "266", "267", "268",
-                   "269", "270", "271", "272", "273", "274", "275", "276", "277", "278", "279", "280", "281", "282", "283", "284", "285", "286",
-                   "287", "288", "289", "290", "291", "292", "293", "294", "295", "296", "297", "298", "299", "300", "301", "302", "303", "304",
-                   "305", "306", "307", "308", "309", "310", "311", "312", "313", "314", "315", "316", "317", "318", "319", "320", "321", "322",
-                   "323", "324", "325", "326", "327", "328", "329", "330", "331", "332", "333", "334", "335", "336", "337", "338", "339", "340",
-                   "341", "342", "343", "344", "345", "346", "347", "348", "349", "350", "351", "352", "353", "354", "355", "356", "357", "358",
-                   "359", "360", "361", "362", "363", "364", "365", "366", "367", "368", "369", "370", "371", "372", "373", "374", "375", "376",
-                   "377", "378", "379", "380", "381", "382", "383", "384", "385", "386"],
-                  ["387", "388", "389", "390", "391", "392", "393", "394", "395", "396", "397", "398", "399", "400", "401", "402", "403", "404",
-                   "405", "406", "407", "408", "409", "410", "411", "412", "413", "414", "415", "416", "417", "418", "419", "420", "421", "422",
-                   "423", "424", "425", "426", "427", "428", "429", "430", "431", "432", "433", "434", "435", "436", "437", "438", "439", "440",
-                   "441", "442", "443", "444", "445", "446", "447", "448", "449", "450", "451", "452", "453", "454", "455", "456", "457", "458",
-                   "459", "460", "461", "462", "463", "464", "465", "466", "467", "468", "469", "470", "471", "472", "473", "474", "475", "476",
-                   "477", "478", "479", "480", "481", "482", "483", "484", "485", "486", "487", "488", "489", "490", "491", "492"],
-                  ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23",
-                   "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44",
-                   "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65",
-                   "66", "67", "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86",
-                   "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99", "100", "101", "102", "103", "104", "105", "106",
-                   "107", "108", "109", "110", "111", "112", "113", "114", "115", "116", "117", "118", "119", "120", "121", "122", "123", "124",
-                   "125", "126", "127", "128", "129", "130", "131", "132", "133", "134", "135", "136", "137", "138", "139", "140", "141", "142",
-                   "143", "144", "145", "146", "147", "148", "149", "150", "151", "152", "153", "154", "155", "156", "157", "158", "159", "160",
-                   "161", "162", "163", "164", "165", "166", "167", "168", "169", "170", "171", "172", "173", "174", "175", "176", "177", "178",
-                   "179", "180", "181", "182", "183", "184", "185", "186", "187", "188", "189", "190", "191", "192", "193", "194", "195", "196",
-                   "197", "198", "199", "200", "201", "202", "203", "204", "205", "206", "207", "208", "209", "210", "211", "212", "213", "214",
-                   "215", "216", "217", "218", "219", "220", "221", "222", "223", "224", "225", "226", "227", "228", "229", "230", "231", "232",
-                   "233", "234", "235", "236", "237", "238", "239", "240", "241", "242", "243", "244", "245", "246", "247", "248", "249", "250",
-                   "251", "252", "253", "254", "255", "256", "257", "258", "259", "260", "261", "262", "263", "264", "265", "266", "267", "268",
-                   "269", "270", "271", "272", "273", "274", "275", "276", "277", "278", "279", "280", "281", "282", "283", "284", "285", "286",
-                   "287", "288", "289", "290", "291", "292", "293", "294", "295", "296", "297", "298", "299", "300", "301", "302", "303", "304",
-                   "305", "306", "307", "308", "309", "310", "311", "312", "313", "314", "315", "316", "317", "318", "319", "320", "321", "322",
-                   "323", "324", "325", "326", "327", "328", "329", "330", "331", "332", "333", "334", "335", "336", "337", "338", "339", "340",
-                   "341", "342", "343", "344", "345", "346", "347", "348", "349", "350", "351", "352", "353", "354", "355", "356", "357", "358",
-                   "359", "360", "361", "362", "363", "364", "365", "366", "367", "368", "369", "370", "371", "372", "373", "374", "375", "376",
-                   "377", "378", "379", "380", "381", "382", "383", "384", "385", "386", "387", "388", "389", "390", "391", "392", "393", "394",
-                   "395", "396", "397", "398", "399", "400", "401", "402", "403", "404", "405", "406", "407", "408", "409", "410", "411", "412",
-                   "413", "414", "415", "416", "417", "418", "419", "420", "421", "422", "423", "424", "425", "426", "427", "428", "429", "430",
-                   "431", "432", "433", "434", "435", "436", "437", "438", "439", "440", "441", "442", "443", "444", "445", "446", "447", "448",
-                   "449", "450", "451", "452", "453", "454", "455", "456", "457", "458", "459", "460", "461", "462", "463", "464", "465", "466",
-                   "467", "468", "469", "470", "471", "472", "473", "474", "475", "476", "477", "478", "479", "480", "481", "482", "483", "484",
-                   "485", "486", "487", "488", "489", "490", "491", "492"]
-                  ]
-
-raid_levels = [[],
-               ["618", "572", "532", "599", "543"],
-               ["103", "520", "510", "207", "303"],
-               ["597", "26", "615", "232", "141"],
-               ["105", "110", "530", "306"],
-               ["643"]]
-
 CHOOSE_LEVEL, CHOOSE_PKM, CHOOSE_GYM, CHOOSE_GYM_SEARCH, CHOOSE_TIME = range(5)
 
 JOB_TIME = Summary('job_processing_seconds', 'Time spent processing job')
@@ -167,7 +88,7 @@ ITEMS_FOUND = Gauge('items_found', 'Number of items found to be processed')
 
 
 def get_pkm_sticker(pkm_id):
-    return 'https://pogochemnitz.ovh/map/pkm_img?telegram&pkm=%s' % (pkm_id)
+    return 'https://raw.githubusercontent.com/nileplumb/PkmnHomeIcons/master/UICONS/pokemon/%s.png' % (pkm_id)
 
 def set_lang(lang):
     global _
@@ -205,7 +126,6 @@ def cmd_help(update, context):
         _("*Pokémon filter*") + "\n" + \
         _("/add pokedexID") + " - " + _("Adds Pokémon with the given ID to the scanner") + "\n" + \
         _("/add pokedexID1 pokedexID2 ...") + "\n" + \
-        _("/addbyrarity 1-5") + " - " + _("Adds Pokémon with the given rarity to scanner (1 very common - 5 ultrarare)") + "\n" + \
         _("/remove pokedexID") + " - " + _("Removes Pokémon with the given ID from the scanner") + "\n" + \
         _("/remove pokedexID1 pokedexID2 ...") + "\n" + \
         _("/iv") + " - " + _("Sets the minimum IVs given as percent") + "\n" +\
@@ -226,10 +146,8 @@ def cmd_help(update, context):
         _("/showivs") + " - " + _("Defines if Individual Values should be displayed") + "\n\n" + \
         _("/perfect") + " - " + _("Defines if perfect Pokémon within the radius should be sent") + "\n\n" + \
         _("*Raid filter*") + "\n" + \
-        _("/newraid") + " - " + _("Adds a new Raid entry to the database") + "\n" + \
         _("/addraid pokedexID") + " - " + _("Adds Raid Pokémon with the given ID to the scanner") + "\n" + \
         _("/addraid pokedexID1 pokedexID2 ...") + "\n" + \
-        _("/addraidbylevel 1-5") + " - " + _("Adds Raid Pokémon with the given level to scanner (1-5)") + "\n" + \
         _("/removeraid pokedexID") + " - " + _("Removes Raid Pokémon with the given ID from the scanner") + "\n" + \
         _("/removeraid pokedexID1 pokedexID2 ...") + "\n\n" + \
         _("*Distance filter*") + "\n" + \
@@ -606,46 +524,6 @@ def cmd_add(update, context):
         update.message.reply_text(text=usage_message)
 
 
-def cmd_add_by_rarity(update, context):
-    if is_not_whitelisted(update, context, 'addByRarity'):
-        return
-
-    chat_id = update.effective_chat.id
-    user_name = update.effective_chat.username
-
-    pref = prefs.get(chat_id)
-    set_lang(pref.get('language'))
-
-    usage_message = _('Usage:') + '\n' + _('/addbyrarity 1-5')
-
-    if len(context.args) < 1:
-        update.message.reply_text(text=usage_message)
-        return
-
-    register_client(chat_id)
-    LOGGER.info('[%s@%s] Add pokemon by rarity' % (user_name, chat_id))
-
-    try:
-        rarity = int(context.args[0])
-
-        if rarity < 1 or rarity > 5:
-            update.message.reply_text(text=usage_message)
-            return
-
-        search = pref.get('pkmids', [])
-        for pkm_to_add in pokemon_rarity[rarity]:
-            pokemon_id = int(pkm_to_add)
-            if pokemon_id not in search and pokemon_id not in pokemon_blacklist:
-                search.append(pokemon_id)
-        search.sort()
-        pref.set('pkmids', search)
-        cmd_list(update, context)
-
-    except Exception as err:
-        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
-        update.message.reply_text(text=usage_message)
-
-
 def cmd_remove(update, context):
     if is_not_whitelisted(update, context, 'remove'):
         return
@@ -670,46 +548,6 @@ def cmd_remove(update, context):
     except Exception as err:
         LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
         update.message.reply_text(text=_('Usage:') + '\n' + _('/remove pokedexID'))
-
-
-def cmd_add_raid_by_level(update, context):
-    if is_not_whitelisted(update, context, 'addraidbylevel'):
-        return
-
-    chat_id = update.effective_chat.id
-    user_name = update.effective_chat.username
-
-    pref = prefs.get(chat_id)
-    set_lang(pref.get('language'))
-
-    usage_message = _('Usage:') + '\n' + _('/addraidbylevel 1-5')
-
-    if len(context.args) < 1:
-        update.message.reply_text(text=usage_message)
-        return
-
-    register_client(chat_id)
-    LOGGER.info('[%s@%s] Add raid pokemon by level' % (user_name, chat_id))
-
-    try:
-        level = int(context.args[0])
-
-        if level < 1 or level > 5:
-            update.message.reply_text(text=usage_message)
-            return
-
-        search = pref.get('raidids', [])
-        for raid_to_add in raid_levels[level]:
-            raid_id = int(raid_to_add)
-            if raid_id not in search:
-                search.append(raid_id)
-        search.sort()
-        pref.set('raidids', search)
-        cmd_list(update, context)
-
-    except Exception as err:
-        LOGGER.error('[%s@%s] %s' % (user_name, chat_id, repr(err)))
-        update.message.reply_text(text=usage_message)
 
 
 def cmd_add_raid(update, context):
@@ -1413,120 +1251,6 @@ def send_raid_notification(raid, chat_id):
 
     lock.release()
 
-def enter_raid_level(update, context):
-    default_cmd(update, context, 'enter_raid_level')
-    reply_keyboard = [[
-        InlineKeyboardButton('⭐', callback_data='raidlevel_1'),
-        InlineKeyboardButton('⭐⭐', callback_data='raidlevel_2'),
-        InlineKeyboardButton('⭐⭐⭐', callback_data='raidlevel_3')
-    ], [
-        InlineKeyboardButton('⭐⭐⭐⭐', callback_data='raidlevel_4'),
-        InlineKeyboardButton('⭐⭐⭐⭐⭐', callback_data='raidlevel_5')
-    ]]
-    markup = InlineKeyboardMarkup(reply_keyboard)
-    update.message.reply_text(_('Please choose the raid level:'), reply_markup=markup)
-    return CHOOSE_LEVEL
-
-
-def cb_raid_level(update, context):
-    query = update.callback_query
-    pref = prefs.get(query.message.chat_id)
-    set_lang(pref.get('language'))
-
-    context.user_data['level'] = int(update.callback_query.data[10:])
-    query.answer()
-    query.edit_message_text(_('*Raid level: %s*') % context.user_data['level'], parse_mode='Markdown')
-    reply_keyboard = []
-    reply_keyboard.append([InlineKeyboardButton(_('Not hatched yet'), callback_data='raidpkm_0')])
-    for pkm_id in raid_levels[context.user_data['level']]:
-        reply_keyboard.append([
-            InlineKeyboardButton(
-                pokemon_name[pref.get('language')][pkm_id], callback_data='raidpkm_' + pkm_id)
-        ])
-    markup = InlineKeyboardMarkup(reply_keyboard)
-    query.message.reply_text(_('Please choose the raid boss:'), reply_markup=markup)
-    return CHOOSE_PKM
-
-
-def cb_raid_pkm(update, context):
-    query = update.callback_query
-    pref = prefs.get(query.message.chat_id)
-    set_lang(pref.get('language'))
-
-    context.user_data['pkm'] = update.callback_query.data[8:]
-    if context.user_data['pkm'] == '0':
-        context.user_data['pkm'] = None
-        query.edit_message_text(_('*Raid boss: %s*') % _('Not hatched yet'), parse_mode='Markdown')
-    else:
-        query.edit_message_text(_('*Raid boss: %s*') % pokemon_name[pref.get('language')][context.user_data['pkm']], parse_mode='Markdown')
-
-    query.answer()
-    query.message.reply_text(_('Please enter the gym name:'))
-    return CHOOSE_GYM
-
-
-def enter_raid_gym_search(update, context):
-    if update.message.text == 'Abbruch' or update.message.text == 'Cancel':
-        return enter_raid_cancel(update, context, context.user_data)
-    pref = prefs.get(update.effective_chat.id)
-    set_lang(pref.get('language'))
-    gyms = data_source.get_gyms_by_name(gym_name=update.message.text)
-    if len(gyms) >= 1:
-        reply_keyboard = []
-        for gym in gyms:
-            reply_keyboard.append(
-                [InlineKeyboardButton(gym.get_name(), callback_data='raidgym_' + gym.get_gym_id())])
-        markup = InlineKeyboardMarkup(reply_keyboard)
-        update.message.reply_text(_('Please select the matching gym:'), reply_markup=markup)
-        return CHOOSE_GYM_SEARCH
-
-    update.message.reply_text(_('No gym with this name could be found. Please try again.'))
-    return CHOOSE_GYM
-
-
-def cb_raid_gym(update, context):
-    query = update.callback_query
-    pref = prefs.get(query.message.chat_id)
-    set_lang(pref.get('language'))
-
-    context.user_data['gym'] = update.callback_query.data[8:]
-    query.answer()
-    gyms = data_source.get_gyms_by_name(gym_name=context.user_data['gym'], use_id=True)
-    query.edit_message_text(_('*Raid gym: %s*') % gyms[0].get_name(), parse_mode='Markdown')
-    query.message.reply_text(_('Please enter the start time of the raid (Format: hh:mm):'))
-    return CHOOSE_TIME
-
-
-def enter_raid_time(update, context):
-    if update.message.text == 'Abbruch' or update.message.text == 'Cancel':
-        return enter_raid_cancel(update, context, context.user_data)
-    pref = prefs.get(update.effective_chat.id)
-    set_lang(pref.get('language'))
-    try:
-        context.user_data['time'] = datetime.strptime(
-            datetime.now().strftime("%d %m %Y ") + update.message.text, "%d %m %Y %H:%M")
-    except Exception as err:
-        LOGGER.error(repr(err))
-        update.message.reply_text(_('Please enter the start time of the raid (Format: hh:mm):'))
-        return CHOOSE_TIME
-    update.message.reply_text(_('*Raid start time: %s*') %
-                              context.user_data['time'].strftime("%H:%M am %d.%m.%Y"), parse_mode='Markdown')
-    update.message.reply_text(text=_('Thanks!'))
-
-    data_source.add_new_raid(context.user_data['gym'], context.user_data['level'], context.user_data['time'].astimezone(
-        timezone.utc), context.user_data['pkm'])
-
-    context.user_data.clear()
-    return ConversationHandler.END
-
-
-def enter_raid_cancel(update, context):
-    pref = prefs.get(update.effective_chat.id)
-    set_lang(pref.get('language'))
-    context.user_data.clear()
-    update.message.reply_text(_('Alright. See you later.'))
-    return ConversationHandler.END
-
 
 def read_config():
     global config
@@ -1552,8 +1276,6 @@ def report_config():
     tmp = tmp[2:]
     LOGGER.info('LIST_OF_ADMINS: <%s>' % (tmp))
     LOGGER.info('TELEGRAM_TOKEN: <%s>' % (config.get('TELEGRAM_TOKEN', None)))
-    LOGGER.info('SCANNER_NAME: <%s>' % (config.get('SCANNER_NAME', None)))
-    LOGGER.info('DB_TYPE: <%s>' % (config.get('DB_TYPE', None)))
     LOGGER.info('DB_CONNECT: <%s>' % (config.get('DB_CONNECT', None)))
     LOGGER.info('DEFAULT_LANG: <%s>' % (config.get('DEFAULT_LANG', 'en')))
     LOGGER.info('SEND_MAP_ONLY: <%s>' % (config.get('SEND_MAP_ONLY', False)))
@@ -1626,16 +1348,7 @@ def main():
             read_move_names(file.split('.')[1])
 
     global data_source
-
-    db_type = config.get('DB_TYPE', None)
-    scanner_name = config.get('SCANNER_NAME', None)
-
-    if db_type == 'mysql' and scanner_name == 'rocketmap-iv':
-        data_source = DataSources.DSRocketMapIVMysql(config.get('DB_CONNECT', None))
-
-    if not data_source:
-        raise Exception('The combination SCANNER_NAME, DB_TYPE is not available: %s,%s' %
-                        (scanner_name, db_type))
+    data_source = DataSources.DSGolbat(config.get('DB_CONNECT', None))
 
     global whitelist
     whitelist = Whitelist.Whitelist(config)
@@ -1659,10 +1372,8 @@ def main():
     dp.add_handler(CommandHandler('help', cmd_help))
     dp.add_handler(CommandHandler('clear', cmd_clear))
     dp.add_handler(CommandHandler('add', cmd_add, pass_args=True))
-    dp.add_handler(CommandHandler('addbyrarity', cmd_add_by_rarity, pass_args=True))
     dp.add_handler(CommandHandler('remove', cmd_remove, pass_args=True))
     dp.add_handler(CommandHandler('addraid', cmd_add_raid, pass_args=True))
-    dp.add_handler(CommandHandler('addraidbylevel', cmd_add_raid_by_level, pass_args=True))
     dp.add_handler(CommandHandler('removeraid', cmd_remove_raid, pass_args=True))
     dp.add_handler(CommandHandler('list', cmd_list))
     dp.add_handler(CommandHandler(['language', 'lang'], cmd_lang, pass_args=True))
@@ -1694,27 +1405,6 @@ def main():
     dp.add_handler(CommandHandler('perfect', cmd_perfect, pass_args=True))
     dp.add_handler(CommandHandler('showivs', cmd_show_ivs, pass_args=True))
     dp.add_handler(CommandHandler(['wo', 'where'], cmd_find_gym, pass_args=True))
-
-    conv_handler = ConversationHandler(
-        entry_points=[
-            CommandHandler(['newraid', 'neuerraid'], enter_raid_level, pass_user_data=True)
-        ],
-        states={
-            CHOOSE_LEVEL: [
-                CallbackQueryHandler(
-                    cb_raid_level, pattern='^raidlevel_(.*)$', pass_user_data=True)
-            ],
-            CHOOSE_PKM: [
-                CallbackQueryHandler(cb_raid_pkm, pattern='^raidpkm_(.*)$', pass_user_data=True)
-            ],
-            CHOOSE_GYM: [MessageHandler(Filters.text, enter_raid_gym_search, pass_user_data=True)],
-            CHOOSE_GYM_SEARCH: [
-                CallbackQueryHandler(cb_raid_gym, pattern='^raidgym_(.*)$', pass_user_data=True)
-            ],
-            CHOOSE_TIME: [MessageHandler(Filters.text, enter_raid_time, pass_user_data=True)]
-        },
-        fallbacks=[CommandHandler(['Cancel', 'cancel', 'Abbruch', 'abbruch'], enter_raid_cancel, pass_user_data=True)])
-    dp.add_handler(conv_handler)
 
     dp.add_handler(MessageHandler(Filters.location, cmd_location))
     dp.add_handler(MessageHandler(Filters.command, cmd_unknown))

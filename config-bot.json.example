@@ -1,8 +1,6 @@
 {
 	"LIST_OF_ADMINS": [],
 	"TELEGRAM_TOKEN": "TOKEN",
-	"SCANNER_NAME": "pogom",
-	"DB_TYPE": "sqlite",
 	"DB_CONNECT": "/PATH/TO/POGOM",
 	"DEFAULT_LANG": "en",
 	"SEND_MAP_ONLY": false,
